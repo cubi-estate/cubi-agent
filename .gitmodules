@@ -1,0 +1,3 @@
+[submodule "vendor/cubi-estate-plugin"]
+	path = vendor/cubi-estate-plugin
+	url = https://github.com/cubi-estate/cubi-estate-plugin.git
