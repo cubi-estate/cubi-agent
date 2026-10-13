@@ -30,7 +30,7 @@ class SearchFilter(BaseModel):
     has_parking: Optional[bool] = Field(description="true only if the user asked for parking or a garage, else null.")
     features: list[str] = Field(description="Structural features asked for, in English Title Case (e.g. 'Balcony', 'Pool', 'Sea View'). Empty if none.")
     lang: Literal["en", "pt", "es", "fr", "de", "nl"] = Field(description="Language the user wrote in.")
-    needs_free_text_search: bool = Field(description="true if the request depends on something a filter cannot express (a landscape region, 'near the beach', 'quiet'), else false.")
+    needs_free_text_search: bool = Field(description="false whenever the user names a town or city and the rest fits the fields above (features like balcony or pool DO fit). true only if the request hinges on something no field can hold: a landscape region instead of a town ('Algarve', 'Tuscany'), proximity ('near the beach'), or a mood ('quiet', 'charming').")
 
     def to_filter_args(self, limit: int = 8) -> dict:
         args: dict = {"lang": self.lang, "limit": limit, "transaction_type": self.transaction_type}

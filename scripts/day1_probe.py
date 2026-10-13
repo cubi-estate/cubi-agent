@@ -38,7 +38,8 @@ REPORTS = Path(__file__).resolve().parent.parent / "reports"
 EXTRACT_SYSTEM = (
     "You turn a home-search request into a search filter for a European property "
     "search service. Fill every field; use null or an empty list when the user did "
-    "not say. Prices are in EUR. Portuguese 'T1/T2/T3' means 1/2/3 bedrooms. "
+    "not say. Prices are in EUR. Portuguese 'T1/T2/T3' means 1/2/3 bedrooms; "
+    "Spanish 'piso' and Portuguese 'apartamento' mean apartment. "
     "Reply with the JSON object only."
 )
 
@@ -98,7 +99,7 @@ def list_models(cli) -> list[str]:
     return sorted(m.id for m in cli.models.list().data)
 
 
-def extract(cli, model: str, query: str) -> dict:
+def extract(cli, model: str, query: str, a_no_think: bool = True) -> dict:
     schema = strict_json_schema()
     attempts = [
         ("json_schema", {"type": "json_schema",
@@ -117,7 +118,8 @@ def extract(cli, model: str, query: str) -> dict:
                 messages=[{"role": "system", "content": system}, {"role": "user", "content": query}],
                 response_format=response_format,
                 temperature=0,
-                max_tokens=2048,
+                max_tokens=1024,
+                extra_body=llm.NO_THINK if a_no_think else None,
             )
         except Exception as e:  # unsupported response_format → try next mode
             last_err = f"{mode}: {type(e).__name__}: {str(e)[:200]}"
@@ -205,7 +207,7 @@ def live_loop(cli, model: str, mcp: CubiMCP, tools: list[dict], query: str, max_
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--roles", default="nano,super,ultra")
+    ap.add_argument("--roles", default="nano,lightning,super,ultra")
     ap.add_argument("--models-only", action="store_true")
     ap.add_argument("--live-loop", action="store_true", help="run one full loop on the live connector (super)")
     a = ap.parse_args()

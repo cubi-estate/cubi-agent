@@ -32,6 +32,8 @@ MODELS = {
     "nano": os.environ.get("MODEL_NANO", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"),
     "super": os.environ.get("MODEL_SUPER", "nvidia/nemotron-3-super-120b-a12b"),
     "ultra": os.environ.get("MODEL_ULTRA", "nvidia/Nemotron-3-Ultra-550b-a55b"),
+    # Newer than the plan; probed as a candidate for the fast calls.
+    "lightning": os.environ.get("MODEL_LIGHTNING", "nvidia/Nemotron-3_5-Lightning"),
 }
 
 TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
