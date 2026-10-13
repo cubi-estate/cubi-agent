@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .env
 .pytest_cache/
+
+# Recorded live replies carry listing descriptions; keep them local until fixtures are sanitised.
+fixtures/filter_listings_*.json
+reports/*.json
