@@ -54,3 +54,10 @@ def test_fixture_tools_convert():
     converted = [to_openai_tool(t) for t in tools]
     names = {t["function"]["name"] for t in converted}
     assert {"filter_listings", "search_properties", "get_listing"} <= names
+
+
+def test_in_band_error_detected():
+    from agent.mcp_client import _in_band_error
+    assert _in_band_error('{"is_error": true, "code": "search_incomplete"}')
+    assert not _in_band_error("Showing 3 properties.")
+    assert not _in_band_error('{"listings": []}')

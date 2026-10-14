@@ -1,0 +1,149 @@
+"""Deterministic clean-up after Nemotron extracts a filter.
+
+Each rule fixes an error the 60-query eval showed was systematic rather than
+random (reports/eval_20261014T131844Z.md), and each is decidable from the
+words the user actually typed:
+
+  * sale vs rent  — models chose 'rent' for requests that never mention renting
+                    (13-14 of Nano's/Lightning's misses, mostly fr/de/nl);
+  * features      — left in the user's language ('piscina', 'dakterras');
+  * property type — 'penthouse'/'villa'/'land' flattened to apartment/house;
+  * route         — moods and proximity ('quiet', 'near the beach') and whole
+                    countries need the free-text search; towns, cities and
+                    regions go to the structured filter.
+"""
+from __future__ import annotations
+
+import re
+import unicodedata
+
+from .schema import SearchFilter
+
+
+def _plain(s: str) -> str:
+    return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
+
+
+def _has(pattern: str, text: str) -> bool:
+    return re.search(pattern, text) is not None
+
+
+RENT = (r"\b(rent|rental|to let|lease|arrend\w*|alug\w*|alquil\w*|louer|a louer|location d\w*|en location|"
+        r"miete\w*|mieten|huur\w*|huren|per month|a month|por mes|al mes|par mois|im monat|"
+        r"pro monat|per maand|/month|/mes|/mois)\b")
+SALE = r"\b(buy|purchase|compr\w*|achet\w*|kauf\w*|kopen|koop)\b"
+
+# Canonical English feature names → patterns in the six languages (ascii-folded).
+FEATURES = {
+    "Pool": r"\b(pool|piscin\w*|zwembad|schwimmbad|swimming)\b",
+    "Terrace": r"(terrace|terrac\w*|terraz\w*|terrass\w*|terras\b|dakterras|dachterrass\w*)",
+    "Balcony": r"\b(balcon\w*|balcony|varanda\w*|balkon\w*)\b",
+    "Garden": r"\b(garden|jardi\w*|garten|tuin)\b",
+    "Elevator": r"\b(lift|elevator|elevador|ascensor|ascenseur|aufzug|fahrstuhl)\b",
+    "Sea View": r"(sea view|vista\w* (para o |al |ao )?mar|vue (sur la )?mer|meerblick|zeezicht)",
+}
+PARKING = r"\b(garage|garag\w*|garaj\w*|parking|parkeer\w*|tiefgarage|stellplatz|estacionamento|aparcamiento)\b"
+
+# Specific types the user named → they win over a generic apartment/house.
+TYPES = {
+    "penthouse": r"\b(penthouse|atico|cobertura|attique)\b",
+    "villa": r"\b(villa|vivenda)\b",
+    "studio": r"\b(studio|estudio)\b",
+    "land": r"\b(plot|land|terreno|terrain|grundstuck|bouwgrond|kavel)\b",
+}
+
+# Things no filter field can hold → free-text search.
+FREE_TEXT = (r"\b(near|close to|perto|junto|cerca|pres|nahe|am see|bij|"
+             r"beach|praia|playa|plage|strand|"
+             r"quiet|sossegad\w*|tranquil\w*|calme|ruhig\w*|rustig\w*|charming|charmant\w*|"
+             r"countryside|campagne|platteland|landlich|no campo|en el campo|"
+             r"somewhere|algures|algun sitio|quelque part|irgendwo|ergens|algo)\b")
+
+
+# "with some land", "com muito terreno": land as an extra, not the property type.
+LAND_AS_EXTRA = r"\b(with (some |a lot of |lots of )?land|com (muito )?terreno|con terreno|avec terrain|mit grundstuck|met grond)\b"
+HOUSE_WORDS = r"\b(house|home|casa|moradia|quinta|maison|haus|hauschen|huis|huisje|woning|chalet|villa|farmhouse|property)\b"
+
+
+def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) -> SearchFilter:
+    """Clean the model's filter using the user's own words.
+
+    For a refinement (`current` given) a rule only fires when this message
+    carries its cue; otherwise the conversation's value stands.
+    """
+    text = _plain(message)
+    data = f.model_dump()
+
+    rent, sale = _has(RENT, text), _has(SALE, text)
+    if rent and not sale:
+        data["transaction_type"] = "rent"
+    elif sale or current is None:
+        data["transaction_type"] = "sale"
+    else:
+        data["transaction_type"] = current.transaction_type
+
+    canon: list[str] = []
+    for name, pattern in FEATURES.items():
+        in_text = _has(pattern, text)
+        in_model = any(_has(pattern, _plain(x)) for x in data["features"])
+        if in_text or in_model:
+            canon.append(name)
+    # Keep any other feature the model found (e.g. 'Fireplace'), minus parking words.
+    for x in data["features"]:
+        px = _plain(x)
+        if not any(_has(p, px) for p in FEATURES.values()) and not _has(PARKING, px) and px not in TYPES:
+            canon.append(x)
+    data["features"] = canon
+    if _has(PARKING, text):
+        data["has_parking"] = True
+
+    for name, pattern in TYPES.items():
+        if not _has(pattern, text):
+            continue
+        if name == "land" and (_has(LAND_AS_EXTRA, text) or _has(HOUSE_WORDS, text)):
+            continue
+        generic = {"apartment", "house"}
+        data["type"] = [t for t in data["type"] if t not in generic and t != name] + [name]
+        break
+    if data["type"] == ["land"] and (_has(LAND_AS_EXTRA, text) or _has(HOUSE_WORDS, text)):
+        data["type"] = []  # model mistook "with land" for a plot
+
+    free = bool(_has(FREE_TEXT, text))
+    data["needs_free_text_search"] = free or bool(current and current.needs_free_text_search)
+    return SearchFilter.model_validate(data)
+
+
+# Covered countries in the six languages (ascii-folded). The connector resolves
+# regions ('Algarve', 'Toscana', 'Costa Brava') fine, but a whole country is too
+# broad for the structured filter (it times out with search_incomplete).
+COUNTRIES = {
+    "portugal", "spain", "espana", "espanha", "espagne", "spanien", "spanje",
+    "italy", "italia", "italie", "italien", "italie",
+    "france", "franca", "francia", "frankreich", "frankrijk",
+    "germany", "alemanha", "alemania", "allemagne", "deutschland", "duitsland",
+    "belgium", "belgica", "belgique", "belgien", "belgie",
+    "austria", "autriche", "osterreich", "oostenrijk",
+    "finland", "finlandia", "finlande", "finnland",
+    "cyprus", "chipre", "chypre", "zypern", "cyprus",
+    "croatia", "croacia", "croatie", "kroatien", "kroatie",
+    "slovakia", "eslovaquia", "slovaquie", "slowakei", "slowakije",
+    "malta", "malte",
+    "greece", "grecia", "grece", "griechenland", "griekenland",
+    "czech republic", "czechia", "chequia", "republica checa", "tchequie", "tschechien", "tsjechie",
+    "poland", "polonia", "pologne", "polen",
+    "netherlands", "paises baixos", "paises bajos", "pays-bas", "niederlande", "nederland", "holland",
+    "bulgaria", "bulgarie", "bulgarien", "bulgarije",
+}
+
+
+def is_country(place: str) -> bool:
+    return _plain(place).strip() in COUNTRIES
+
+
+def route_for(f: SearchFilter | None) -> str:
+    """Structured filter when a town, city or region is named and nothing needs free text."""
+    if f is None or not f.location or f.needs_free_text_search:
+        return "search"
+    if all(is_country(p) for p in f.location):
+        return "search"
+    return "filter"

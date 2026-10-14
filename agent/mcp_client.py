@@ -85,7 +85,7 @@ class CubiMCP:
         text = "\n".join(c.get("text", "") for c in res.get("content", []) if c.get("type") == "text")
         return {
             "text": text,
-            "is_error": bool(res.get("isError")),
+            "is_error": bool(res.get("isError")) or _in_band_error(text),
             "structured": res.get("structuredContent"),
         }
 
@@ -97,6 +97,18 @@ class CubiMCP:
                 continue
             out.append(to_openai_tool(t))
         return out
+
+
+def _in_band_error(text: str) -> bool:
+    """The connector reports some failures (e.g. search_incomplete) as a JSON body
+    with "is_error": true rather than via MCP's isError flag."""
+    head = text.lstrip()
+    if not head.startswith("{"):
+        return False
+    try:
+        return bool(json.loads(head).get("is_error"))
+    except (json.JSONDecodeError, AttributeError):
+        return False
 
 
 def to_openai_tool(t: dict) -> dict:
