@@ -126,9 +126,77 @@ def ensure_not_a_valuation(answer: str, lang: str) -> str:
     return answer.rstrip() + "\n\n" + NOT_A_VALUATION.get(lang, NOT_A_VALUATION["en"])
 
 
+# A price comparison may say below / within / above the range. It must not turn that
+# into a verdict ("a good deal", "overpriced"). Sentences carrying one are removed —
+# except where the verdict word is negated or quoted back as the user's question.
+_VERDICT = re.compile(
+    r"(good deal|great deal|bargain|great value|good value|fairly priced|fair price|overpriced|underpriced|"
+    r"worth (buying|it)|bom neg[oó]cio|pechincha|sobrevalorizad|caro demais|buen negocio|ganga|chollo|"
+    r"sobrevalorad|bonne affaire|surévalu|trop cher|gutes geschäft|schnäppchen|überteuert|"
+    r"goede deal|koopje|te duur|overgewaardeerd)", re.I)
+_VERDICT_NOTE = {
+    "en": "Whether it is a good buy depends on condition, view and exact location — get an independent valuation before deciding.",
+    "pt": "Se é uma boa compra depende do estado, da vista e da localização exata — peça uma avaliação independente antes de decidir.",
+    "es": "Si es una buena compra depende del estado, las vistas y la ubicación exacta: pida una tasación independiente antes de decidir.",
+    "fr": "Savoir si c'est un bon achat dépend de l'état, de la vue et de l'emplacement exact : demandez une estimation indépendante avant de décider.",
+    "de": "Ob sich der Kauf lohnt, hängt von Zustand, Aussicht und genauer Lage ab – holen Sie vor einer Entscheidung ein unabhängiges Gutachten ein.",
+    "nl": "Of het een goede koop is, hangt af van staat, uitzicht en exacte ligging — laat vóór een beslissing een onafhankelijke taxatie doen.",
+}
+
+
+def _drop_sentences(answer: str, pattern: re.Pattern, keep_questions: bool = False) -> tuple[str, int]:
+    """Remove matching sentences, line by line, keeping the answer's layout."""
+    n, lines = 0, []
+    for line in answer.split("\n"):
+        parts = re.split(r"(?<=[.!?])\s+", line)
+        kept = [x for x in parts if not pattern.search(x) or (keep_questions and x.rstrip().endswith("?"))]
+        n += len(parts) - len(kept)
+        if kept or not line.strip():
+            lines.append(" ".join(kept))
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip(), n
+
+
+def drop_price_verdicts(answer: str, lang: str) -> tuple[str, int]:
+    out, n = _drop_sentences(answer, _VERDICT, keep_questions=True)
+    if not n:
+        return answer, 0
+    return out + "\n\n" + _VERDICT_NOTE.get(lang, _VERDICT_NOTE["en"]), n
+
+
+# Contact: nothing is sent until the user follows Cubi's link. A first-person claim
+# of having sent, contacted or booked something is false by construction.
+_SENT_CLAIM = re.compile(
+    r"\b(i(?:'ve| have)? (?:sent|contacted|messaged|emailed|booked|scheduled|forwarded|reached out)|"
+    r"(?:enviei|contactei|marquei|agendei|reservei)|"
+    r"(?:he enviado|he contactado|envié|contacté|reservé|agendé)|"
+    r"j'ai (?:envoyé|contacté|réservé|transmis)|"
+    r"ich habe [^.]{0,40}(?:gesendet|geschickt|kontaktiert|gebucht|weitergeleitet)|"
+    r"ik heb [^.]{0,40}(?:verstuurd|gestuurd|gecontacteerd|geboekt|doorgestuurd))", re.I)
+_NOT_SENT = {
+    "en": "Nothing has been sent yet: you send it yourself from the Cubi link above.",
+    "pt": "Ainda não foi enviado nada: é você quem envia, a partir da ligação da Cubi acima.",
+    "es": "Todavía no se ha enviado nada: lo envía usted desde el enlace de Cubi de arriba.",
+    "fr": "Rien n'a encore été envoyé : c'est vous qui l'envoyez depuis le lien Cubi ci-dessus.",
+    "de": "Es wurde noch nichts gesendet: Sie senden es selbst über den Cubi-Link oben.",
+    "nl": "Er is nog niets verstuurd: u verstuurt het zelf via de Cubi-link hierboven.",
+}
+
+
+def drop_sent_claims(answer: str, lang: str) -> tuple[str, int]:
+    out, n = _drop_sentences(answer, _SENT_CLAIM)
+    if not n:
+        return answer, 0
+    return out + "\n\n" + _NOT_SENT.get(lang, _NOT_SENT["en"]), n
+
+
 def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple[str, dict]:
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
     answer, scrubbed = scrub_contacts(answer)
+    verdicts = sent = 0
     if "compare_asking_prices" in used_tools:
+        answer, verdicts = drop_price_verdicts(answer, lang)
         answer = ensure_not_a_valuation(answer, lang)
-    return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed}
+    if "get_contact_options" in used_tools:
+        answer, sent = drop_sent_claims(answer, lang)
+    return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
+                    "verdicts_dropped": verdicts, "sent_claims_dropped": sent}

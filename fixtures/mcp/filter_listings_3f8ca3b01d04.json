@@ -1,0 +1,18 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "de",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Porto"
+  ],
+  "type": [
+   "apartment"
+  ],
+  "max_price": 400000.0,
+  "min_bedrooms": 2
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Apartment in Margaride**\n   Location: Margaride, Várzea, Lagares, Varziela e Moure, Felgueiras, Porto, Portugal, Porto\n   Apartment | 3 bd | 3 ba | 166 m2 living | 350 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A993948\n   ID: iad_pt:993948\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A993948&intent=ask\n   Tags: Garage\n\n**2. Apartment in Modivas**\n   Location: Modivas, Vila do Conde, Porto, Portugal, Porto\n   Apartment | 3 bd | 3 ba | 130 m2 living | 310 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A981792\n   ID: iad_pt:981792\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A981792&intent=ask\n\n**3. Apartment in Moreira**\n   Location: Moreira, Maia, Porto, Portugal, Porto\n   Apartment | 2 bd | 3 ba | 146 m2 living | 315 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A962394\n   ID: iad_pt:962394\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A962394&intent=ask\n   Tags: Elevator, Optical fiber connection, Air Conditioning, Air conditioning in bedroom and living room, Hot water supplied by heat pump\n\n**4. Apartment in Vila Meã**\n   Location: Vila Meã, Amarante, Porto, Portugal, Porto\n   Apartment | 2 bd | 2 ba | 93 m2 living | 255 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A168038\n   ID: iad_pt:168038\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A168038&intent=ask\n\n**5. Apartment in Bougado**\n   Location: Bougado, Trofa, Porto, Portugal, Porto District\n   Apartment | 3 bd | 3 ba | 134 m2 living | 335 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A158006\n   ID: iad_pt:158006\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A158006&intent=ask\n   Tags: modern architecture, energyClass B, Energy Efficiency, 239 m² space, Acabamentos premium\n\n**6. Apartment in Vila Fria e Vizela**\n   Location: Vila Fria e Vizela, Felgueiras, Porto, Portugal, Porto District\n   Apartment | 3 bd | 3 ba | 134 m2 living | 245 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A150930\n   ID: iad_pt:150930\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A150930&intent=ask\n   Tags: Elevator, Ground floor, Underfloor Heating, energyClass A, Parking\n"
+}

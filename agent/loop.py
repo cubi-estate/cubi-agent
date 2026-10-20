@@ -24,8 +24,8 @@ import time
 from typing import Iterator
 
 from . import extract as extractmod
-from . import guards, lang as langmod, listings, llm, skills as skillsmod
-from .fixtures import connect
+from . import guards, lang as langmod, listings, llm, ordinals, skills as skillsmod, tavily_tool
+from .fixtures import connect, listing_ref
 from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
 
@@ -101,6 +101,10 @@ class Agent:
         self.stats = {"llm_in": 0, "llm_out": 0, "fallback_searches": 0, "filter_searches": 0}
         self.timings: list[tuple[str, float]] = []  # this turn's stages, seconds
         self.cards: list[dict] = []  # listings from this turn's last search, shown as cards
+        self.shown: list[dict] = []  # the cards currently on screen (last search with results)
+        self.seen_refs: set[str] = set()  # every listing id shown in this conversation
+        self._message = ""
+        self.focus: str | None = None  # the last home a price/contact/detail call was about
 
     # ---- tools -------------------------------------------------------------
     def _timed(self, stage: str, t0: float) -> None:
@@ -113,7 +117,34 @@ class Agent:
         self._timed("mcp tools/list (cached after the first turn)", t0)
         if "search_homes" in skill.tools:
             tools.insert(0, SEARCH_HOMES_TOOL)
+        if "research_area" in skill.tools:
+            tools.append(tavily_tool.TOOL)
         return tools
+
+    def _on_screen(self) -> str:
+        if not self.shown:
+            return ""
+        rows = []
+        for c in self.shown:
+            place = ", ".join(listings.places(c.get("location", ""))[:2])
+            rows.append(f"#{c['n']} {c.get('id', '?')} — {c.get('type', 'Home')}, {place}, {c.get('price_text', 'price n/a')}")
+        return ("\n\nHomes on screen now (card number → listing id). When the user refers to a card, pass "
+                "its listing id; the app also resolves card numbers itself:\n" + "\n".join(rows))
+
+    def _resolve_listing(self, given: str) -> tuple[str | None, str]:
+        """The listing a price/contact/detail call is about: the card the user named wins,
+        then an id already shown, then the only card on screen. Returns (id, how)."""
+        n = ordinals.ordinal(self._message, len(self.shown))
+        if n and 1 <= n <= len(self.shown) and self.shown[n - 1].get("id"):
+            return self.shown[n - 1]["id"], f"card #{n}"
+        ref = listing_ref(given) if given else ""
+        if ref and ref.lower() in self.seen_refs:
+            return ref, "id from an earlier result"
+        if self.focus:
+            return self.focus, "the home discussed last"
+        if len(self.shown) == 1 and self.shown[0].get("id"):
+            return self.shown[0]["id"], "the only card on screen"
+        return None, "unknown"
 
     def _search_homes(self, request: str) -> Iterator[dict | str]:
         ex = extractmod.extract(request, current=self.filter, cli=self.cli)
@@ -157,14 +188,42 @@ class Agent:
         if not res["is_error"]:
             self.has_results = True
             self.cards = listings.parse(res["text"])
+            if self.cards:
+                self.shown = self.cards
+                self.focus = None  # a new result set: "it" no longer means the old home
+                self.seen_refs |= {c["id"].lower() for c in self.cards if c.get("id")}
         yield header + res["text"]
 
     def _run_tool(self, name: str, args: dict) -> Iterator[dict | str]:
         if name == "search_homes":
             yield from self._search_homes(str(args.get("request", "")))
             return
+        if name == "research_area":
+            places, topics = list(args.get("places") or []), list(args.get("topics") or [])
+            yield {"type": "action", "text": f"Researching {', '.join(places[:tavily_tool.MAX_PLACES])} on the web "
+                                             f"(Tavily): {', '.join(topics) or 'quality of life'}"}
+            try:
+                text, st = tavily_tool.research_area(places, topics)
+            except tavily_tool.TavilyError as e:
+                yield {"type": "action", "text": f"Area research unavailable: {e}"}
+                yield f"error: {e}. Tell the user area research is unavailable right now; do not answer from memory."
+                return
+            self.stats["tavily_searches"] = self.stats.get("tavily_searches", 0) + st["searches"]
+            self.timings.append(("tavily search", st["seconds"]))
+            yield text
+            return
         label = {"get_listing": "Opening the listing", "compare_asking_prices": "Comparing asking prices nearby",
                  "get_contact_options": "Looking up contact options"}.get(name, name)
+        if "listing_id" in args or name in ("get_listing", "compare_asking_prices", "get_contact_options"):
+            ref, how = self._resolve_listing(str(args.get("listing_id") or ""))
+            if ref is None:
+                yield {"type": "action", "text": f"{label}: which home? (no card number or known id)"}
+                yield ("error: the listing id is not one shown in this conversation. Ask the user which card "
+                       "number they mean; do not guess an id.")
+                return
+            args["listing_id"] = ref
+            self.focus = ref
+            label += f" — {how} ({ref})"
         yield {"type": "action", "text": label}
         args.setdefault("lang", self.lang)
         yield self.mcp.call_tool(name, args)["text"]
@@ -174,11 +233,12 @@ class Agent:
         t0 = time.monotonic()
         self.timings = []
         self.cards = []
+        self._message = text
         calls0 = len(self.mcp.calls)
         self.lang = langmod.detect(text, default=self.lang)
         skill = self.skills[skillsmod.select(text, self.has_results)]
         tools = self._tools_for(skill)
-        system = BASE_RULES.format(lang=self.lang) + "\n\n" + skill.body
+        system = BASE_RULES.format(lang=self.lang) + "\n\n" + skill.body + self._on_screen()
         messages = [{"role": "system", "content": system}, *self.history, {"role": "user", "content": text}]
         turn_msgs: list[dict] = [{"role": "user", "content": text}]
         tool_text, used = "", set()

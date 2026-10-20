@@ -1,0 +1,9 @@
+{
+ "tool": "get_contact_options",
+ "args": {
+  "listing_id": "iad_pt:981792",
+  "lang": "de"
+ },
+ "is_error": false,
+ "text": "### How to reach the agent for iad_pt:981792\n\n1. **Send the agent questions via Cubi** — Cubi writes the buyer's questions to the agent in the agent's language and follows up by email.\n   - Suggested questions: Ist die Immobilie noch verfügbar, und wann könnte ich sie besichtigen?; Ist der Preis verhandelbar?; Wie hoch sind das monatliche Hausgeld und die jährliche Grundsteuer?; Welche Energieeffizienzklasse hat die Immobilie?; In welchem Stockwerk liegt die Wohnung, und gibt es einen Aufzug?\n2. **Cubi Connect** — Cubi connects the buyer with the agent — available in the Cubi chat for this home.\n3. **Send the agent a request by email** — The buyer's own message, forwarded through Cubi's consented contact flow.\n\nTo send questions or a request, the buyer opens: https://www.cubi.estate/chat?listing_id=iad_pt%3A981792&intent=contact (a Cubi chat about this home; sign-in required)."
+}

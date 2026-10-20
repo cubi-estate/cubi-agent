@@ -69,7 +69,7 @@ def test_skill_selection():
 
 def test_skills_load_from_vendored_pack():
     loaded = skills.load()
-    assert set(loaded) == {"find-homes", "check-asking-price", "contact-agent"}
+    assert set(loaded) == {"find-homes", "check-asking-price", "contact-agent", "compare-areas"}
     assert "filter_listings" in loaded["find-homes"].body
 
 
@@ -257,3 +257,64 @@ def test_parking_never_sent_as_false():
     kept = normalize.apply(_f(location=["Lisboa"], has_parking=None), "and under 300k",
                            _f(location=["Lisboa"], has_parking=True))
     assert kept.has_parking is True
+
+
+# ---- days 6-7: card references, price/contact guards, area research ----
+
+from agent import ordinals, tavily_tool  # noqa: E402
+
+
+@pytest.mark.parametrize("msg,want", [
+    ("is #2 overpriced?", 2), ("o segundo é caro?", 2), ("¿el tercero es caro?", 3),
+    ("Et la deuxième ?", 2), ("Ist die erste zu teuer?", 1), ("is de laatste te duur?", 6),
+    ("number 4 please", 4), ("how do I contact the agent?", None), ("at least 2 bedrooms", None),
+])
+def test_ordinals(msg, want):
+    assert ordinals.ordinal(msg, 6) == want
+
+
+def test_price_verdict_sentence_dropped_layout_kept():
+    ans = "It sits within the range (€360k–€380k, 16 comparables).\nThat makes it a good deal. Is it overpriced?"
+    out, n = guards.drop_price_verdicts(ans, "en")
+    assert n == 1 and "good deal" not in out and "Is it overpriced?" in out
+    assert out.startswith("It sits within the range") and "independent valuation" in out
+
+
+def test_sent_claim_dropped():
+    out, n = guards.drop_sent_claims("Ich habe dem Makler Ihre Fragen geschickt. Öffnen Sie den Link.", "de")
+    assert n == 1 and "geschickt" not in out.split("\n")[0] and "noch nichts gesendet" in out
+
+
+def test_select_area_vs_home_search():
+    assert skills.select("Compare schools and public transport in Porto and Valencia", True) == "compare-areas"
+    assert skills.select("2-bed flat near a metro station in Lisbon", False) == "find-homes"
+
+
+def test_research_area_formats_sources(monkeypatch):
+    monkeypatch.setattr(tavily_tool, "_search", lambda q, http: [
+        {"title": "Schools in Porto", "url": "https://example.org/porto-schools", "content": "x " * 400,
+         "published_date": "2025-03-01"}])
+    text, st = tavily_tool.research_area(["Porto", "Valencia"], ["schools"], http=object())
+    assert st == {"searches": 2, "sources": 2, "seconds": st["seconds"]}
+    assert "https://example.org/porto-schools (2025-03-01)" in text and "## Valencia" in text
+    assert max(len(line) for line in text.splitlines()) < 400  # excerpts are capped
+
+
+def test_research_area_without_key_is_reported(monkeypatch):
+    monkeypatch.setattr(tavily_tool.config, "TAVILY_API_KEY", "")
+    monkeypatch.delenv("CUBI_OFFLINE", raising=False)
+    with pytest.raises(tavily_tool.TavilyError, match="not configured"):
+        tavily_tool.research_area(["Porto"], ["schools"], http=object())
+
+
+def test_follow_up_resolves_card_number(tmp_path):
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=SimpleNamespace())
+    agent_.shown = listings.parse(CARDS)
+    agent_.seen_refs = {"test_pt:1", "test_pt:2"}
+    agent_._message = "is the second one overpriced?"
+    assert agent_._resolve_listing("test_pt:1") == ("test_pt:2", "card #2")  # the user's card wins
+    agent_._message = "is it overpriced?"
+    assert agent_._resolve_listing("https://cubi.estate/r/test_pt%3A1")[0] == "test_pt:1"
+    assert agent_._resolve_listing("made_up:9") == (None, "unknown")
+    agent_.focus = "test_pt:2"
+    assert agent_._resolve_listing("made_up:9") == ("test_pt:2", "the home discussed last")

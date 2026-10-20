@@ -4,9 +4,12 @@ Facts only (see agent/fixtures.py). Regenerate with `python -m agent.fixtures`.
 
 | file | tool | arguments | listings |
 |---|---|---|---|
+| `compare_asking_prices_e2b8bad0d74a.json` | compare_asking_prices | `{"listing_id": "iad_pt:151312", "lang": "en"}` | 0 |
+| `compare_asking_prices_eadff8aeddd0.json` | compare_asking_prices | `{"listing_id": "iad_pt:981792", "lang": "de"}` | 0 |
 | `filter_listings_0766bc0b4acc.json` | filter_listings | `{"lang": "en", "limit": 6, "transaction_type": "sale", "location": ["Évora"], "type": ["townhouse"], "has_parking": true}` | 0 |
 | `filter_listings_1bfcab55058b.json` | filter_listings | `{"lang": "nl", "limit": 6, "transaction_type": "rent", "price_period": "month", "location": ["Gent"], "type": ["studio"], "min_bedrooms": 0}` | 3 |
 | `filter_listings_2a3f8ed6a5e3.json` | filter_listings | `{"lang": "es", "limit": 6, "transaction_type": "rent", "price_period": "month", "location": ["Málaga"], "type": ["penthouse"], "max_price": 1800.0}` | 2 |
+| `filter_listings_3f8ca3b01d04.json` | filter_listings | `{"lang": "de", "limit": 6, "transaction_type": "sale", "location": ["Porto"], "type": ["apartment"], "max_price": 400000.0, "min_bedrooms": 2}` | 6 |
 | `filter_listings_46748e0548e6.json` | filter_listings | `{"lang": "pt", "limit": 6, "transaction_type": "sale", "location": ["Loulé"], "type": ["house"], "features": ["Pool"], "max_price": 900000.0, "min_bedrooms": 4}` | 6 |
 | `filter_listings_49fd0d44e385.json` | filter_listings | `{"lang": "pt", "limit": 6, "transaction_type": "sale", "location": ["Braga"], "type": ["apartment"], "min_price": 150000.0, "max_price": 220000.0}` | 6 |
 | `filter_listings_4dbf24b7abf5.json` | filter_listings | `{"lang": "fr", "limit": 6, "transaction_type": "rent", "price_period": "month", "location": ["Bordeaux"], "type": ["studio"], "max_price": 700.0}` | 0 |
@@ -37,3 +40,5 @@ Facts only (see agent/fixtures.py). Regenerate with `python -m agent.fixtures`.
 | `filter_listings_eff840a4e18c.json` | filter_listings | `{"lang": "de", "limit": 6, "transaction_type": "sale", "location": ["Mallorca"], "type": ["villa"], "features": ["Pool"], "max_price": 2000000.0}` | 6 |
 | `filter_listings_f278cd9df10e.json` | filter_listings | `{"lang": "en", "limit": 6, "transaction_type": "rent", "price_period": "month", "location": ["Bologna"], "max_price": 900.0, "min_bedrooms": 1, "max_bedrooms": 1}` | 6 |
 | `filter_listings_f5d9dbda6677.json` | filter_listings | `{"lang": "es", "limit": 6, "transaction_type": "sale", "location": ["Granada"], "type": ["studio"], "features": ["Elevator"]}` | 0 |
+| `get_contact_options_e2b8bad0d74a.json` | get_contact_options | `{"listing_id": "iad_pt:151312", "lang": "en"}` | 0 |
+| `get_contact_options_eadff8aeddd0.json` | get_contact_options | `{"listing_id": "iad_pt:981792", "lang": "de"}` | 0 |

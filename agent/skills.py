@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 SKILLS_DIR = Path(__file__).resolve().parent.parent / "vendor" / "cubi-estate-plugin" / "skills"
+# Skills this app adds on top of the shared pack (they need tools the plugin lacks).
+LOCAL_SKILLS_DIR = Path(__file__).resolve().parent.parent / "skills"
 
 # Tools each skill may use (task-scoped, per the plan).
 TOOLS = {
@@ -19,6 +21,7 @@ TOOLS = {
     "find-homes": ["search_homes", "get_listing"],
     "check-asking-price": ["compare_asking_prices", "get_listing"],
     "contact-agent": ["get_contact_options"],
+    "compare-areas": ["research_area"],  # local tool: Tavily web search (agent/tavily_tool.py)
 }
 
 _PATTERNS = {
@@ -29,6 +32,15 @@ _PATTERNS = {
                      r"contactar|agente|visita|ligar|telefone|llamar|"
                      r"kontakt|makler|besichtig|anrufen|contacter|visiter|appeler|"
                      r"makelaar|bezichtig|bellen",
+    # Living-in-the-area topics; a bare "compare" is not enough (it may be prices or homes).
+    "compare-areas": r"school|escola|colegio|escuela|[ée]cole|schule|scholen|school|"
+                     r"transport|metro|tram|bus\b|commut|"
+                     r"safety|safe\b|crime|segura|seguridad|s[ée]curit|sicher|veilig|"
+                     r"hospital|healthcare|sa[uú]de|sanidad|sant[ée]\b|gesundheit|zorg|"
+                     r"quality of life|qualidade de vida|calidad de vida|qualit[ée] de vie|lebensqualit|"
+                     r"kwaliteit van leven|cost of living|custo de vida|coste de vida|co[uû]t de la vie|"
+                     r"lebenshaltung|kosten van levensonderhoud|neighbou?rhood|bairro|barrio|quartier|"
+                     r"viertel|buurt|which (town|city|area) is better|live in",
 }
 
 
@@ -57,7 +69,10 @@ def load(skills_dir: Path = SKILLS_DIR) -> dict[str, Skill]:
             f"{skills_dir} missing — run `git submodule update --init` to fetch the skill pack"
         )
     out = {}
-    for p in sorted(skills_dir.glob("*/SKILL.md")):
+    paths = sorted(skills_dir.glob("*/SKILL.md"))
+    if skills_dir == SKILLS_DIR:
+        paths += sorted(LOCAL_SKILLS_DIR.glob("*/SKILL.md"))
+    for p in paths:
         s = _parse(p)
         if s.name in TOOLS:
             out[s.name] = s
@@ -65,10 +80,23 @@ def load(skills_dir: Path = SKILLS_DIR) -> dict[str, Skill]:
 
 
 def select(message: str, has_results: bool) -> str:
-    """Pick a skill. Price/contact questions only make sense about a home already shown."""
+    """Pick a skill. Price/contact questions only make sense about a home already shown;
+    an area question needs no results. Anything else searches homes."""
     low = message.lower()
     if has_results:
         for name in ("check-asking-price", "contact-agent"):
             if re.search(_PATTERNS[name], low):
                 return name
+    if re.search(_PATTERNS["compare-areas"], low) and not _looks_like_home_search(low):
+        return "compare-areas"
     return "find-homes"
+
+
+_HOME_WORDS = (r"\b(apartment|flat|house|villa|studio|penthouse|plot|land|t[0-9]|bed|bedroom|apartamento|"
+               r"moradia|piso|casa|chalet|appartement|maison|wohnung|haus|woning|huis|for sale|to rent|"
+               r"under \d|bis \d|até \d|hasta \d)")
+
+
+def _looks_like_home_search(low: str) -> bool:
+    """'2-bed flat near a metro station in Lisbon' is a home search, not an area question."""
+    return re.search(_HOME_WORDS, low) is not None

@@ -6,8 +6,9 @@
 Recordings live in fixtures/mcp/, one JSON file per (tool, arguments). They are
 cut down before saving: listing cards keep facts only (type, place, size,
 price, URL, id, a few tags) — no title, no description, no street address —
-so the public repo carries no text copied from the original listings. Other
-tools keep only labelled fact lines.
+so the public repo carries no text copied from the original listings. Price
+comparisons and contact options are Cubi's own text and are kept whole;
+anything else keeps only labelled fact lines.
 
 Token Factory is still called in offline mode: it is the part being shown.
 Offline mode is for tests and for reproducing results when the live service is
@@ -39,13 +40,23 @@ def _plain(s: str) -> str:
     return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower().strip()
 
 
-def _canon(v):
+def listing_ref(v: str) -> str:
+    """A listing URL or id → the bare source-prefixed id (`iad_pt:151312`)."""
+    from urllib.parse import unquote
+    v = unquote(str(v).strip())
+    m = re.search(r"/r/([^/?#\s]+)", v) or re.search(r"listing_id=([^&#\s]+)", v)
+    return unquote(m.group(1)) if m else v
+
+
+def _canon(v, k: str = ""):
+    if k == "listing_id":
+        return _plain(listing_ref(v))
     if isinstance(v, str):
         return _plain(v)
     if isinstance(v, list):
         return sorted(_canon(x) for x in v)
     if isinstance(v, dict):
-        return {k: _canon(x) for k, x in sorted(v.items()) if k not in ("limit",)}
+        return {k: _canon(x, k) for k, x in sorted(v.items()) if k not in ("limit", "parent_request_id")}
     return v
 
 
@@ -55,7 +66,13 @@ def key(tool: str, args: dict) -> str:
     return f"{tool}_{hashlib.sha1(blob.encode()).hexdigest()[:12]}"
 
 
-def sanitise(text: str) -> str:
+# Replies written entirely by Cubi (no text from the listing itself): kept as is.
+_CUBI_AUTHORED = {"compare_asking_prices", "get_contact_options"}
+
+
+def sanitise(text: str, tool: str = "") -> str:
+    if tool in _CUBI_AUTHORED:
+        return text
     if listings.parse(text):
         return listings.render_facts(text)
     keep = [line for line in text.splitlines() if _FACT_LABELS.match(line)]
@@ -92,7 +109,9 @@ class FixtureMCP:
         for f in sorted(self.dir.glob(f"{tool}_*.json")):
             rec = json.loads(f.read_text())
             got = _canon(rec["args"])
-            if got.get("location") != want.get("location") and got.get("query") != want.get("query"):
+            same = any(want.get(k) is not None and got.get(k) == want.get(k)
+                       for k in ("location", "query", "listing_id"))
+            if not same:
                 continue
             score = sum(got.get(k) == v for k, v in want.items())
             if score > best_score:
@@ -116,7 +135,7 @@ class RecordingMCP(CubiMCP):
         res = super().call_tool(name, arguments)
         FIXTURE_DIR.mkdir(parents=True, exist_ok=True)
         rec = {"tool": name, "args": arguments, "is_error": res["is_error"],
-               "text": sanitise(res["text"]) if not res["is_error"] else res["text"][:300]}
+               "text": sanitise(res["text"], name) if not res["is_error"] else res["text"][:300]}
         (FIXTURE_DIR / f"{key(name, arguments)}.json").write_text(json.dumps(rec, indent=1, ensure_ascii=False) + "\n")
         return res
 

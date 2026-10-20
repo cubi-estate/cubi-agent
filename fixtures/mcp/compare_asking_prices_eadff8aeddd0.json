@@ -1,0 +1,9 @@
+{
+ "tool": "compare_asking_prices",
+ "args": {
+  "listing_id": "iad_pt:981792",
+  "lang": "de"
+ },
+ "is_error": false,
+ "text": "{\"listing_id\": \"iad_pt:981792\", \"asking_price\": 310000.0, \"currency\": \"EUR\", \"price_period\": null, \"kind\": \"asking_price_comparison\", \"note\": \"Band of ASKING prices of comparable active listings in the same city (25th-75th percentile). Not a valuation and not a sale-price prediction.\", \"band\": {\"low\": 355000, \"median\": 370000, \"high\": 410000}, \"n_comps\": 20, \"basis\": \"eur_per_m2\", \"asking_vs_band\": \"below\", \"ask_cubi_url\": \"https://www.cubi.estate/chat?listing_id=iad_pt%3A981792&intent=ask\", \"contact_via_cubi_url\": \"https://www.cubi.estate/chat?listing_id=iad_pt%3A981792&intent=contact\"}"
+}

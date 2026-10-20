@@ -1,0 +1,9 @@
+{
+ "tool": "get_contact_options",
+ "args": {
+  "listing_id": "iad_pt:151312",
+  "lang": "en"
+ },
+ "is_error": false,
+ "text": "### How to reach the agent for iad_pt:151312\n\n1. **Send the agent questions via Cubi** — Cubi writes the buyer's questions to the agent in the agent's language and follows up by email.\n   - Suggested questions: Is the property still available, and when could I view it?; Is the asking price negotiable?; What are the monthly condominium fees and the annual property tax?; Which floor is it on, and is there a lift?; Is parking or a garage included?\n2. **Cubi Connect** — Cubi connects the buyer with the agent — available in the Cubi chat for this home.\n3. **Send the agent a request by email** — The buyer's own message, forwarded through Cubi's consented contact flow.\n\nTo send questions or a request, the buyer opens: https://www.cubi.estate/chat?listing_id=iad_pt%3A151312&intent=contact (a Cubi chat about this home; sign-in required)."
+}
