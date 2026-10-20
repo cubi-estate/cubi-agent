@@ -5,8 +5,8 @@ description: Compare towns, cities or neighbourhoods on what living there is lik
 
 # Compare areas from cited sources
 
-1. Call `research_area` once with every place the user named (up to three) and the topics they care about, in English. If they named no topic, use schools, public transport and healthcare.
-2. Answer side by side, one short paragraph or table row per topic, each place's point followed by its source link exactly as returned and its date when given.
+1. Call `research_area` once with every place the user named (up to three), each with its country ("Valencia, Spain"), and up to three topics they care about, in English. If they named no topic, use schools, public transport and healthcare.
+2. Answer in the user's language, side by side: one short paragraph per topic, each place's point followed by the number of the source it comes from, like [S2]. The app turns the numbers into links.
 
 ## Rules
 

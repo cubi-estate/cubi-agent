@@ -290,14 +290,24 @@ def test_select_area_vs_home_search():
     assert skills.select("2-bed flat near a metro station in Lisbon", False) == "find-homes"
 
 
-def test_research_area_formats_sources(monkeypatch):
+def test_research_area_numbers_sources_and_links_citations(monkeypatch):
     monkeypatch.setattr(tavily_tool, "_search", lambda q, http: [
-        {"title": "Schools in Porto", "url": "https://example.org/porto-schools", "content": "x " * 400,
-         "published_date": "2025-03-01"}])
-    text, st = tavily_tool.research_area(["Porto", "Valencia"], ["schools"], http=object())
-    assert st == {"searches": 2, "sources": 2, "seconds": st["seconds"]}
-    assert "https://example.org/porto-schools (2025-03-01)" in text and "## Valencia" in text
-    assert max(len(line) for line in text.splitlines()) < 400  # excerpts are capped
+        {"title": f"About {q}", "url": "https://example.org/" + q.split(",")[0].lower(),
+         "content": "x " * 400, "published_date": "2025-03-01"},
+        {"title": "Disaster assistance", "url": "https://fema.example/public", "content": "grants"}])  # off-topic
+    text, st = tavily_tool.research_area(["Porto, Portugal", "Valencia, Spain"], ["schools", "transport"], http=object())
+    assert st["searches"] == 4 and set(st["sources"]) == {"S1", "S2"}  # same URL → same number
+    assert "[S1] About Porto, Portugal: schools for residents (example.org, 2025-03-01)" in text
+    assert "fema" not in text
+    assert "https://" not in text  # the model gets numbers, not URLs
+    assert max(len(line) for line in text.splitlines()) < 400
+    ans = 'Porto has bilingual schools [S1]【{"id":0,"cursor":0}】. Valencia too [S1, S2]. Made up [S9].'
+    out, n = tavily_tool.link_citations(ans, st["sources"])
+    assert n == 3 and "【" not in out and "[S9]" not in out
+    assert "[S1](https://example.org/porto)" in out and "[S2](https://example.org/valencia)" in out
+    assert "**Sources**\n- [S1](https://example.org/porto)" in out
+    bare, n0 = tavily_tool.link_citations("Both are fine.", st["sources"], "de")
+    assert n0 == 0 and "nicht einzeln" in bare and "[S2](https://example.org/valencia)" in bare
 
 
 def test_research_area_without_key_is_reported(monkeypatch):

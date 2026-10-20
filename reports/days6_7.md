@@ -1,8 +1,8 @@
 # Days 6–7 — price check, contact, area comparison (2026-10-20)
 
-Gate: the full demo flow runs in the CLI. **Met** for search → price → contact,
-live and offline. The area comparison is built and tested, but it hasn't run
-against Tavily yet because `TAVILY_API_KEY` isn't set.
+Gate: the full demo flow runs in the CLI. **Met**: search → price → contact
+runs live and offline, and the area comparison runs live on Tavily (added the
+same day, once the key was set; see the last section).
 
 ## Live run (German, `CUBI_RECORD=1`)
 
@@ -61,8 +61,30 @@ Tests: 51 offline tests pass.
 - Input tokens grow with history: about 23k cumulative by turn 4. Fine for
   the demo; trim tool results in history if longer chats matter.
 
-## Needed from the owner
+## Area comparison, live on Tavily
 
-- A **Tavily API key** in `.env` / the demo host (`TAVILY_API_KEY`). The
-  hackathon's Tavily prize is the reason to include it. With the key:
-  `CUBI_RECORD=1 python cli.py "Compare schools and public transport in Porto and Valencia"`.
+First run: one combined search per place. Three problems:
+
+1. Nemotron cited with its internal markup (`【{"id":0,"cursor":0,…}】`), not links.
+2. "Valencia" brought Valencia College in Florida; most hits were Facebook/Instagram.
+3. The German question was answered in English; one combined query per place found nothing on schools.
+
+Fixes:
+
+- One search per place × topic (at most 3 × 3), run in parallel: 4 searches in about 2s, down from 7.7s sequentially.
+- Places carry their country.
+- Social-media domains are excluded.
+- Hits that don't name the place are dropped.
+- Query shape `"<place>: <topic> for residents"`. The shape "public transport in Valencia, Spain" returned public.io, the NYT and FEMA.
+- The model gets numbered sources `[S1]…` without URLs. Code turns `[S3]` into a link, removes unknown numbers and internal markup, and always adds a **Sources** list. If the model cited nothing, the list says so ("not cited one by one").
+- The tool output ends with the answer language spelled out.
+
+| run | language | citations | turn |
+|---|---|---|---|
+| Compare schools and public transport in Porto and Valencia | en | 12 linked, all correct cities | 6.7s |
+| Compara a saúde e as praias em Cascais e Alicante | pt | 10 linked | 8.7s |
+
+Tavily credits: 1 per search, so 4 for a two-place, two-topic comparison.
+Recordings are in `fixtures/tavily/` (git-ignored). Still to watch: Tavily
+gives no dates for general pages, so answers say "undated", and many sources
+are relocation and real-estate marketing sites.

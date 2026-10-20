@@ -30,6 +30,8 @@ from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
 
 MAX_STEPS = 5
+LANG_NAMES = {"en": "English", "pt": "European Portuguese", "es": "Spanish", "fr": "French", "de": "German",
+              "nl": "Dutch"}
 TOOL_TEXT_CAP = 12000
 HISTORY_TOOL_CAP = 1500
 LOOP_ROLE = os.environ.get("LOOP_ROLE", "super")
@@ -105,6 +107,7 @@ class Agent:
         self.seen_refs: set[str] = set()  # every listing id shown in this conversation
         self._message = ""
         self.focus: str | None = None  # the last home a price/contact/detail call was about
+        self.sources: dict[str, dict] = {}  # this turn's area-research sources, S1.. → url
 
     # ---- tools -------------------------------------------------------------
     def _timed(self, stage: str, t0: float) -> None:
@@ -209,8 +212,10 @@ class Agent:
                 yield f"error: {e}. Tell the user area research is unavailable right now; do not answer from memory."
                 return
             self.stats["tavily_searches"] = self.stats.get("tavily_searches", 0) + st["searches"]
-            self.timings.append(("tavily search", st["seconds"]))
-            yield text
+            self.timings.append((f"tavily ({st['searches']} searches)", st["seconds"]))
+            self.sources.update(st["sources"])
+            yield (text + f"\n\nCite sources by their number, e.g. [S2], right after the claim — never write "
+                   f"URLs. Write the whole answer in {LANG_NAMES.get(self.lang, 'English')}.")
             return
         label = {"get_listing": "Opening the listing", "compare_asking_prices": "Comparing asking prices nearby",
                  "get_contact_options": "Looking up contact options"}.get(name, name)
@@ -234,6 +239,7 @@ class Agent:
         self.timings = []
         self.cards = []
         self._message = text
+        self.sources = {}
         calls0 = len(self.mcp.calls)
         self.lang = langmod.detect(text, default=self.lang)
         skill = self.skills[skillsmod.select(text, self.has_results)]
@@ -287,7 +293,12 @@ class Agent:
 
         for c in self.mcp.calls[calls0:]:
             self.timings.append((f"mcp {c['tool']}" + (" (error)" if c["is_error"] else ""), c["seconds"]))
+        cited = 0
+        if "research_area" in used:
+            answer, cited = tavily_tool.link_citations(answer, self.sources, self.lang)
+            tool_text += "\n".join(src["url"] for src in self.sources.values())
         answer, report = guards.apply(answer, tool_text, self.lang, used)
+        report["citations_linked"] = cited
         turn_msgs.append({"role": "assistant", "content": answer})
         self.history += turn_msgs
         yield {"type": "answer", "text": answer, "skill": skill.name, "lang": self.lang,
