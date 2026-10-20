@@ -228,7 +228,7 @@ async def health(request: Request):
     # address; without it every visitor shares one per-IP limit.
     return JSONResponse({"ok": True, "sessions": len(sessions),
                          "forwarded": bool(request.headers.get("x-forwarded-for")),
-                         "trust_proxy": TRUST_PROXY})
+                         "trust_proxy": TRUST_PROXY, "build": os.environ.get("CUBI_AGENT_BUILD", "dev")[:12]})
 
 
 @app.get("/")

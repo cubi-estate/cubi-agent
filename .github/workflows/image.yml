@@ -34,6 +34,7 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64
+          build-args: GIT_SHA=${{ github.sha }}
           tags: |
             ghcr.io/cubi-estate/cubi-agent:latest
             ghcr.io/cubi-estate/cubi-agent:${{ github.sha }}

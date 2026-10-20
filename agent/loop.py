@@ -261,7 +261,9 @@ class Agent:
             self.focus = ref
             label += f" — {how} ({ref})"
         yield {"type": "action", "text": label}
-        args.setdefault("lang", self.lang)
+        # The detected language of this turn, always: the model copies an earlier
+        # turn's lang from history (an English question got a Dutch contact reply).
+        args["lang"] = self.lang
         yield self.mcp.call_tool(name, args)["text"]
 
     # ---- turn --------------------------------------------------------------

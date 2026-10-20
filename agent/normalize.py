@@ -65,6 +65,13 @@ LAND_AS_EXTRA = r"\b(with (some |a lot of |lots of )?land|com (muito )?terreno|c
 HOUSE_WORDS = r"\b(house|home|casa|moradia|quinta|maison|haus|hauschen|huis|huisje|woning|chalet|villa|farmhouse|property)\b"
 
 
+def same_place(f: SearchFilter, current: SearchFilter) -> bool:
+    """The new filter searches where the current one did (or names no place at all)."""
+    if not f.location:
+        return True
+    return {_plain(x).strip() for x in f.location} == {_plain(x).strip() for x in current.location}
+
+
 def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) -> SearchFilter:
     """Clean the model's filter using the user's own words.
 
@@ -73,6 +80,11 @@ def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) ->
     """
     text = _plain(message)
     data = f.model_dump()
+    # A refinement keeps the conversation's sale/rent and parking; a search for a
+    # different place starts fresh. Live test 2026-10-20: after a Lisbon rental,
+    # "piso … en Valencia hasta 300.000 €" ran as a rental.
+    if current is not None and not same_place(f, current):
+        current = None
 
     rent, sale = _has(RENT, text), _has(SALE, text)
     if rent and not sale:

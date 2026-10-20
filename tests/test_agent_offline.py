@@ -330,3 +330,25 @@ def test_follow_up_resolves_card_number(tmp_path):
     assert agent_._resolve_listing("made_up:9") == (None, "unknown")
     agent_.focus = "test_pt:2"
     assert agent_._resolve_listing("made_up:9") == ("test_pt:2", "the home discussed last")
+
+
+def test_new_place_starts_a_fresh_search():
+    """Live 2026-10-20: a Lisbon rental made the next, Valencia purchase search a rental."""
+    current = _f(location=["Lisboa"], transaction_type="rent", max_price=1500, has_parking=True)
+    got = normalize.apply(_f(location=["Valencia"], transaction_type="rent", max_price=300000),
+                          "Busco piso de 3 habitaciones en Valencia hasta 300.000 €", current)
+    assert got.transaction_type == "sale" and got.has_parking is None
+    # a refinement of the same place still keeps rent and parking
+    kept = normalize.apply(_f(location=["Lisboa"], transaction_type="sale"), "and with a balcony", current)
+    assert kept.transaction_type == "rent" and kept.has_parking is True
+
+
+def test_connector_calls_use_this_turns_language(tmp_path):
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=SimpleNamespace())
+    agent_.shown = listings.parse(CARDS)
+    agent_.seen_refs = {"test_pt:1", "test_pt:2"}
+    agent_.lang, agent_._message = "en", "How do I contact the agent for #1?"
+    sent = []
+    agent_.mcp.call_tool = lambda name, args: sent.append(args) or {"text": "ok", "is_error": False}
+    list(agent_._run_tool("get_contact_options", {"listing_id": "test_pt:1", "lang": "nl"}))
+    assert sent == [{"listing_id": "test_pt:1", "lang": "en"}]

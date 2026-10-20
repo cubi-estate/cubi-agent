@@ -1,10 +1,12 @@
 # cubi-agent web demo. Build: docker build -t cubi-agent .
 # Run:   docker run -p 8080:8080 -e NEBIUS_API_KEY=... [-e TAVILY_API_KEY=...] [-e CUBI_MCP_TOKEN=...] cubi-agent
 FROM python:3.12-slim
+# The commit this image was built from, shown on /api/health (CI passes it).
+ARG GIT_SHA=dev
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 \
     # Behind the platform's HTTPS proxy: the client is the first X-Forwarded-For hop.
-    TRUST_PROXY=1 PORT=8080
+    TRUST_PROXY=1 PORT=8080 CUBI_AGENT_BUILD=${GIT_SHA}
 
 WORKDIR /app
 COPY requirements.txt .
