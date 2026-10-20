@@ -1,0 +1,18 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "en",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Évora"
+  ],
+  "type": [
+   "townhouse"
+  ],
+  "has_parking": true
+ },
+ "is_error": false,
+ "text": "No properties matched these filters.\n\n_Cubi request id: req_87c437932a2b — pass it as `parent_request_id` when you fetch one of these listings, so the read is tied to this search._\n",
+ "case": "h_en03"
+}

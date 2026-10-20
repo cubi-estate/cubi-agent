@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import itertools
 import json
+import time
 from typing import Any
 
 import httpx
@@ -16,6 +17,10 @@ import httpx
 from . import config
 
 PROTOCOL_VERSION = "2025-06-18"
+# Units the connector charges against an anonymous caller's daily budget
+# (MCP_QUOTA_COST_SEARCH / _DEFAULT on the server): free-text search runs Cubi's
+# own language-model pipeline, everything else is a database read.
+QUOTA_UNITS = {"search_properties": 10}
 
 
 class MCPError(RuntimeError):
@@ -52,6 +57,7 @@ class CubiMCP:
         self._http = httpx.Client(headers=headers, timeout=timeout)
         self._ids = itertools.count(1)
         self._tools: list[dict] | None = None
+        self.calls: list[dict] = []  # {"tool", "seconds", "units", "is_error"} per tools/call
 
     def _rpc(self, method: str, params: dict | None = None) -> Any:
         payload = {"jsonrpc": "2.0", "id": next(self._ids), "method": method, "params": params or {}}
@@ -81,13 +87,17 @@ class CubiMCP:
 
     def call_tool(self, name: str, arguments: dict) -> dict:
         """Returns {"text": str, "is_error": bool, "structured": dict|None}."""
+        t0 = time.monotonic()
         res = self._rpc("tools/call", {"name": name, "arguments": arguments})
         text = "\n".join(c.get("text", "") for c in res.get("content", []) if c.get("type") == "text")
-        return {
+        out = {
             "text": text,
             "is_error": bool(res.get("isError")) or _in_band_error(text),
             "structured": res.get("structuredContent"),
         }
+        self.calls.append({"tool": name, "seconds": round(time.monotonic() - t0, 2),
+                           "units": QUOTA_UNITS.get(name, 1), "is_error": out["is_error"]})
+        return out
 
     def openai_tools(self, names: list[str] | None = None) -> list[dict]:
         """MCP tool schemas → OpenAI `tools` format, optionally scoped to `names`."""
@@ -99,10 +109,16 @@ class CubiMCP:
         return out
 
 
+_RATE_LIMIT_TEXT = ("too many tool calls", "daily budget", "quota")
+
+
 def _in_band_error(text: str) -> bool:
-    """The connector reports some failures (e.g. search_incomplete) as a JSON body
-    with "is_error": true rather than via MCP's isError flag."""
+    """The connector reports some failures as ordinary text rather than via MCP's
+    isError flag: a JSON body with "is_error": true (e.g. search_incomplete), or a
+    rate-limit/quota sentence in place of results."""
     head = text.lstrip()
+    if len(head) < 400 and any(w in head[:200].lower() for w in _RATE_LIMIT_TEXT):
+        return True
     if not head.startswith("{"):
         return False
     try:

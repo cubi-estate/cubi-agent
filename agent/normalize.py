@@ -94,8 +94,15 @@ def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) ->
         if not any(_has(p, px) for p in FEATURES.values()) and not _has(PARKING, px) and px not in TYPES:
             canon.append(x)
     data["features"] = canon
+    # Parking is a requirement only when asked for. Models fill `false` for "not
+    # mentioned", which the connector reads as "must have no parking" and which
+    # emptied studio searches in Lisbon and Granada (reports/compare_20261020T152335Z.md).
     if _has(PARKING, text):
         data["has_parking"] = True
+    elif current is not None and current.has_parking:
+        data["has_parking"] = True
+    else:
+        data["has_parking"] = None
 
     for name, pattern in TYPES.items():
         if not _has(pattern, text):

@@ -1,0 +1,21 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "de",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "München"
+  ],
+  "type": [
+   "apartment"
+  ],
+  "features": [
+   "Balcony"
+  ],
+  "max_price": 600000.0
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Apartment in Berg am Laim**\n   Location: Berg am Laim, München, Bayern, Bavaria\n   Apartment | 2 bd | 1 ba | 73 m2 living | 599 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A500980\n   ID: ohne_makler_de:500980\n   Last changed: 2026-10-19\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A500980&intent=ask\n   Tags: Bicycle storage / parking (building), Elevator, Guaranteed rental income, residential complex, residential complex\n\n**2. Apartment in Maxvorstadt**\n   Location: Maxvorstadt, München, Bayern, Bavaria\n   Apartment | 1 ba | 30 m2 living | 470 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A500261\n   ID: ohne_makler_de:500261\n   Last changed: 2026-10-19\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A500261&intent=ask\n   Tags: Elevator, Recently Renovated, Built-in Kitchen, Balcony, Roof terrace\n\n**3. Apartment in Schwabmünchen**\n   Location: Schwabmünchen, Bayern, Bavaria\n   Apartment | 2 bd | 1 ba | 72 m2 living | 299 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A495831\n   ID: ohne_makler_de:495831\n   Last changed: 2026-10-19\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A495831&intent=ask\n   Tags: Enhanced acoustic and thermal insulation, Good condition, Sold vacant, Underfloor Heating, Energy Certificate\n\n**4. Apartment in Schwabing**\n   Location: Schwabing, München, Schwabing-West, Bayern, Bavaria\n   Apartment | 1 ba | 42 m2 living | 559 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A496075\n   ID: ohne_makler_de:496075\n   Last changed: 2026-10-05\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A496075&intent=ask\n   Tags: Elevator, Elevator, Monthly condo fee, Monthly condo fee, Sold vacant\n\n**5. Apartment in Aubing**\n   Location: Aubing, Müncen, Bayern, Bavaria\n   Apartment | 1 bd | 1 ba | 70 m2 living | 555 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A495472\n   ID: ohne_makler_de:495472\n   Last changed: 2026-10-05\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A495472&intent=ask\n   Tags: complete plumbing replacement, Electrical installation compliance certificate, Elevator, Elevator, Piped Gas\n\n**6. Attic apartment in Berg am Laim**\n   Location: Berg am Laim, München - Trudering-Riem, Bayern, Bavaria\n   Attic apartment | 1 bd | 1 ba | 60 m2 living | 398 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A435320\n   ID: ohne_makler_de:435320\n   Last changed: 2026-09-28\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A435320&intent=ask\n   Tags: Central Heating, Double Glazing, Gas heating, Radiator heating, Recently Renovated\n",
+ "case": "h_de01"
+}

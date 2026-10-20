@@ -1,0 +1,21 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "pt",
+  "limit": 6,
+  "transaction_type": "rent",
+  "price_period": "month",
+  "location": [
+   "Coimbra"
+  ],
+  "type": [
+   "apartment"
+  ],
+  "max_price": 750.0,
+  "min_bedrooms": 1,
+  "max_bedrooms": 1
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Apartment in Coimbra**\n   Location: Coimbra, Coimbra District\n   Apartment | 1 bd | 1 ba | 41 m2 living | 10 EUR/mo\n   URL: https://cubi.estate/r/housinganywhere_pt%3A1741330\n   ID: housinganywhere_pt:1741330\n   Last changed: 2026-09-24\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=housinganywhere_pt%3A1741330&intent=ask\n   Tags: Internet access, Piped Gas, Air Conditioning, Central Heating, Annex kitchen\n\n**2. Apartment in Coimbra**\n   Location: Coimbra, Coimbra District\n   Apartment | 1 bd | 1 ba | 41 m2 living | 10 EUR/mo\n   URL: https://cubi.estate/r/housinganywhere_pt%3A1735115\n   ID: housinganywhere_pt:1735115\n   Last changed: 2026-09-24\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=housinganywhere_pt%3A1735115&intent=ask\n   Tags: Internet access, Air Conditioning, Central Heating, Bathroom, Built-in Kitchen\n\n**3. Apartment in Figueira da Foz**\n   Location: Figueira da Foz, Coimbra District\n   Apartment | 1 bd | 58 m2 living | 450 EUR/mo\n   URL: https://cubi.estate/r/housinganywhere_pt%3A1364275\n   ID: housinganywhere_pt:1364275\n   Last changed: 2026-09-24\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=housinganywhere_pt%3A1364275&intent=ask\n   Tags: Internet access, Bathroom, Bathroom, Built-in Kitchen, Furnished\n\n**4. Apartment in Coimbra**\n   Location: Coimbra, Coimbra District\n   Apartment | 1 bd | 1 ba | 23 m2 living | 700 EUR/mo\n   URL: https://cubi.estate/r/housinganywhere_pt%3A1716761\n   ID: housinganywhere_pt:1716761\n   Last changed: 2026-09-24\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=housinganywhere_pt%3A1716761&intent=ask\n   Tags: Internet access, Air Conditioning, Annex kitchen, Bathroom, Clothes dryer\n\n**5. Apartment in Coimbra**\n   Location: Coimbra, Coimbra District\n   Apartment | 1 bd | 1 ba | 28 m2 living | 650 EUR/mo\n   URL: https://cubi.estate/r/housinganywhere_pt%3A1715257\n   ID: housinganywhere_pt:1715257\n   Last changed: 2026-09-24\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=housinganywhere_pt%3A1715257&intent=ask\n   Tags: Internet access, Air Conditioning, Electric individual heating, Furnished, Guest Toilet\n\n**6. Apartment in Coimbra**\n   Location: Coimbra, Coimbra District\n   Apartment | 1 bd | 20 m2 living | 650 EUR/mo\n   URL: https://cubi.estate/r/housinganywhere_pt%3A1715183\n   ID: housinganywhere_pt:1715183\n   Last changed: 2026-09-24\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=housinganywhere_pt%3A1715183&intent=ask\n",
+ "case": "h_pt01"
+}

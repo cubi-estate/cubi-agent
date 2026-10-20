@@ -1,0 +1,21 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "nl",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Utrecht"
+  ],
+  "type": [
+   "apartment"
+  ],
+  "features": [
+   "Elevator"
+  ],
+  "max_price": 450000.0
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. portiekflat in Nieuwegein**\n   Location: Nieuwegein, Utrecht, Utrecht\n   portiekflat | 2 bd | 1 ba | 63 m2 living | 375 000 EUR\n   URL: https://cubi.estate/r/vastgoednederland_nl%3A670050\n   ID: vastgoednederland_nl:670050\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vastgoednederland_nl%3A670050&intent=ask\n   Tags: aislamiento, Elevator, Well maintained building, District heating, Water heater\n\n**2. Appartement in Plettenburg**\n   Location: Plettenburg, Nieuwegein, Utrecht, Utrecht\n   Appartement | 1 bd | 1 ba | 48 m2 living | 300 000 EUR\n   URL: https://cubi.estate/r/huislijn_nl%3A4436858\n   ID: huislijn_nl:4436858\n   Last changed: 2026-10-17\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=huislijn_nl%3A4436858&intent=ask\n   Tags: Elevator, Enhanced acoustic and thermal insulation, Good condition, Good condition, Good condition\n\n**3. portiekwoning in Utrecht**\n   Location: Utrecht, Utrecht\n   portiekwoning | 1 bd | 1 ba | 59 m2 living | 425 000 EUR\n   URL: https://cubi.estate/r/vastgoednederland_nl%3A668924\n   ID: vastgoednederland_nl:668924\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vastgoednederland_nl%3A668924&intent=ask\n   Tags: Bicycle storage / parking (building), Elevator, property management services, District heating, District heating\n\n**4. galerijflat in Leersum**\n   Location: Leersum, Utrecht, Utrecht\n   galerijflat | 1 bd | 1 ba | 67 m2 living | 395 000 EUR\n   URL: https://cubi.estate/r/vastgoednederland_nl%3A668896\n   ID: vastgoednederland_nl:668896\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vastgoednederland_nl%3A668896&intent=ask\n   Tags: aislamiento, Awning, Elevator, janelas no telhado, Monthly condo fee\n\n**5. portiekflat in Utrecht**\n   Location: Utrecht, Utrecht\n   portiekflat | 2 bd | 1 ba | 90 m2 living | 315 000 EUR\n   URL: https://cubi.estate/r/vastgoednederland_nl%3A668796\n   ID: vastgoednederland_nl:668796\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vastgoednederland_nl%3A668796&intent=ask\n   Tags: Elevator, District heating, energyClass C, Large windows for natural light, balconies of 12 and 4 sq m\n\n**6. portiekflat in Utrecht**\n   Location: Utrecht, Utrecht\n   portiekflat | 2 bd | 1 ba | 76 m2 living | 385 000 EUR\n   URL: https://cubi.estate/r/vastgoednederland_nl%3A668793\n   ID: vastgoednederland_nl:668793\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vastgoednederland_nl%3A668793&intent=ask\n   Tags: Elevator, Optional storage room, property management services, New / Newly Built, energyClass C\n",
+ "case": "h_nl01"
+}

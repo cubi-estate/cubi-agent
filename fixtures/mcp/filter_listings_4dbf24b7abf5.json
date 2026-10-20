@@ -1,0 +1,19 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "fr",
+  "limit": 6,
+  "transaction_type": "rent",
+  "price_period": "month",
+  "location": [
+   "Bordeaux"
+  ],
+  "type": [
+   "studio"
+  ],
+  "max_price": 700.0
+ },
+ "is_error": false,
+ "text": "No properties matched these filters.\n\n_Cubi request id: req_4d7feccd593b — pass it as `parent_request_id` when you fetch one of these listings, so the read is tied to this search._\n",
+ "case": "h_fr03"
+}

@@ -1,0 +1,22 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "pt",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Loulé"
+  ],
+  "type": [
+   "house"
+  ],
+  "features": [
+   "Pool"
+  ],
+  "max_price": 900000.0,
+  "min_bedrooms": 4
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. House in Loivo**\n   Location: Loivo, Vila Nova de Cerveira, Viana do Castelo, Portugal, Faro District\n   House | 4 bd | 4 ba | 3480 m2 living | 690 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A955254\n   ID: iad_pt:955254\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A955254&intent=ask\n   Tags: Optical fiber connection, sunny and bright on all fronts, Cable or satellite TV, Fireplace, Fireplace\n\n**2. House in Alegrete**\n   Location: Alegrete, Portalegre, Portugal, Faro District\n   House | 5 bd | 5 ba | 2384 m2 living | 790 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A825625\n   ID: iad_pt:825625\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A825625&intent=ask\n   Tags: Optical fiber connection, energyClass C, Sun exposure, Fireplace, large windows\n\n**3. House in Lousã e Vilarinho**\n   Location: Lousã e Vilarinho, Lousã, Coimbra, Portugal, Faro District\n   House | 5 bd | 4 ba | 1824 m2 living | 595 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A879460\n   ID: iad_pt:879460\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A879460&intent=ask\n   Tags: Direct access to pool and garden, Automatic irrigation system, Enhanced acoustic and thermal insulation, Independent entrances, Optical fiber connection\n\n**4. House in Graça**\n   Location: Graça, Pedrógão Grande, Leiria, Portugal, Faro District\n   House | 4 bd | 3 ba | 2089 m2 living | 285 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A861052\n   ID: iad_pt:861052\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A861052&intent=ask\n   Tags: private entrance, Local Accommodation License (AL), energyClass BMinus, bedroom with en-suite bathroom, Bright living and dining room\n\n**5. House in Lagoa e Carvoeiro**\n   Location: Lagoa e Carvoeiro, Lagoa, Faro, Portugal, Faro District\n   House | 4 bd | 3 ba | 400 m2 living | 675 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A148584\n   ID: iad_pt:148584\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A148584&intent=ask\n   Tags: Local Accommodation License (AL), energyClass C, Open-plan kitchen (open to the living space), Storage Room, Distance to restaurants and supermarkets\n\n**6. House in Luz de Tavira e Santo Estêvão**\n   Location: Luz de Tavira e Santo Estêvão, Tavira, Faro, Portugal, Faro District\n   House | 5 bd | 3 ba | 1739 m2 living | 530 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A131527\n   ID: iad_pt:131527\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A131527&intent=ask\n   Tags: Electric Shutters, Pool support annexes, Air Conditioning, authentic stone walls, Bathroom with bathtub\n",
+ "case": "h_pt02"
+}

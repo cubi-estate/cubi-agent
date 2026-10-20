@@ -1,0 +1,19 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "fr",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Lyon"
+  ],
+  "type": [
+   "apartment"
+  ],
+  "max_price": 320000.0,
+  "min_bedrooms": 2
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Appartement in France**\n   Location: France, Auvergne-Rhône-Alpes\n   Appartement | 2 bd | 56 m2 living | 238 000 EUR\n   URL: https://cubi.estate/r/era_fr%3A579918\n   ID: era_fr:579918\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=era_fr%3A579918&intent=ask\n\n**2. Appartement in France**\n   Location: France, Auvergne-Rhône-Alpes\n   Appartement | 2 bd | 68 m2 living | 262 000 EUR\n   URL: https://cubi.estate/r/era_fr%3A577887\n   ID: era_fr:577887\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=era_fr%3A577887&intent=ask\n\n**3. Appartement in France**\n   Location: France, Auvergne-Rhône-Alpes\n   Appartement | 2 bd | 1 ba | 78 m2 living | 288 000 EUR\n   URL: https://cubi.estate/r/era_fr%3A576661\n   ID: era_fr:576661\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=era_fr%3A576661&intent=ask\n\n**4. appartement in Lyon**\n   Location: Lyon, France, Auvergne-Rhône-Alpes\n   appartement | 2 bd | 1 ba | 96 m2 living | 299 000 EUR\n   URL: https://cubi.estate/r/laforet_fr%3A52923520\n   ID: laforet_fr:52923520\n   Last changed: 2026-09-17\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=laforet_fr%3A52923520&intent=ask\n\n**5. appartement in Lyon**\n   Location: Lyon, France, Auvergne-Rhône-Alpes\n   appartement | 2 bd | 1 ba | 38 m2 living | 225 000 EUR\n   URL: https://cubi.estate/r/laforet_fr%3A52893530\n   ID: laforet_fr:52893530\n   Last changed: 2026-09-17\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=laforet_fr%3A52893530&intent=ask\n\n**6. appartement in Lyon**\n   Location: Lyon, France, Auvergne-Rhône-Alpes\n   appartement | 2 bd | 1 ba | 80 m2 living | 313 000 EUR\n   URL: https://cubi.estate/r/laforet_fr%3A52379997\n   ID: laforet_fr:52379997\n   Last changed: 2026-09-17\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=laforet_fr%3A52379997&intent=ask\n",
+ "case": "h_fr01"
+}

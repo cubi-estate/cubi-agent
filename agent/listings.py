@@ -1,0 +1,136 @@
+"""Parse the connector's listing cards into facts, and rebuild cards from facts.
+
+`filter_listings` and `search_properties` both return markdown cards:
+
+    **1. T3 Apartment in Bougado**
+       Location: Bougado, Trofa, Porto, Portugal, Porto District
+       Apartment | 3 bd | 3 ba | 134 m2 living | 335 000 EUR
+       <description excerpt>
+       URL: https://cubi.estate/r/iad_pt%3A158006
+       ID: iad_pt:158006
+       Last changed: 2026-09-22
+       Ask Cubi (...): https://www.cubi.estate/chat?listing_id=...
+       Tags: Garage
+
+`parse()` keeps the facts (used by the eval to check constraints), and
+`render_facts()` rebuilds a card without the title or description, so recorded
+fixtures carry no text copied from the original listing.
+"""
+from __future__ import annotations
+
+import re
+
+_HEAD = re.compile(r"^\*\*(\d+)\.\s+(.*?)\*\*\s*$")
+_NUM = re.compile(r"[\d][\d .,]*")
+
+
+def _number(s: str) -> float | None:
+    m = _NUM.search(s)
+    if not m:
+        return None
+    digits = re.sub(r"[ .,](?=\d{3}\b)", "", m.group().strip())
+    try:
+        return float(digits.replace(",", "."))
+    except ValueError:
+        return None
+
+
+def _facts_line(line: str, out: dict) -> None:
+    parts = [p.strip() for p in line.split("|")]
+    out["type"] = parts[0]
+    for p in parts[1:]:
+        low = p.lower()
+        if low.endswith(" bd"):
+            out["bedrooms"] = _number(p)
+        elif low.endswith(" ba"):
+            out["bathrooms"] = _number(p)
+        elif "m2" in low:
+            out["living_area"] = _number(p)
+        elif re.search(r"\b(eur|usd|gbp|chf)\b", low) or "price on request" in low:
+            out["price"] = _number(p)
+            out["price_text"] = p
+
+
+def parse(text: str) -> list[dict]:
+    cards: list[dict] = []
+    cur: dict | None = None
+    for raw in text.splitlines():
+        line = raw.strip()
+        head = _HEAD.match(line)
+        if head:
+            cur = {"n": int(head.group(1))}
+            cards.append(cur)
+            continue
+        if cur is None or not line:
+            continue
+        if line.startswith("Location:"):
+            cur["location"] = line[9:].strip()
+        elif line.startswith("URL:"):
+            cur["url"] = line[4:].strip()
+        elif line.startswith("ID:"):
+            cur["id"] = line[3:].strip()
+        elif line.startswith("Last changed:"):
+            cur["updated"] = line[13:].strip()
+        elif line.startswith("Ask Cubi"):
+            cur["ask_url"] = line.split(": ", 1)[-1].strip()
+        elif line.startswith("Tags:"):
+            cur["tags"] = [t.strip() for t in line[5:].split(",") if t.strip()]
+        elif "|" in line and "type" not in cur:
+            _facts_line(line, cur)
+    return cards
+
+
+def header(text: str) -> str:
+    """The summary line(s) before the first card."""
+    out = []
+    for line in text.splitlines():
+        if _HEAD.match(line.strip()):
+            break
+        out.append(line)
+    return "\n".join(out).strip()
+
+
+_STREET = re.compile(r"^(rua|r\.|calle|c/|carrer|avenida|av\.|avda|travessa|largo|praca|plaza|via|viale|"
+                     r"rue|avenue|boulevard|chemin|impasse|allee)\b|(strasse|straße|str\.|weg|gasse|platz|"
+                     r"straat|laan|plein|gracht)$", re.I)
+
+
+def places(location: str) -> list[str]:
+    """The place names of a card's Location line, without street or house number.
+
+    Everything up to the last component holding a digit is the address; street
+    words catch addresses written without a number."""
+    parts = [x.strip() for x in location.split(",") if x.strip()]
+    last_digit = max((i for i, x in enumerate(parts) if re.search(r"\d", x)), default=-1)
+    return [x for x in parts[last_digit + 1:] if not _STREET.search(x)]
+
+
+def render_facts(text: str) -> str:
+    """The same reply with each card reduced to facts (no title, no description)."""
+    return render_cards(header(text), parse(text))
+
+
+def render_cards(head: str, cards: list[dict]) -> str:
+    parts = [head, ""]
+    for c in cards:
+        place = next(iter(places(c.get("location") or "")), "")
+        parts.append(f"**{c['n']}. {c.get('type', 'Home')} in {place}**")
+        if c.get("location"):
+            parts.append(f"   Location: {', '.join(places(c['location']))}")
+        facts = [c.get("type", "")]
+        if c.get("bedrooms") is not None:
+            facts.append(f"{c['bedrooms']:.0f} bd")
+        if c.get("bathrooms") is not None:
+            facts.append(f"{c['bathrooms']:.0f} ba")
+        if c.get("living_area") is not None:
+            facts.append(f"{c['living_area']:.0f} m2 living")
+        if c.get("price_text"):
+            facts.append(c["price_text"])
+        parts.append("   " + " | ".join(f for f in facts if f))
+        for key, label in (("url", "URL"), ("id", "ID"), ("updated", "Last changed"), ("ask_url", "Ask Cubi")):
+            if c.get(key):
+                parts.append(f"   {label}: {c[key]}")
+        if c.get("tags"):
+            parts.append("   Tags: " + ", ".join(c["tags"][:5]))
+        parts.append("")
+    return "\n".join(parts).rstrip() + "\n"

@@ -1,0 +1,17 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "pt",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Lisboa"
+  ],
+  "type": [
+   "studio"
+  ]
+ },
+ "is_error": false,
+ "text": "Showing 4 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Studio in Santa Maria Maior**\n   Location: Santa Maria Maior, Lisboa, Portugal, Lisboa\n   Studio | 1 bd | 1 ba | 35 m2 living | 195 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A979930\n   ID: iad_pt:979930\n   Last changed: 2026-09-19\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A979930&intent=ask\n   Tags: first floor of a building without an elevator, Air Conditioning, Double Glazing, energyClass C, Bathroom with shower\n\n**2. Studio in Campo de Ourique**\n   Location: Campo de Ourique, Lisbon & Surrounding Areas, Portugal, Lisboa\n   Studio | 1 ba | 330 000 EUR\n   URL: https://cubi.estate/r/bontefilipidis_pt%3A744716\n   ID: bontefilipidis_pt:744716\n   Last changed: 2026-09-08\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=bontefilipidis_pt%3A744716&intent=ask\n   Tags: Enhanced acoustic and thermal insulation, High performance windows, Ceramic flooring kitchen and bathrooms, Open plan kitchen living room, Open-plan kitchen (open to the living space)\n\n**3. Estúdio/Venda in São Vicente**\n   Location: São Vicente, Lisboa, Lisboa, Lisboa\n   Estúdio/Venda | 1 ba | 35 m2 living | 205 000 EUR\n   URL: https://cubi.estate/r/remax%3A123761356-7\n   ID: remax:123761356-7\n   Last changed: 2026-08-13\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=remax%3A123761356-7&intent=ask\n   Tags: Century old building with renovation, Contemporary Architecture, Historic building, Opportunity to finish second independent dwelling, R/C\n\n**4. Estúdio/Venda in Santa Maria Maior**\n   Location: Santa Maria Maior, Lisboa, Lisboa, Lisboa\n   Estúdio/Venda | 2 bd | 2 ba | 261 m2 living | 1 700 000 EUR\n   URL: https://cubi.estate/r/remax%3A120992070-155\n   ID: remax:120992070-155\n   Last changed: 2026-07-28\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=remax%3A120992070-155&intent=ask\n   Tags: Direct street access, Commercial space ground floor exterior access, Historic facade preserved, Historic facade preserved, R/C\n",
+ "case": "h_pt05"
+}

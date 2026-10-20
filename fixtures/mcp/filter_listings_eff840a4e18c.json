@@ -1,0 +1,21 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "de",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Mallorca"
+  ],
+  "type": [
+   "villa"
+  ],
+  "features": [
+   "Pool"
+  ],
+  "max_price": 2000000.0
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Chalet in Cala Egos**\n   Location: Cala Egos, Mallorca, Balearen, Spanien, Balearic Islands\n   Chalet | 4 bd | 4 ba | 796 m2 living | 1 225 000 EUR\n   URL: https://cubi.estate/r/aplaceinthesun_es%3AAP4289739\n   ID: aplaceinthesun_es:AP4289739\n   Last changed: 2026-09-19\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=aplaceinthesun_es%3AAP4289739&intent=ask\n   Tags: estilo ibicenco, Tourist use license, Air Conditioning, Fireplace, Near a beach\n\n**2. Villa / Detached in Cala d'Or**\n   Location: Cala d'Or, Mallorca, Balearische Inseln, Spanien, Balearic Islands\n   Villa / Detached | 3 bd | 3 ba | 495 m2 living | 1 600 000 EUR\n   URL: https://cubi.estate/r/aplaceinthesun_es%3AAP4242339\n   ID: aplaceinthesun_es:AP4242339\n   Last changed: 2026-09-19\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=aplaceinthesun_es%3AAP4242339&intent=ask\n   Tags: Guest Toilet, Walking distance to marina and services, Walking distance to marina and services, a terrace in the ground floor apartments, Balconies with stunning nature views\n\n**3. House/Villa in Es Forti**\n   Location: Es Forti, Mallorca, Balearische Inseln, Spanien, Balearic Islands\n   House/Villa | 4 bd | 3 ba | 688 m2 living | 1 495 000 EUR\n   URL: https://cubi.estate/r/aplaceinthesun_es%3AAP4048340\n   ID: aplaceinthesun_es:AP4048340\n   Last changed: 2026-09-19\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=aplaceinthesun_es%3AAP4048340&intent=ask\n   Tags: private access to the beach, Detached Villa, Gated Community, modern architecture, separate entrances\n\n**4. Villa in Palma de Mallorca**\n   Location: Palma de Mallorca, Mallorca, Balearische Inseln, Spanien, Balearic Islands\n   Villa | 4 bd | 4 ba | 19600 m2 living | 1 490 000 EUR\n   URL: https://cubi.estate/r/aplaceinthesun_es%3AAP4266804\n   ID: aplaceinthesun_es:AP4266804\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=aplaceinthesun_es%3AAP4266804&intent=ask\n   Tags: Independent entrances, Cellar, Machine room, warehouse, varias terrazas\n\n**5. Villa in Establiments - Son Sardina**\n   Location: Establiments - Son Sardina, Palma de Mallorca, Baleares, Spanien, Balearic Islands\n   Villa | 5 bd | 4 ba | 10269 m2 living | 1 395 000 EUR\n   URL: https://cubi.estate/r/spainhouses_es%3A15520860\n   ID: spainhouses_es:15520860\n   Last changed: 2026-07-14\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=spainhouses_es%3A15520860&intent=ask\n   Tags: Modernized infrastructure, Optical fiber connection, Construction and land use restrictions, private well, terrazas cubiertas y descubiertas\n\n**6. Villa in Spanien**\n   Location: Spanien, Balearic Islands\n   Villa | 4 bd | 5 ba | 7661 m2 living | 1 695 000 EUR\n   URL: https://cubi.estate/r/spainhouses_es%3A15405654\n   ID: spainhouses_es:15405654\n   Last changed: 2026-05-24\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=spainhouses_es%3A15405654&intent=ask\n   Tags: Reserved access for residents, Automatic irrigation system, Construction area, Electricity Connection, Optical fiber connection\n",
+ "case": "h_de05"
+}

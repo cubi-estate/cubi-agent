@@ -1,0 +1,17 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "de",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Brandenburg"
+  ],
+  "type": [
+   "land"
+  ]
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Plot in Woltersdorf**\n   Location: Woltersdorf, Brandenburg, Brandenburg\n   Plot | 1552 m2 living | 985 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A506598\n   ID: ohne_makler_de:506598\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A506598&intent=ask\n\n**2. Plot in Lühnsdorf**\n   Location: Lühnsdorf, Niemegk OT Lühnsdorf, Brandenburg, Brandenburg\n   Plot | 350 m2 living | 68 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A503695\n   ID: ohne_makler_de:503695\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A503695&intent=ask\n\n**3. Plot in Schöneiche bei Berlin**\n   Location: Schöneiche bei Berlin, Schöneiche, Brandenburg, Brandenburg\n   Plot | 863 m2 living | 276 160 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A466628\n   ID: ohne_makler_de:466628\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A466628&intent=ask\n\n**4. Plot in Bornstedt**\n   Location: Bornstedt, Potsdam, Brandenburg, Brandenburg\n   Plot | 703 m2 living | 810 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A444703\n   ID: ohne_makler_de:444703\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A444703&intent=ask\n\n**5. Plot in Fichtenwalde**\n   Location: Fichtenwalde, Beelitz, Brandenburg, Brandenburg\n   Plot | 1900 m2 living | Price on request\n   URL: https://cubi.estate/r/ohne_makler_de%3A324748\n   ID: ohne_makler_de:324748\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A324748&intent=ask\n\n**6. Plot in Kablow-Ziegelei**\n   Location: Kablow-Ziegelei, Königs Wusterhausen, Brandenburg, Brandenburg\n   Plot | 1300 m2 living | Price on request\n   URL: https://cubi.estate/r/ohne_makler_de%3A499121\n   ID: ohne_makler_de:499121\n   Last changed: 2026-10-05\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A499121&intent=ask\n   Tags: Electricity Connection, irrigation water and electricity connections, irrigation water and electricity connections, Water Supply, Beachfront / waterfront\n",
+ "case": "h_de06"
+}

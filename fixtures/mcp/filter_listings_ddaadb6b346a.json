@@ -1,0 +1,20 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "de",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Hamburg"
+  ],
+  "type": [
+   "penthouse"
+  ],
+  "features": [
+   "Terrace"
+  ]
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. apartment/penthouse in Germany**\n   Location: Germany, Hamburg, Harvestehude, Hamburg\n   apartment/penthouse | 4 bd | 4 ba | 298 m2 living | 6 370 000 EUR\n   URL: https://cubi.estate/r/engelvoelkers_de%3A79a2e60c-86c1-5914-9123-b8d24a196210\n   ID: engelvoelkers_de:79a2e60c-86c1-5914-9123-b8d24a196210\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=engelvoelkers_de%3A79a2e60c-86c1-5914-9123-b8d24a196210&intent=ask\n   Tags: Elevator, Elevator direct garage access, privacidade, Central Heating, Recently Renovated\n\n**2. apartment/penthouse in Germany**\n   Location: Germany, Hamburg, Winterhude, Hamburg\n   apartment/penthouse | 3 bd | 2 ba | 167 m2 living | 2 250 000 EUR\n   URL: https://cubi.estate/r/engelvoelkers_de%3A0d32dfc8-8057-5fed-94c3-74e36cb384f5\n   ID: engelvoelkers_de:0d32dfc8-8057-5fed-94c3-74e36cb384f5\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=engelvoelkers_de%3A0d32dfc8-8057-5fed-94c3-74e36cb384f5&intent=ask\n   Tags: Direct lift access to upper floors, Direct lift access to upper floors, Direct lift access to upper floors, Elevator, Bomba de calor\n\n**3. Apartment in Hamburg**\n   Location: Hamburg, Hamburg, Hamburg\n   Apartment | 4 bd | 2 ba | 179 m2 living | 1 610 000 EUR\n   URL: https://cubi.estate/r/vonpoll%3A35001525769\n   ID: vonpoll:35001525769\n   Last changed: 2026-09-14\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vonpoll%3A35001525769&intent=ask\n   Tags: Elevator, Good condition, Solar water heating system, Gas heating, Gas heating\n\n**4. Apartment in Hamburg**\n   Location: Hamburg, Hamburg, Hamburg\n   Apartment | 5 bd | 3 ba | 475 m2 living | 9 200 000 EUR\n   URL: https://cubi.estate/r/vonpoll%3A146001462475\n   ID: vonpoll:146001462475\n   Last changed: 2026-09-14\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vonpoll%3A146001462475&intent=ask\n   Tags: Direct lift access to upper floors, private access to the beach, private access to the beach, Monthly condo fee, panoramic elevator from the garage\n\n**5. apartment/penthouse in Germany**\n   Location: Germany, Hamburg, Rahlstedt, Hamburg\n   apartment/penthouse | 2 bd | 1 ba | 94 m2 living | 495 000 EUR\n   URL: https://cubi.estate/r/engelvoelkers_de%3Ac2cbbbf0-0731-588e-94c3-d37a480314bd\n   ID: engelvoelkers_de:c2cbbbf0-0731-588e-94c3-d37a480314bd\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=engelvoelkers_de%3Ac2cbbbf0-0731-588e-94c3-d37a480314bd&intent=ask\n   Tags: Electric sun protection blinds outer glazing, Heating, Hot water supplied by heat pump, Hot water supplied by heat pump, triple-glazed windows for better insulation\n\n**6. apartment/penthouse in Germany**\n   Location: Germany, Hamburg, Altona-Nord, Hamburg\n   apartment/penthouse | 2 bd | 2 ba | 83 m2 living | 795 000 EUR\n   URL: https://cubi.estate/r/engelvoelkers_de%3A850e2355-f80a-593b-b75e-1718eb1d9a7f\n   ID: engelvoelkers_de:850e2355-f80a-593b-b75e-1718eb1d9a7f\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=engelvoelkers_de%3A850e2355-f80a-593b-b75e-1718eb1d9a7f&intent=ask\n   Tags: Bicycle storage / parking (building), Electricity Connection, Elevator, privacidade, District heating\n",
+ "case": "h_de04"
+}

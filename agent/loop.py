@@ -8,7 +8,10 @@ Per turn:
      (keeping the conversation's current filter for refinements) and code routes
      it to `filter_listings`, or to the connector's free-text search if no town
      or city was given;
-  4. the answer passes URL, contact-detail and price-wording guards.
+  4. the answer passes URL, contact-detail and price-wording guards;
+  5. the homes themselves are rendered by the app from the tool output
+     (`listings` on the answer event), not written by the model — so a card
+     can't be invented, and the model only writes a short summary.
 
 `turn()` yields events — {"type": "action" | "answer", ...} — so the CLI and the
 web server can show a short action log (never raw model reasoning).
@@ -21,7 +24,8 @@ import time
 from typing import Iterator
 
 from . import extract as extractmod
-from . import guards, lang as langmod, llm, skills as skillsmod
+from . import guards, lang as langmod, listings, llm, skills as skillsmod
+from .fixtures import connect
 from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
 
@@ -51,13 +55,19 @@ SEARCH_HOMES_TOOL = {
 
 BASE_RULES = (
     "You are Cubi, a home-search assistant for Europe, running on an open model. "
-    "Answer in the user's language ({lang}). Be brief: a one-line summary of what was "
-    "searched, then the homes as a short list (price, place, size, bedrooms, one or two "
-    "matching features, and the listing URL exactly as returned). Only describe homes the "
-    "tools returned. Never invent URLs, ids, prices or contact details.\n"
+    "Answer in the user's language ({lang}). Only describe homes the tools returned. Never invent "
+    "URLs, ids, prices or contact details.\n"
     "In this app the skill's `filter_listings` and `search_properties` are both reached "
     "through `search_homes`, which chooses between them; call `search_homes` for any new "
-    "or refined search, and `get_listing` for one home's details."
+    "or refined search, and `get_listing` for one home's details.\n"
+    "After a search, the app shows every returned home as a numbered card under your reply, with "
+    "price, place, size, bedrooms, features and the listing link, in the order returned. So do NOT "
+    "list the homes and do not repeat their links (this replaces the skill's 'Present the results' "
+    "rules). Write two or three sentences: what was searched, how many homes came back, and anything "
+    "the user should know — a filter that was relaxed, homes that are older or pricier than the rest, "
+    "or the best match by card number (\"#2\"). Limits are bounds: 'at least 1 bedroom' includes "
+    "2-bedroom homes, so never call those mismatches. If nothing came back, say so and suggest one "
+    "change to the search."
 )
 
 
@@ -80,7 +90,7 @@ def _describe(f: SearchFilter) -> str:
 
 class Agent:
     def __init__(self, mcp: CubiMCP | None = None, cli=None, limit: int = 6):
-        self.mcp = mcp or CubiMCP()
+        self.mcp = mcp or connect()
         self.cli = cli or llm.client()
         self.skills = skillsmod.load()
         self.limit = limit
@@ -89,17 +99,25 @@ class Agent:
         self.has_results = False
         self.lang = "en"
         self.stats = {"llm_in": 0, "llm_out": 0, "fallback_searches": 0, "filter_searches": 0}
+        self.timings: list[tuple[str, float]] = []  # this turn's stages, seconds
+        self.cards: list[dict] = []  # listings from this turn's last search, shown as cards
 
     # ---- tools -------------------------------------------------------------
+    def _timed(self, stage: str, t0: float) -> None:
+        self.timings.append((stage, round(time.monotonic() - t0, 2)))
+
     def _tools_for(self, skill: skillsmod.Skill) -> list[dict]:
         mcp_names = [t for t in skill.tools if t != "search_homes"]
+        t0 = time.monotonic()
         tools = self.mcp.openai_tools(mcp_names) if mcp_names else []
+        self._timed("mcp tools/list (cached after the first turn)", t0)
         if "search_homes" in skill.tools:
             tools.insert(0, SEARCH_HOMES_TOOL)
         return tools
 
     def _search_homes(self, request: str) -> Iterator[dict | str]:
         ex = extractmod.extract(request, current=self.filter, cli=self.cli)
+        self.timings.append((f"extract ({ex.model.split('/')[-1]}, {ex.attempts} attempt(s))", ex.latency_s))
         self.stats["llm_in"] += ex.usage.get("in", 0)
         self.stats["llm_out"] += ex.usage.get("out", 0)
         if ex.filter is not None and ex.route == "filter":
@@ -111,6 +129,16 @@ class Agent:
             yield {"type": "action", "text": "Searching listings (structured filter)"}
             res = self.mcp.call_tool("filter_listings", args)
             header = f"[searched with filter_listings {json.dumps(args, ensure_ascii=False)}]\n"
+            if not res["is_error"] and not listings.parse(res["text"]) and args.get("features"):
+                # Features are hard filters on the connector, and tagging is uneven (a
+                # studio with a lift is rarely tagged "Elevator"): relax once, say so.
+                dropped = args.pop("features")
+                self.stats["relaxed_searches"] = self.stats.get("relaxed_searches", 0) + 1
+                yield {"type": "action", "text": "No exact matches — searching again without: " + ", ".join(dropped)}
+                res = self.mcp.call_tool("filter_listings", args)
+                header = (f"[no exact matches; searched again without the features {dropped} — say so to the "
+                          f"user, these homes are not confirmed to have them] "
+                          f"[filter_listings {json.dumps(args, ensure_ascii=False)}]\n")
             if res["is_error"]:
                 self.stats["fallback_searches"] += 1
                 yield {"type": "action", "text": "Structured search could not finish — retrying with Cubi's "
@@ -128,6 +156,7 @@ class Agent:
             header = "[searched with search_properties (free text)]\n"
         if not res["is_error"]:
             self.has_results = True
+            self.cards = listings.parse(res["text"])
         yield header + res["text"]
 
     def _run_tool(self, name: str, args: dict) -> Iterator[dict | str]:
@@ -143,6 +172,9 @@ class Agent:
     # ---- turn --------------------------------------------------------------
     def turn(self, text: str) -> Iterator[dict]:
         t0 = time.monotonic()
+        self.timings = []
+        self.cards = []
+        calls0 = len(self.mcp.calls)
         self.lang = langmod.detect(text, default=self.lang)
         skill = self.skills[skillsmod.select(text, self.has_results)]
         tools = self._tools_for(skill)
@@ -155,10 +187,13 @@ class Agent:
         answer = ""
         for step in range(MAX_STEPS + 1):
             force_answer = step == MAX_STEPS
+            t_llm = time.monotonic()
             r = self.cli.chat.completions.create(
                 model=llm.model(LOOP_ROLE), messages=messages, temperature=0.2, max_tokens=1500,
                 tools=None if force_answer else tools, extra_body=extra,
             )
+            out_tok = (r.usage.completion_tokens or 0) if r.usage else 0
+            self._timed(f"loop step {step} ({llm.model(LOOP_ROLE).split('/')[-1]}, {out_tok} tokens out)", t_llm)
             if r.usage:
                 self.stats["llm_in"] += r.usage.prompt_tokens or 0
                 self.stats["llm_out"] += r.usage.completion_tokens or 0
@@ -190,8 +225,11 @@ class Agent:
                 messages.append({"role": "tool", "tool_call_id": tc.id, "content": result[:TOOL_TEXT_CAP]})
                 turn_msgs.append({"role": "tool", "tool_call_id": tc.id, "content": result[:HISTORY_TOOL_CAP]})
 
+        for c in self.mcp.calls[calls0:]:
+            self.timings.append((f"mcp {c['tool']}" + (" (error)" if c["is_error"] else ""), c["seconds"]))
         answer, report = guards.apply(answer, tool_text, self.lang, used)
         turn_msgs.append({"role": "assistant", "content": answer})
         self.history += turn_msgs
         yield {"type": "answer", "text": answer, "skill": skill.name, "lang": self.lang,
-               "guards": report, "latency_s": round(time.monotonic() - t0, 2), "stats": dict(self.stats)}
+               "guards": report, "latency_s": round(time.monotonic() - t0, 2), "stats": dict(self.stats),
+               "timings": list(self.timings), "listings": list(self.cards)}

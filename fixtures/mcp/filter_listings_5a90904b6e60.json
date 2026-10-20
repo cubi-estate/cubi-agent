@@ -1,0 +1,18 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "de",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Berlin"
+  ],
+  "type": [
+   "apartment"
+  ],
+  "min_bedrooms": 2
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Apartment in Pankow**\n   Location: Pankow, Berlin, Berlin\n   Apartment | 2 bd | 2 ba | 98 m2 living | 790 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A506307\n   ID: ohne_makler_de:506307\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A506307&intent=ask\n\n**2. Attic apartment in Moabit**\n   Location: Moabit, Berlin, Berlin\n   Attic apartment | 2 bd | 1 ba | 74 m2 living | 559 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A506260\n   ID: ohne_makler_de:506260\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A506260&intent=ask\n\n**3. Apartment in Prenzlauer Berg**\n   Location: Prenzlauer Berg, Berlin, Berlin\n   Apartment | 3 bd | 1 ba | 88 m2 living | 575 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A505506\n   ID: ohne_makler_de:505506\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A505506&intent=ask\n\n**4. Ground floor apartment in Niederschöneweide**\n   Location: Niederschöneweide, Berlin, Berlin\n   Ground floor apartment | 3 bd | 1 ba | 63 m2 living | 259 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A504591\n   ID: ohne_makler_de:504591\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A504591&intent=ask\n\n**5. Apartment in Mariendorf**\n   Location: Mariendorf, Berlin, Berlin\n   Apartment | 2 bd | 1 ba | 77 m2 living | 268 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A504127\n   ID: ohne_makler_de:504127\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A504127&intent=ask\n\n**6. Apartment in Neukölln**\n   Location: Neukölln, Berlin, Berlin\n   Apartment | 2 bd | 1 ba | 72 m2 living | 410 000 EUR\n   URL: https://cubi.estate/r/ohne_makler_de%3A503833\n   ID: ohne_makler_de:503833\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=ohne_makler_de%3A503833&intent=ask\n",
+ "case": "h_de03"
+}

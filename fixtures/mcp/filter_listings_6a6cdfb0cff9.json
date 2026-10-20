@@ -1,0 +1,19 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "de",
+  "limit": 6,
+  "transaction_type": "rent",
+  "price_period": "month",
+  "location": [
+   "Köln"
+  ],
+  "type": [
+   "house"
+  ],
+  "max_price": 2500.0
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. House in Lindenthal**\n   Location: Lindenthal, Köln, North Rhine-Westphalia\n   House | 2 bd | 180 m2 living | 1 950 EUR/mo\n   URL: https://cubi.estate/r/housinganywhere_de%3A1745699\n   ID: housinganywhere_de:1745699\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=housinganywhere_de%3A1745699&intent=ask\n\n**2. House in Burgallee**\n   Location: Burgallee, Köln, North Rhine-Westphalia\n   House | 1 bd | 110 m2 living | 2 200 EUR/mo\n   URL: https://cubi.estate/r/wunderflats_de%3A698c831122f3d6d6e49eee33\n   ID: wunderflats_de:698c831122f3d6d6e49eee33\n   Last changed: 2026-08-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=wunderflats_de%3A698c831122f3d6d6e49eee33&intent=ask\n   Tags: Valid habitation certificate, Bathroom with bathtub, Bathroom with shower tray, Desk, Dishwasher\n\n**3. House in Köln**\n   Location: Köln, North Rhine-Westphalia\n   House | 2 bd | 110 m2 living | 2 200 EUR/mo\n   URL: https://cubi.estate/r/wunderflats_de%3A689ef72e5df76b4a7fa9007b\n   ID: wunderflats_de:689ef72e5df76b4a7fa9007b\n   Last changed: 2026-10-18\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=wunderflats_de%3A689ef72e5df76b4a7fa9007b&intent=ask\n   Tags: Bathroom with bathtub, Desk, Desk, Dishwasher, Furnished\n\n**4. House in Köln**\n   Location: Köln, North Rhine-Westphalia\n   House | 1 bd | 80 m2 living | 1 800 EUR/mo\n   URL: https://cubi.estate/r/wunderflats_de%3A671d0d5287e691dc10e94e31\n   ID: wunderflats_de:671d0d5287e691dc10e94e31\n   Last changed: 2026-09-28\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=wunderflats_de%3A671d0d5287e691dc10e94e31&intent=ask\n   Tags: Air Conditioning, Air Conditioning, Air Conditioning, Underfloor Heating, Underfloor Heating\n\n**5. House in Köln**\n   Location: Köln, North Rhine-Westphalia\n   House | 1 bd | 40 m2 living | 1 800 EUR/mo\n   URL: https://cubi.estate/r/wunderflats_de%3A671213d89093174888a8a099\n   ID: wunderflats_de:671213d89093174888a8a099\n   Last changed: 2026-09-18\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=wunderflats_de%3A671213d89093174888a8a099&intent=ask\n   Tags: animals_allowed, Valid habitation certificate, Gas heating, Gas heating, energyClass E\n\n**6. House in Köln**\n   Location: Köln, North Rhine-Westphalia\n   House | 2 bd | 104 m2 living | 2 490 EUR/mo\n   URL: https://cubi.estate/r/wunderflats_de%3A65f4888a4e9304622d46f700\n   ID: wunderflats_de:65f4888a4e9304622d46f700\n   Last changed: 2026-09-18\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=wunderflats_de%3A65f4888a4e9304622d46f700&intent=ask\n   Tags: Wheelchair Accessible, Wheelchair Accessible, Home Automation, Valid habitation certificate, Valid habitation certificate\n",
+ "case": "h_de02"
+}

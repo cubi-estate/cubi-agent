@@ -96,11 +96,11 @@ def summarise(role: str, res: dict) -> dict:
     }
 
 
-def render(summary: list[dict], lang_ok: int, n: int, results: dict, at: str) -> str:
+def render(summary: list[dict], lang_ok: int, n: int, results: dict, at: str, set_name: str) -> str:
     out = [f"# Filter-extraction eval — {at}", "",
-           f"{n} requests, 10 per language (en/pt/es/fr/de/nl), single turn. Thinking off. "
+           f"Set `evals/{set_name}`: {n} requests in en/pt/es/fr/de/nl, single turn. Thinking off. "
            f"Model output passes through agent/normalize.py (as in the agent). "
-           f"Gold in `evals/filter_extraction.jsonl`.", "",
+           "", 
            f"Deterministic language detector: **{lang_ok}/{n}** correct.", "",
            "| role | model | valid | retried | field acc | all fields right | route (agent rule) | route (place only) | p50 | p95 | $/1k queries |",
            "|---|---|---|---|---|---|---|---|---|---|---|"]
@@ -125,8 +125,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--roles", default="nano,lightning,super,ultra")
     ap.add_argument("--ids", default="")
+    ap.add_argument("--cases", default=str(CASES), help="JSONL eval set (default: the tuning set)")
     a = ap.parse_args()
-    cases = [json.loads(line) for line in CASES.read_text().splitlines() if line.strip()]
+    cases_path = Path(a.cases)
+    cases = [json.loads(line) for line in cases_path.read_text().splitlines() if line.strip()]
     if a.ids:
         wanted = set(a.ids.split(","))
         cases = [c for c in cases if c["id"] in wanted]
@@ -140,7 +142,7 @@ def main() -> int:
     at = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     (ROOT / "reports").mkdir(exist_ok=True)
-    md = render(summary, lang_ok, len(cases), results, at)
+    md = render(summary, lang_ok, len(cases), results, at, cases_path.name)
     (ROOT / "reports" / f"eval_{stamp}.md").write_text(md)
     (ROOT / "reports" / f"eval_{stamp}.json").write_text(json.dumps({"summary": summary, "results": results}, indent=1))
     print("\n" + md.split("## Per field")[0])

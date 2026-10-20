@@ -61,3 +61,4 @@ def test_in_band_error_detected():
     assert _in_band_error('{"is_error": true, "code": "search_incomplete"}')
     assert not _in_band_error("Showing 3 properties.")
     assert not _in_band_error('{"listings": []}')
+    assert _in_band_error("Too many tool calls from this client in the last minute. Wait about a minute.")

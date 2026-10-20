@@ -1,0 +1,21 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "nl",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Eindhoven"
+  ],
+  "type": [
+   "house"
+  ],
+  "features": [
+   "Garden"
+  ],
+  "min_bedrooms": 4
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. eengezinswoning in Eindhoven**\n   Location: Eindhoven, Noord-Brabant, North Brabant\n   eengezinswoning | 5 bd | 2 ba | 490 m2 living | 1 995 000 EUR\n   URL: https://cubi.estate/r/vastgoednederland_nl%3A670124\n   ID: vastgoednederland_nl:670124\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vastgoednederland_nl%3A670124&intent=ask\n   Tags: Enhanced acoustic and thermal insulation, The house is entirely built in stone, Gas heating, Gas heating, Recently Renovated\n\n**2. House in Eindhoven**\n   Location: Eindhoven, Noord-Brabant, North Brabant\n   House | 4 bd | 2 ba | 119 m2 living | 695 000 EUR\n   URL: https://cubi.estate/r/rotsvast_nl%3ABN100309\n   ID: rotsvast_nl:BN100309\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=rotsvast_nl%3ABN100309&intent=ask\n   Tags: Electric sun protection blinds outer glazing, Electric sun protection blinds outer glazing, Air Conditioning, Central Heating, Underfloor Heating\n\n**3. huis in Karpen**\n   Location: Karpen, Eindhoven, North Brabant\n   huis | 4 bd | 3 ba | 1861 m2 living | 1 250 000 EUR\n   URL: https://cubi.estate/r/pararius_nl%3Adf9b630b-c2d5-562a-a394-105c3bd7bac2\n   ID: pararius_nl:df9b630b-c2d5-562a-a394-105c3bd7bac2\n   Last changed: 2026-10-03\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=pararius_nl%3Adf9b630b-c2d5-562a-a394-105c3bd7bac2&intent=ask\n   Tags: private entrance, private entrance, insulation between floors and fractions, Thermal Insulation, Thermal Insulation\n\n**4. huis in Irisbuurt**\n   Location: Irisbuurt, Eindhoven, North Brabant\n   huis | 4 bd | 1 ba | 205 m2 living | 649 000 EUR\n   URL: https://cubi.estate/r/pararius_nl%3Aba55e40b-0358-5eda-b93a-98d169898520\n   ID: pararius_nl:ba55e40b-0358-5eda-b93a-98d169898520\n   Last changed: 2026-10-10\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=pararius_nl%3Aba55e40b-0358-5eda-b93a-98d169898520&intent=ask\n   Tags: Awning, electric awning, insulation between floors and fractions, janelas no telhado, Optical fiber connection\n\n**5. huis in Bennekel-Oost**\n   Location: Bennekel-Oost, Eindhoven, North Brabant\n   huis | 4 bd | 310 m2 living | 449 000 EUR\n   URL: https://cubi.estate/r/pararius_nl%3Aa04d0edd-cc91-5612-8c41-a43d1de1437d\n   ID: pararius_nl:a04d0edd-cc91-5612-8c41-a43d1de1437d\n   Last changed: 2026-10-09\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=pararius_nl%3Aa04d0edd-cc91-5612-8c41-a43d1de1437d&intent=ask\n   Tags: private entrance, pronto a habitar, Recently renovated roof, Sold vacant, Double Glazing\n\n**6. huis in Schrijversbuurt**\n   Location: Schrijversbuurt, Eindhoven, North Brabant\n   huis | 5 bd | 2 ba | 203 m2 living | 1 075 000 EUR\n   URL: https://cubi.estate/r/pararius_nl%3A8a71d384-1d21-525f-b536-a5aaff4c61a0\n   ID: pararius_nl:8a71d384-1d21-525f-b536-a5aaff4c61a0\n   Last changed: 2026-10-18\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=pararius_nl%3A8a71d384-1d21-525f-b536-a5aaff4c61a0&intent=ask\n   Tags: EV charging point installed (private/per-unit), energyClass A, Two 3kW batteries, Storage Room, Garden\n",
+ "case": "h_nl03"
+}

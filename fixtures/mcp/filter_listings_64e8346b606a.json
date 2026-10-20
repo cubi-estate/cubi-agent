@@ -1,0 +1,20 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "es",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Alicante"
+  ],
+  "type": [
+   "house"
+  ],
+  "features": [
+   "Garden"
+  ]
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. House in Costa Blanca**\n   Location: Costa Blanca, Alicante, Walencja, Hiszpania, Valencian Community\n   House | 90 m2 living | 319 900 EUR\n   URL: https://cubi.estate/r/domiporta_pl%3A156936006\n   ID: domiporta_pl:156936006\n   Last changed: 2026-10-12\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=domiporta_pl%3A156936006&intent=ask\n   Tags: Ground floor with garden, Optional storage room, The entire property has LED lighting, thermal break aluminum, Built-in Wardrobe\n\n**2. Villa in Lomas de Cabo Roig**\n   Location: Lomas de Cabo Roig, Alicante, Valencia, Spain, Valencia\n   Villa | 3 bd | 3 ba | 197 m2 living | 570 000 EUR\n   URL: https://cubi.estate/r/aplaceinthesun_es%3AAP4297823\n   ID: aplaceinthesun_es:AP4297823\n   Last changed: 2026-09-21\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=aplaceinthesun_es%3AAP4297823&intent=ask\n   Tags: Mosquito screens on all windows, Solar Panels, Storage Room, Multiple amenities nearby, Near a golf course\n\n**3. Bungalow in Alicante**\n   Location: Alicante, Valencia, Spain, Valencian Community\n   Bungalow | 2 bd | 1 ba | 70 m2 living | 129 990 EUR\n   URL: https://cubi.estate/r/aplaceinthesun_es%3AAP4297817\n   ID: aplaceinthesun_es:AP4297817\n   Last changed: 2026-09-21\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=aplaceinthesun_es%3AAP4297817&intent=ask\n   Tags: No community fee, Air Conditioning, close to local amenities, Backyard for outdoor dining or leisure, front and rear gardens\n\n**4. Villa in Alicante**\n   Location: Alicante, Valencia, Spain, Valencian Community\n   Villa | 3 bd | 2 ba | 400 m2 living | 499 000 EUR\n   URL: https://cubi.estate/r/aplaceinthesun_es%3AAP4297791\n   ID: aplaceinthesun_es:AP4297791\n   Last changed: 2026-09-21\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=aplaceinthesun_es%3AAP4297791&intent=ask\n   Tags: Bright living and dining room, cozinhas totalmente equipadas, Master bedroom suite features, Corner location with main avenue visibility, Terreno de gaveto\n\n**5. Villa in La Finca**\n   Location: La Finca, Alicante, Valencia, Spain, Valencia\n   Villa | 3 bd | 2 ba | 360 m2 living | 375 000 EUR\n   URL: https://cubi.estate/r/aplaceinthesun_es%3AAP4111498\n   ID: aplaceinthesun_es:AP4111498\n   Last changed: 2026-09-21\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=aplaceinthesun_es%3AAP4111498&intent=ask\n   Tags: Gated Community, Gated Community, Ground floor, privacidade, Air Conditioning\n\n**6. Villa in Lomas de Cabo Roig**\n   Location: Lomas de Cabo Roig, Alicante, Valencia, Spain, Valencia\n   Villa | 3 bd | 3 ba | 570 000 EUR\n   URL: https://cubi.estate/r/aplaceinthesun_es%3AAP4297023\n   ID: aplaceinthesun_es:AP4297023\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=aplaceinthesun_es%3AAP4297023&intent=ask\n   Tags: Mosquito screens on all windows, Ducted air conditioning, Solar Panels, All appliances included, Furnished\n",
+ "case": "h_es03"
+}

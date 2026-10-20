@@ -1,0 +1,19 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "es",
+  "limit": 6,
+  "transaction_type": "rent",
+  "price_period": "month",
+  "location": [
+   "Málaga"
+  ],
+  "type": [
+   "penthouse"
+  ],
+  "max_price": 1800.0
+ },
+ "is_error": false,
+ "text": "Showing 2 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Ático in Málaga**\n   Location: Málaga, Málaga, Spain, Andalusia\n   Ático | 3 bd | 2 ba | 139 m2 living | 1 600 EUR/mo\n   URL: https://cubi.estate/r/redpiso_es%3ARP3252026156362\n   ID: redpiso_es:RP3252026156362\n   Last changed: 2026-09-09\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=redpiso_es%3ARP3252026156362&intent=ask\n   Tags: Disabled Access, Elevator, Monocapa (single-coat render) facade, Air Conditioning, Individual hot water system (per unit)\n\n**2. Ático in Málaga**\n   Location: Málaga, Málaga, Spain, Andalusia\n   Ático | 1 bd | 1 ba | 55 m2 living | 1 500 EUR/mo\n   URL: https://cubi.estate/r/redpiso_es%3ARP1912026145589\n   ID: redpiso_es:RP1912026145589\n   Last changed: 2026-07-06\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=redpiso_es%3ARP1912026145589&intent=ask\n   Tags: Age over 25 years, Elevator, Good condition, Monocapa (single-coat render) facade, Air Conditioning\n",
+ "case": "h_es02"
+}

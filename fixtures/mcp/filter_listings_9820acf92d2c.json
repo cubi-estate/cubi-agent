@@ -1,0 +1,22 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "es",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Bilbao"
+  ],
+  "type": [
+   "apartment"
+  ],
+  "features": [
+   "Terrace"
+  ],
+  "max_price": 400000.0,
+  "has_parking": true
+ },
+ "is_error": false,
+ "text": "Showing 2 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Piso in Santa Clara Kalea**\n   Location: Santa Clara Kalea, Bilbao, Bizkaia, Spain, Basque Country\n   Piso | 3 bd | 2 ba | 86 m2 living | 349 900 EUR\n   URL: https://cubi.estate/r/tecnocasa_es%3A638178\n   ID: tecnocasa_es:638178\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=tecnocasa_es%3A638178&intent=ask\n   Tags: Pedestrian access is available, Elevator, Elevator, Render / ETICS / ventilated cladding facade, Central Heating\n\n**2. apartment/flat in Spain**\n   Location: Spain, Basque Country, Bilbao, Basurto-Zorroza, Basque Country\n   apartment/flat | 1 bd | 1 ba | 55 m2 living | 394 700 EUR\n   URL: https://cubi.estate/r/engelvoelkers_es%3A6f92c9a7-8436-56e9-8860-854c361c5dde\n   ID: engelvoelkers_es:6f92c9a7-8436-56e9-8860-854c361c5dde\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=engelvoelkers_es%3A6f92c9a7-8436-56e9-8860-854c361c5dde&intent=ask\n   Tags: three floors, Energy Efficiency, Sun exposure, Bathroom Count, Bedroom Count\n",
+ "case": "h_es06"
+}

@@ -1,0 +1,19 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "nl",
+  "limit": 6,
+  "transaction_type": "rent",
+  "price_period": "month",
+  "location": [
+   "Gent"
+  ],
+  "type": [
+   "studio"
+  ],
+  "min_bedrooms": 0
+ },
+ "is_error": false,
+ "text": "Showing 3 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Studio in East Flanders**\n   Location: East Flanders, East Flanders\n   Studio | 1 bd | 1 ba | 34 m2 living | 660 EUR/mo\n   URL: https://cubi.estate/r/immoweb_be%3A21847764\n   ID: immoweb_be:21847764\n   Last changed: 2026-09-25\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=immoweb_be%3A21847764&intent=ask\n   Tags: Condition almost new, Monthly condo fee, No elevator, No elevator, Double Glazing\n\n**2. Studio in East Flanders**\n   Location: East Flanders, East Flanders\n   Studio | 1 ba | 640 EUR/mo\n   URL: https://cubi.estate/r/immoweb_be%3A21755123\n   ID: immoweb_be:21755123\n   Last changed: 2026-09-09\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=immoweb_be%3A21755123&intent=ask\n   Tags: Monthly condo fee, Monthly condo fee, Double Glazing, Electric individual heating, Electric individual heating\n\n**3. Student Kot in East Flanders**\n   Location: East Flanders, East Flanders\n   Student Kot | 7 ba | 15 m2 living | 475 EUR/mo\n   URL: https://cubi.estate/r/immoweb_be%3A21644363\n   ID: immoweb_be:21644363\n   Last changed: 2026-07-26\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=immoweb_be%3A21644363&intent=ask\n   Tags: Disabled Access, Building Condition, Condition almost new, Elevator, Double Glazing\n",
+ "case": "h_nl04"
+}

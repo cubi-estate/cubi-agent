@@ -1,0 +1,20 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "en",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Valencia"
+  ],
+  "type": [
+   "apartment"
+  ],
+  "max_price": 280000.0,
+  "min_bedrooms": 2,
+  "max_bedrooms": 2
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Piso in La Raiosa**\n   Location: La Raiosa, Valencia, Valencia, Spain, Valencian Community\n   Piso | 2 bd | 1 ba | 70 m2 living | 249 000 EUR\n   URL: https://cubi.estate/r/redpiso_es%3ARP1322026157029\n   ID: redpiso_es:RP1322026157029\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=redpiso_es%3ARP1322026157029&intent=ask\n\n**2. apartment/flat in Spain**\n   Location: Spain, Valencian Community, El Perelló, Valencian Community\n   apartment/flat | 2 bd | 1 ba | 62 m2 living | 160 000 EUR\n   URL: https://cubi.estate/r/engelvoelkers_es%3A9deda4fd-2a36-5f23-8db3-eea036b4db54\n   ID: engelvoelkers_es:9deda4fd-2a36-5f23-8db3-eea036b4db54\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=engelvoelkers_es%3A9deda4fd-2a36-5f23-8db3-eea036b4db54&intent=ask\n   Tags: Water heater, Livable / Move-in Ready, energyClass E, tiled floors, Beachfront / waterfront\n\n**3. Apartment in Puerto de Sagunto**\n   Location: Puerto de Sagunto, Spain, Valencian Community\n   Apartment | 2 bd | 2 ba | 74 m2 living | 135 000 EUR\n   URL: https://cubi.estate/r/century21_es%3A0099-RARE-00481-hs\n   ID: century21_es:0099-RARE-00481-hs\n   Last changed: 2026-09-21\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=century21_es%3A0099-RARE-00481-hs&intent=ask\n   Tags: No interior visits allowed, Livable / Move-in Ready, energyClass G, ocupada por terceros\n\n**4. Apartment in Valencian Community**\n   Location: Valencian Community\n   Apartment | 2 bd | 2 ba | 80 m2 living | 254 316 EUR\n   URL: https://cubi.estate/r/century21_es%3A0099-RARE-00479-hs\n   ID: century21_es:0099-RARE-00479-hs\n   Last changed: 2026-09-21\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=century21_es%3A0099-RARE-00479-hs&intent=ask\n   Tags: ramp, Elevator, Es una propiedad de procedencia bancaria, No possession no interior access, Water Supply\n\n**5. Apartment in Burjassot**\n   Location: Burjassot, Spain, Valencia\n   Apartment | 2 bd | 1 ba | 56 m2 living | 147 000 EUR\n   URL: https://cubi.estate/r/century21_es%3A0099-LIRE-02301-hs\n   ID: century21_es:0099-LIRE-02301-hs\n   Last changed: 2026-09-21\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=century21_es%3A0099-LIRE-02301-hs&intent=ask\n   Tags: Livable / Move-in Ready, energyClass G, ocupada por terceros\n\n**6. Flat in Valencia**\n   Location: Valencia, Valencia, Spain, Valencian Community\n   Flat | 2 bd | 2 ba | 78 m2 living | 191 000 EUR\n   URL: https://cubi.estate/r/aplaceinthesun_es%3AAP4243237\n   ID: aplaceinthesun_es:AP4243237\n   Last changed: 2026-09-18\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=aplaceinthesun_es%3AAP4243237&intent=ask\n   Tags: easy road access, Elevator, Essential services access, Near commercial / shopping area, Terrace\n",
+ "case": "h_en01"
+}

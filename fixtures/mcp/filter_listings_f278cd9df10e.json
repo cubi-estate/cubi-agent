@@ -1,0 +1,18 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "en",
+  "limit": 6,
+  "transaction_type": "rent",
+  "price_period": "month",
+  "location": [
+   "Bologna"
+  ],
+  "max_price": 900.0,
+  "min_bedrooms": 1,
+  "max_bedrooms": 1
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Appartamento in Bologna**\n   Location: Bologna, BO, Italy, Emilia-Romagna\n   Appartamento | 2 bd | 1 ba | 37 m2 living | 830 EUR/mo\n   URL: https://cubi.estate/r/gabetti_it%3A3340302\n   ID: gabetti_it:3340302\n   Last changed: 2026-09-18\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=gabetti_it%3A3340302&intent=ask\n   Tags: private entrance, Building Condition, Estimated occupancy: 70% to 85%, Air Conditioning, Underfloor Heating\n\n**2. Appartamento in Bologna**\n   Location: Bologna, BO, Italy, Emilia-Romagna\n   Appartamento | 2 bd | 1 ba | 43 m2 living | 900 EUR/mo\n   URL: https://cubi.estate/r/gabetti_it%3A3339848\n   ID: gabetti_it:3339848\n   Last changed: 2026-09-18\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=gabetti_it%3A3339848&intent=ask\n   Tags: No elevator, Central Heating, Heating, Recently Renovated, energyClass F\n\n**3. Appartamento in Bologna**\n   Location: Bologna, BO, Italy, Emilia-Romagna\n   Appartamento | 2 bd | 1 ba | 31 m2 living | 850 EUR/mo\n   URL: https://cubi.estate/r/gabetti_it%3A3339730\n   ID: gabetti_it:3339730\n   Last changed: 2026-09-18\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=gabetti_it%3A3339730&intent=ask\n   Tags: Building Condition, entrada independente, Monthly condo fee, No elevator, Air Conditioning\n\n**4. Appartamento in Bologna**\n   Location: Bologna, BO, Italy, Emilia-Romagna\n   Appartamento | 2 bd | 1 ba | 45 m2 living | 850 EUR/mo\n   URL: https://cubi.estate/r/gabetti_it%3A3338887\n   ID: gabetti_it:3338887\n   Last changed: 2026-09-18\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=gabetti_it%3A3338887&intent=ask\n   Tags: Electric Shutters, Monthly condo fee, Mosquito screens on all windows, No elevator, Air Conditioning\n\n**5. Appartamento in Bologna**\n   Location: Bologna, BO, Italy, Emilia-Romagna\n   Appartamento | 1 bd | 1 ba | 30 m2 living | 650 EUR/mo\n   URL: https://cubi.estate/r/gabetti_it%3A3338879\n   ID: gabetti_it:3338879\n   Last changed: 2026-09-18\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=gabetti_it%3A3338879&intent=ask\n   Tags: Elevator, Ground floor, Monthly condo fee, Central Heating, Central Heating\n\n**6. Appartamento in Bologna**\n   Location: Bologna, BO, Italy, Emilia-Romagna\n   Appartamento | 2 bd | 1 ba | 40 m2 living | 900 EUR/mo\n   URL: https://cubi.estate/r/gabetti_it%3A3336655\n   ID: gabetti_it:3336655\n   Last changed: 2026-09-11\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=gabetti_it%3A3336655&intent=ask\n   Tags: Monthly condo fee, No elevator, Air Conditioning, Autonomous individual heating (per-unit), Ducted air conditioning installed\n",
+ "case": "h_en02"
+}

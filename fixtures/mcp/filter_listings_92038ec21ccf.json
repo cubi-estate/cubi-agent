@@ -1,0 +1,20 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "fr",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Nice"
+  ],
+  "type": [
+   "house"
+  ],
+  "features": [
+   "Pool"
+  ]
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Maison in Nice**\n   Location: Nice, France, Provence-Alpes-Côte d'Azur\n   Maison | 296 m2 living | 3 900 000 EUR\n   URL: https://cubi.estate/r/century21_fr%3A16785076994\n   ID: century21_fr:16785076994\n   Last changed: 2026-09-02\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=century21_fr%3A16785076994&intent=ask\n   Tags: caretaker's house, Lush vegetation, fully equipped summer kitchen, Landscaped green grounds, Garage\n\n**2. Maison in Nice**\n   Location: Nice, France, Provence-Alpes-Côte d'Azur\n   Maison | 140 m2 living | 1 690 000 EUR\n   URL: https://cubi.estate/r/century21_fr%3A15869047957\n   ID: century21_fr:15869047957\n   Last changed: 2026-09-02\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=century21_fr%3A15869047957&intent=ask\n   Tags: Direct street access, bedroom with en-suite bathroom, bedroom with en-suite bathroom, Open plan kitchen living room, separate utility room\n\n**3. maison in Nice**\n   Location: Nice, France, Provence-Alpes-Côte d'Azur\n   maison | 5 bd | 2 ba | 1950 m2 living | 1 375 000 EUR\n   URL: https://cubi.estate/r/orpi_fr%3Amaison-t6-nice-06100-ea2c3d76-ef06-46f9-a282-06544ad539f6\n   ID: orpi_fr:maison-t6-nice-06100-ea2c3d76-ef06-46f9-a282-06544ad539f6\n   Last changed: 2026-09-10\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=orpi_fr%3Amaison-t6-nice-06100-ea2c3d76-ef06-46f9-a282-06544ad539f6&intent=ask\n   Tags: Swimming pool\n\n**4. maison in Nice**\n   Location: Nice, France, Provence-Alpes-Côte d'Azur\n   maison | 4 bd | 3 ba | 600 m2 living | 795 000 EUR\n   URL: https://cubi.estate/r/orpi_fr%3Amaison-t5-nice-06200-dfaf372f-0b5e-405d-8b63-fa2e9b0a92e5\n   ID: orpi_fr:maison-t5-nice-06200-dfaf372f-0b5e-405d-8b63-fa2e9b0a92e5\n   Last changed: 2026-08-31\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=orpi_fr%3Amaison-t5-nice-06200-dfaf372f-0b5e-405d-8b63-fa2e9b0a92e5&intent=ask\n   Tags: Garden, Private swimming pool, Swimming pool\n\n**5. maison in Nice**\n   Location: Nice, France, Provence-Alpes-Côte d'Azur\n   maison | 4 bd | 3 ba | 130 m2 living | 960 000 EUR\n   URL: https://cubi.estate/r/orpi_fr%3Amaison-t5-nice-06200-7a88435e-b5be-4123-8417-8794169686f8\n   ID: orpi_fr:maison-t5-nice-06200-7a88435e-b5be-4123-8417-8794169686f8\n   Last changed: 2026-08-31\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=orpi_fr%3Amaison-t5-nice-06200-7a88435e-b5be-4123-8417-8794169686f8&intent=ask\n   Tags: Garden, Private swimming pool, Swimming pool\n\n**6. maison in Nice**\n   Location: Nice, France, Provence-Alpes-Côte d'Azur\n   maison | 4 bd | 2 ba | 522 m2 living | 850 000 EUR\n   URL: https://cubi.estate/r/orpi_fr%3Amaison-t5-nice-06100-354b8d7a-df50-4237-9216-46a8400a9575\n   ID: orpi_fr:maison-t5-nice-06100-354b8d7a-df50-4237-9216-46a8400a9575\n   Last changed: 2026-08-31\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=orpi_fr%3Amaison-t5-nice-06100-354b8d7a-df50-4237-9216-46a8400a9575&intent=ask\n   Tags: Swimming pool\n",
+ "case": "h_fr02"
+}

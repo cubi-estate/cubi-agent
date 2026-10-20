@@ -1,0 +1,18 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "nl",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Den Haag"
+  ],
+  "type": [
+   "apartment"
+  ],
+  "has_parking": true
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Galerijflat in Rustenburg**\n   Location: Rustenburg, Den Haag, Zuid-Holland, South Holland\n   Galerijflat | 2 bd | 82 m2 living | 260 000 EUR\n   URL: https://cubi.estate/r/huislijn_nl%3A4436346\n   ID: huislijn_nl:4436346\n   Last changed: 2026-10-15\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=huislijn_nl%3A4436346&intent=ask\n   Tags: casement windows with solid wooden shutters, Double layer asphalt roof, Good condition, Optional storage room, District heating\n\n**2. Appartement in Morgenweide**\n   Location: Morgenweide, Den Haag, Zuid-Holland, South Holland\n   Appartement | 2 bd | 76 m2 living | 395 000 EUR\n   URL: https://cubi.estate/r/huislijn_nl%3A4436288\n   ID: huislijn_nl:4436288\n   Last changed: 2026-10-12\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=huislijn_nl%3A4436288&intent=ask\n\n**3. Portiekwoning in Moerwijk-Zuid**\n   Location: Moerwijk-Zuid, Den Haag, Zuid-Holland, South Holland\n   Portiekwoning | 2 bd | 62 m2 living | 250 000 EUR\n   URL: https://cubi.estate/r/huislijn_nl%3A4430311\n   ID: huislijn_nl:4430311\n   Last changed: 2026-10-09\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=huislijn_nl%3A4430311&intent=ask\n   Tags: Building Condition, Double layer asphalt roof, Good condition, pre-installed internet cable, Central Heating\n\n**4. Benedenwoning in Noordpolderbuurt**\n   Location: Noordpolderbuurt, Den Haag, Zuid-Holland, South Holland\n   Benedenwoning | 2 bd | 74 m2 living | 275 000 EUR\n   URL: https://cubi.estate/r/huislijn_nl%3A4430286\n   ID: huislijn_nl:4430286\n   Last changed: 2026-10-09\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=huislijn_nl%3A4430286&intent=ask\n   Tags: acesso direto ao quintal, Good condition, Good condition, Optional storage room, Single floor pitched roof\n\n**5. Portiekflat in Kampen**\n   Location: Kampen, Den Haag, Zuid-Holland, South Holland\n   Portiekflat | 2 bd | 88 m2 living | 359 000 EUR\n   URL: https://cubi.estate/r/huislijn_nl%3A4429059\n   ID: huislijn_nl:4429059\n   Last changed: 2026-10-07\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=huislijn_nl%3A4429059&intent=ask\n   Tags: Building Condition, Double layer asphalt roof, Pvc aluminum double glazed window frames, Well maintained building, Agua caliente central\n\n**6. Portiekflat in Waldeck-Noord**\n   Location: Waldeck-Noord, Den Haag, Zuid-Holland, South Holland\n   Portiekflat | 3 bd | 97 m2 living | 425 000 EUR\n   URL: https://cubi.estate/r/huislijn_nl%3A4426994\n   ID: huislijn_nl:4426994\n   Last changed: 2026-10-09\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=huislijn_nl%3A4426994&intent=ask\n   Tags: Building Condition, Elevator, Good condition, residential complex, Double Glazing\n",
+ "case": "h_nl06"
+}

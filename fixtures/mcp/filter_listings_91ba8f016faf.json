@@ -1,0 +1,21 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "en",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Barcelona"
+  ],
+  "type": [
+   "penthouse"
+  ],
+  "features": [
+   "Terrace"
+  ],
+  "min_living_area": 120.0
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. apartment/penthouse in Spain**\n   Location: Spain, Catalonia, Barcelona, Les Corts, Catalonia\n   apartment/penthouse | 5 bd | 3 ba | 212 m2 living | 1 670 000 EUR\n   URL: https://cubi.estate/r/engelvoelkers_es%3A25f29c75-02a2-5c4c-b1f7-07b2df093e59\n   ID: engelvoelkers_es:25f29c75-02a2-5c4c-b1f7-07b2df093e59\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=engelvoelkers_es%3A25f29c75-02a2-5c4c-b1f7-07b2df093e59&intent=ask\n   Tags: Senior oriented, Wheelchair Accessible, Elevator, Well maintained building, Air Conditioning\n\n**2. Ático in Sant Pere**\n   Location: Sant Pere, Sta. Caterina i la Ribera, Barcelona, Barcelona ciudad, Barcelona provincia, Catalonia\n   Ático | 4 bd | 5 ba | 250 m2 living | 4 495 000 EUR\n   URL: https://cubi.estate/r/coldwellbanker_spain_es%3A2733\n   ID: coldwellbanker_spain_es:2733\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=coldwellbanker_spain_es%3A2733&intent=ask\n   Tags: Storage and direct lift access, Elevator, Elevator, Air Conditioning, Recently Renovated\n\n**3. Ático in Sant Pere**\n   Location: Sant Pere, Sta. Caterina i la Ribera, Barcelona, Barcelona ciudad, Barcelona provincia, Catalonia\n   Ático | 2 bd | 3 ba | 109 m2 living | 1 760 000 EUR\n   URL: https://cubi.estate/r/coldwellbanker_spain_es%3A11826\n   ID: coldwellbanker_spain_es:11826\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=coldwellbanker_spain_es%3A11826&intent=ask\n   Tags: Elevator, Air Conditioning, Recently Renovated, energyClass B, High end kitchen appliances\n\n**4. Ático in Borne**\n   Location: Borne, Barcelona, Barcelona ciudad, Barcelona provincia, Catalonia\n   Ático | 3 bd | 2 ba | 172 m2 living | 725 000 EUR\n   URL: https://cubi.estate/r/coldwellbanker_spain_es%3A10651\n   ID: coldwellbanker_spain_es:10651\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=coldwellbanker_spain_es%3A10651&intent=ask\n   Tags: Elevator, Elevator, Air Conditioning, Air Conditioning, cozinhas totalmente equipadas\n\n**5. Ático in Sant Gervasi- Galvany**\n   Location: Sant Gervasi- Galvany, Barcelona, Barcelona ciudad, Barcelona provincia, Catalonia\n   Ático | 7 bd | 5 ba | 330 m2 living | 2 900 000 EUR\n   URL: https://cubi.estate/r/coldwellbanker_spain_es%3A6828\n   ID: coldwellbanker_spain_es:6828\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=coldwellbanker_spain_es%3A6828&intent=ask\n   Tags: Elevator, potential for renovation, energyClass D, Rooftop Terrace, Terrace\n\n**6. Ático in Dreta de l'Eixample**\n   Location: Dreta de l'Eixample, Barcelona, Barcelona ciudad, Barcelona provincia, Catalonia\n   Ático | 4 bd | 5 ba | 221 m2 living | 4 400 000 EUR\n   URL: https://cubi.estate/r/coldwellbanker_spain_es%3A6662\n   ID: coldwellbanker_spain_es:6662\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=coldwellbanker_spain_es%3A6662&intent=ask\n   Tags: Elevator, Energy Rating, production area on the ground floor, Balcony, multiple balconies\n",
+ "case": "h_en06"
+}

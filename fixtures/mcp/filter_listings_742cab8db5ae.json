@@ -1,0 +1,20 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "fr",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Côte d'Azur"
+  ],
+  "type": [
+   "villa"
+  ],
+  "features": [
+   "Sea View"
+  ]
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Chalet in Alpes-Maritimes**\n   Location: Alpes-Maritimes, France, Provence-Alpes-Côte d'Azur\n   Chalet | 5 bd | 2 ba | 2112 m2 living | 1 850 000 EUR\n   URL: https://cubi.estate/r/leggett%3AA47184ALK06\n   ID: leggett:A47184ALK06\n   Last changed: 2026-09-04\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=leggett%3AA47184ALK06&intent=ask\n   Tags: energyClass A, energyClass B, Bathroom with hydromassage bathtub, Fireplace, Furnished\n\n**2. Villa in La Napoule**\n   Location: La Napoule, Provence-Alpes-Côte d'Azur\n   Villa | 1386 m2 living | 3 850 000 EUR\n   URL: https://cubi.estate/r/vonpoll%3A4280086377294100\n   ID: vonpoll:4280086377294100\n   Last changed: 2026-09-14\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vonpoll%3A4280086377294100&intent=ask\n   Tags: Sea view\n\n**3. Villa in Cannes**\n   Location: Cannes, Provence-Alpes-Côte d'Azur\n   Villa | 1116 m2 living | 3 995 000 EUR\n   URL: https://cubi.estate/r/vonpoll%3A4280085942121100\n   ID: vonpoll:4280085942121100\n   Last changed: 2026-09-14\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vonpoll%3A4280085942121100&intent=ask\n   Tags: Underfloor Heating, Recently Renovated, Drive time to nearest airport, energyClass B, Fireplace\n\n**4. Villa in Cannes**\n   Location: Cannes, Provence-Alpes-Côte d'Azur\n   Villa | 825 m2 living | 6 495 000 EUR\n   URL: https://cubi.estate/r/vonpoll%3A4280085169351100\n   ID: vonpoll:4280085169351100\n   Last changed: 2026-09-14\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vonpoll%3A4280085169351100&intent=ask\n   Tags: Floor with elevator access, energyClass D, Fireplace, Floor level with elevator access, Living Area\n\n**5. Villa in Grimaud**\n   Location: Grimaud, Provence-Alpes-Côte d'Azur\n   Villa | 4600 m2 living | 5 200 000 EUR\n   URL: https://cubi.estate/r/vonpoll%3A4280084898246100\n   ID: vonpoll:4280084898246100\n   Last changed: 2026-09-14\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vonpoll%3A4280084898246100&intent=ask\n   Tags: Sea view\n\n**6. Villa in Sainte-Maxime**\n   Location: Sainte-Maxime, Provence-Alpes-Côte d'Azur\n   Villa | 151 m2 living | 2 395 000 EUR\n   URL: https://cubi.estate/r/vonpoll%3A4280084884269100\n   ID: vonpoll:4280084884269100\n   Last changed: 2026-09-14\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=vonpoll%3A4280084884269100&intent=ask\n   Tags: 170 unique hectares, privileged location right in front of the bay, casino nearby, Near a golf course, Garden\n",
+ "case": "h_fr04"
+}

@@ -40,10 +40,12 @@ class SearchFilter(BaseModel):
             value = getattr(self, key)
             if value:
                 args[key] = value
-        for key in ("min_price", "max_price", "min_bedrooms", "max_bedrooms", "min_living_area", "has_parking"):
+        for key in ("min_price", "max_price", "min_bedrooms", "max_bedrooms", "min_living_area"):
             value = getattr(self, key)
             if value is not None:
                 args[key] = value
+        if self.has_parking:  # never send false: the connector would exclude homes with parking
+            args["has_parking"] = True
         return args
 
 

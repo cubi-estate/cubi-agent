@@ -1,0 +1,19 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "es",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Granada"
+  ],
+  "type": [
+   "studio"
+  ],
+  "features": [
+   "Elevator"
+  ]
+ },
+ "is_error": false,
+ "text": "No properties matched these filters.\n"
+}

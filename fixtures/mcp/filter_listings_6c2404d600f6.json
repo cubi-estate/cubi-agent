@@ -1,0 +1,19 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "es",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Sevilla"
+  ],
+  "type": [
+   "apartment"
+  ],
+  "max_price": 250000.0,
+  "min_bedrooms": 3
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Piso in Sevilla**\n   Location: Sevilla, Spain, Andalusia\n   Piso | 4 bd | 2 ba | 105 m2 living | 199 000 EUR\n   URL: https://cubi.estate/r/tecnocasa_es%3A671379\n   ID: tecnocasa_es:671379\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=tecnocasa_es%3A671379&intent=ask\n   Tags: Elevator, design that maximises natural light and views, Bakery Nearby, Bar or cafe nearby, Hospital Nearby\n\n**2. Piso in Sevilla**\n   Location: Sevilla, Spain, Andalusia\n   Piso | 3 bd | 1 ba | 73 m2 living | 169 000 EUR\n   URL: https://cubi.estate/r/tecnocasa_es%3A671253\n   ID: tecnocasa_es:671253\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=tecnocasa_es%3A671253&intent=ask\n   Tags: Elevator, Recently Renovated, energyClass E, Bright living room with terrace access, Bakery Nearby\n\n**3. Piso in Sevilla**\n   Location: Sevilla, Spain, Andalusia\n   Piso | 3 bd | 1 ba | 78 m2 living | 160 000 EUR\n   URL: https://cubi.estate/r/tecnocasa_es%3A670747\n   ID: tecnocasa_es:670747\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=tecnocasa_es%3A670747&intent=ask\n   Tags: AZOTEA transitable, Elevator, Elevator, Air Conditioning, All rooms exterior-facing\n\n**4. Piso in Sevilla**\n   Location: Sevilla, Spain, Andalusia\n   Piso | 3 bd | 1 ba | 80 m2 living | 100 000 EUR\n   URL: https://cubi.estate/r/tecnocasa_es%3A670637\n   ID: tecnocasa_es:670637\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=tecnocasa_es%3A670637&intent=ask\n   Tags: 2 º andar, No elevator, living and dining room, Separate (closed) kitchen, Bakery Nearby\n\n**5. Piso in C. Sor Francisca Dorotea**\n   Location: C. Sor Francisca Dorotea, Sevilla, Spain, Andalusia\n   Piso | 3 bd | 1 ba | 78 m2 living | 169 000 EUR\n   URL: https://cubi.estate/r/tecnocasa_es%3A670187\n   ID: tecnocasa_es:670187\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=tecnocasa_es%3A670187&intent=ask\n   Tags: AZOTEA transitable, trastero en propiedad, energia class Em tramite, 2 frentes, Bakery Nearby\n\n**6. Piso in C. Cdad. de Sueca**\n   Location: C. Cdad. de Sueca, Sevilla, Spain, Andalusia\n   Piso | 3 bd | 1 ba | 90 m2 living | 171 000 EUR\n   URL: https://cubi.estate/r/tecnocasa_es%3A670619\n   ID: tecnocasa_es:670619\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=tecnocasa_es%3A670619&intent=ask\n   Tags: energia class Em tramite, Bakery distance, Bakery distance, Bakery distance, Bakery Nearby\n",
+ "case": "h_es01"
+}

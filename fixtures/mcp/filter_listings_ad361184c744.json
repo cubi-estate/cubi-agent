@@ -1,0 +1,17 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "fr",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Provence"
+  ],
+  "type": [
+   "land"
+  ]
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Terrain in Vedène**\n   Location: Vedène, France, Provence-Alpes-Côte d'Azur\n   Terrain | 590 m2 living | 135 000 EUR\n   URL: https://cubi.estate/r/era_fr%3A578824\n   ID: era_fr:578824\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=era_fr%3A578824&intent=ask\n\n**2. Terrain in Saint Paul De Vence**\n   Location: Saint Paul De Vence, France, Provence-Alpes-Côte d'Azur\n   Terrain | 970 m2 living | 420 000 EUR\n   URL: https://cubi.estate/r/era_fr%3A578822\n   ID: era_fr:578822\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=era_fr%3A578822&intent=ask\n\n**3. Terrain in Mazan**\n   Location: Mazan, France, Provence-Alpes-Côte d'Azur\n   Terrain | 46530 m2 living | 39 000 EUR\n   URL: https://cubi.estate/r/era_fr%3A578482\n   ID: era_fr:578482\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=era_fr%3A578482&intent=ask\n\n**4. Terrain in Saint Cannat**\n   Location: Saint Cannat, France, Provence-Alpes-Côte d'Azur\n   Terrain | 364 m2 living | 239 000 EUR\n   URL: https://cubi.estate/r/era_fr%3A578081\n   ID: era_fr:578081\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=era_fr%3A578081&intent=ask\n\n**5. Terrain in Aubignosc**\n   Location: Aubignosc, France, Provence-Alpes-Côte d'Azur\n   Terrain | 443 m2 living | 78 400 EUR\n   URL: https://cubi.estate/r/era_fr%3A576503\n   ID: era_fr:576503\n   Last changed: 2026-09-22\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=era_fr%3A576503&intent=ask\n\n**6. terrain in Sault**\n   Location: Sault, France, Provence-Alpes-Côte d'Azur\n   terrain | 20196 m2 living | 14 000 EUR\n   URL: https://cubi.estate/r/laforet_fr%3A52893521\n   ID: laforet_fr:52893521\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=laforet_fr%3A52893521&intent=ask\n",
+ "case": "h_fr05"
+}

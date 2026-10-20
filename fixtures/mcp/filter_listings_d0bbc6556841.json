@@ -1,0 +1,19 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "pt",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Lisboa"
+  ],
+  "type": [
+   "studio"
+  ],
+  "features": [
+   "Elevator"
+  ]
+ },
+ "is_error": false,
+ "text": "No properties matched these filters.\n"
+}

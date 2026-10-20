@@ -1,0 +1,17 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "es",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Granada"
+  ],
+  "type": [
+   "studio"
+  ]
+ },
+ "is_error": false,
+ "text": "Showing 3 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Estudio in Cercado Bajo de Cartuja**\n   Location: Cercado Bajo de Cartuja, Granada, Granada, Spain, Andalusia\n   Estudio | 1 ba | 55 m2 living | 120 000 EUR\n   URL: https://cubi.estate/r/spainhouses_es%3A15542008\n   ID: spainhouses_es:15542008\n   Last changed: 2026-07-15\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=spainhouses_es%3A15542008&intent=ask\n   Tags: Aluminum windows, Air Conditioning, Bomba de calor, Furnished, Kitchen equipped with appliances\n\n**2. Estudio in Centro-Sagrario**\n   Location: Centro-Sagrario, Granada, Granada, Spain, Andalusia\n   Estudio | 1 ba | 36 m2 living | 160 000 EUR\n   URL: https://cubi.estate/r/spainhouses_es%3A15539429\n   ID: spainhouses_es:15539429\n   Last changed: 2026-07-15\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=spainhouses_es%3A15539429&intent=ask\n   Tags: minimalist architecture, Recently Renovated, Bathroom with shower, open-plan concept, Studio apartment with 36 m2\n\n**3. Estudio in Cercado Bajo de Cartuja**\n   Location: Cercado Bajo de Cartuja, Granada, Granada, Spain, Andalusia\n   Estudio | 1 bd | 1 ba | 34 m2 living | 137 900 EUR\n   URL: https://cubi.estate/r/spainhouses_es%3A15539388\n   ID: spainhouses_es:15539388\n   Last changed: 2026-07-15\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=spainhouses_es%3A15539388&intent=ask\n   Tags: aislamiento, pvc windows, Central Heating, Recently Renovated, Energy Rating\n",
+ "case": "h_es05"
+}

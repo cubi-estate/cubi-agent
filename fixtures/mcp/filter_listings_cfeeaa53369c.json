@@ -1,0 +1,19 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "pt",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Matosinhos"
+  ],
+  "features": [
+   "Balcony"
+  ],
+  "min_bedrooms": 3,
+  "has_parking": true
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Apartment in Custóias**\n   Location: Custóias, Custóias, Leça do Balio e Guifões, Matosinhos, Porto, Porto District\n   Apartment | 3 bd | 109 m2 living | 405 000 EUR\n   URL: https://cubi.estate/r/imovirtual_pt%3A19277915\n   ID: imovirtual_pt:19277915\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=imovirtual_pt%3A19277915&intent=ask\n   Tags: Balcony, Garage\n\n**2. Apartment in Custóias**\n   Location: Custóias, Custóias, Leça do Balio e Guifões, Matosinhos, Porto, Porto District\n   Apartment | 3 bd | 110 m2 living | 395 000 EUR\n   URL: https://cubi.estate/r/imovirtual_pt%3A19274491\n   ID: imovirtual_pt:19274491\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=imovirtual_pt%3A19274491&intent=ask\n   Tags: Suite, Balcony, Garage\n\n**3. Venda/Apartamento in São Mamede de Infesta e Senhora da Hora**\n   Location: São Mamede de Infesta e Senhora da Hora, Matosinhos, Porto, Porto\n   Venda/Apartamento | 3 bd | 2 ba | 114 m2 living | 420 000 EUR\n   URL: https://cubi.estate/r/kw%3A84582\n   ID: kw:84582\n   Last changed: 2026-09-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=kw%3A84582&intent=ask\n   Tags: independent exterior access to both floors, energyClass E, 2 pisos, cozinhas totalmente equipadas, Spacious living room with balcony access\n\n**4. Apartment in São Mamede de Infesta e Senhora da Hora**\n   Location: São Mamede de Infesta e Senhora da Hora, Matosinhos, Porto, Portugal, Porto District\n   Apartment | 3 bd | 4 ba | 135 m2 living | 640 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A142451\n   ID: iad_pt:142451\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A142451&intent=ask\n   Tags: Metro station pedestrian access, Enhanced acoustic and thermal insulation, energyClass A, contemporary bathrooms, cozinhas totalmente equipadas\n\n**5. Apartment in São Mamede de Infesta e Senhora da Hora**\n   Location: São Mamede de Infesta e Senhora da Hora, Matosinhos, Porto, Portugal, Porto District\n   Apartment | 3 bd | 4 ba | 132 m2 living | 610 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A142450\n   ID: iad_pt:142450\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A142450&intent=ask\n   Tags: Enhanced acoustic and thermal insulation, energyClass A, Built-in Wardrobe, contemporary bathrooms, cozinhas totalmente equipadas\n\n**6. Apartment in São Mamede de Infesta e Senhora da Hora**\n   Location: São Mamede de Infesta e Senhora da Hora, Matosinhos, Porto, Portugal, Porto District\n   Apartment | 3 bd | 4 ba | 135 m2 living | 585 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A142442\n   ID: iad_pt:142442\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A142442&intent=ask\n   Tags: Metro station pedestrian access, Enhanced acoustic and thermal insulation, energyClass A, contemporary bathrooms, cozinhas totalmente equipadas\n",
+ "case": "h_pt06"
+}

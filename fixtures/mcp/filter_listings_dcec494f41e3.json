@@ -1,0 +1,16 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "nl",
+  "limit": 6,
+  "transaction_type": "rent",
+  "price_period": "month",
+  "location": [
+   "Rotterdam"
+  ],
+  "max_price": 1600.0
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Apartment in Rotterdam**\n   Location: Rotterdam, Nederland, South Holland\n   Apartment | 1 bd | 14 m2 living | 900 EUR/mo\n   URL: https://cubi.estate/r/rotsvast_nl%3AH1025010426\n   ID: rotsvast_nl:H1025010426\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=rotsvast_nl%3AH1025010426&intent=ask\n\n**2. Apartment in Rotterdam**\n   Location: Rotterdam, South Holland\n   Apartment | 2 bd | 72 m2 living | 900 EUR/mo\n   URL: https://cubi.estate/r/rentola_nl%3A40436055\n   ID: rentola_nl:40436055\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=rentola_nl%3A40436055&intent=ask\n\n**3. Apartment in South Holland**\n   Location: South Holland\n   Apartment | 1 bd | 20 m2 living | 489 EUR/mo\n   URL: https://cubi.estate/r/rentola_nl%3A40434362\n   ID: rentola_nl:40434362\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=rentola_nl%3A40434362&intent=ask\n\n**4. Room in South Holland**\n   Location: South Holland\n   Room | 1 bd | 18 m2 living | 600 EUR/mo\n   URL: https://cubi.estate/r/rentola_nl%3A40432120\n   ID: rentola_nl:40432120\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=rentola_nl%3A40432120&intent=ask\n\n**5. Room in South Holland**\n   Location: South Holland\n   Room | 1 bd | 81 m2 living | 727 EUR/mo\n   URL: https://cubi.estate/r/rentola_nl%3A40432113\n   ID: rentola_nl:40432113\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=rentola_nl%3A40432113&intent=ask\n\n**6. Apartment in South Holland**\n   Location: South Holland\n   Apartment | 2 bd | 109 m2 living | 1 450 EUR/mo\n   URL: https://cubi.estate/r/rentola_nl%3A40425504\n   ID: rentola_nl:40425504\n   Last changed: 2026-10-20\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=rentola_nl%3A40425504&intent=ask\n",
+ "case": "h_nl02"
+}

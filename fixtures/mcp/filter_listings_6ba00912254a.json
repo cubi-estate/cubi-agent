@@ -1,0 +1,17 @@
+{
+ "tool": "filter_listings",
+ "args": {
+  "lang": "en",
+  "limit": 6,
+  "transaction_type": "sale",
+  "location": [
+   "Tavira"
+  ],
+  "type": [
+   "land"
+  ]
+ },
+ "is_error": false,
+ "text": "Showing 6 properties. Total matches not counted — narrow the filters if you need an exact number.\n\n**1. Building Plot in Abrantes e Alferrarede**\n   Location: Abrantes e Alferrarede, Abrantes, Santarém, Portugal, Algarve\n   Building Plot | 17587 m2 living | 548 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A992034\n   ID: iad_pt:992034\n   Last changed: 2026-09-21\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A992034&intent=ask\n   Tags: 2 to 3 floors, Duplex, Essential infrastructure equipped, Plot Area, Residential area with ground floor commercial\n\n**2. Plot in São Miguel do Rio Torto e Rossio ao Sul do Tejo**\n   Location: São Miguel do Rio Torto e Rossio ao Sul do Tejo, Abrantes, Santarém, Portugal, Algarve\n   Plot | 1857 m2 living | 275 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A146556\n   ID: iad_pt:146556\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A146556&intent=ask\n   Tags: Needs complete rehabilitation, Project flexibility, New / Newly Built, Sun exposure, Superf&iacute;cie de pavimento total: 1701 m2\n\n**3. Plot in São Brás de Alportel**\n   Location: São Brás de Alportel, Faro, Portugal, Algarve\n   Plot | 7880 m2 living | 150 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A96304\n   ID: iad_pt:96304\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A96304&intent=ask\n   Tags: Adjacent to existing public road\n\n**4. Plot in São Brás de Alportel**\n   Location: São Brás de Alportel, Faro, Portugal, Algarve\n   Plot | 80 bd | 8779 m2 living | 4 500 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A81387\n   ID: iad_pt:81387\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A81387&intent=ask\n   Tags: approved project, Construction area, modern architecture, Paid licenses, Type T0\n\n**5. Plot in Conceição e Cabanas de Tavira**\n   Location: Conceição e Cabanas de Tavira, Tavira, Faro, Portugal, Faro District\n   Plot | 4662 m2 living | 35 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A72887\n   ID: iad_pt:72887\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A72887&intent=ask\n   Tags: Building Area: Maximum 4000 m², agricultural land is highly fertile\n\n**6. Plot in São Brás de Alportel**\n   Location: São Brás de Alportel, Faro, Portugal, Algarve\n   Plot | 1350 m2 living | 60 000 EUR\n   URL: https://cubi.estate/r/iad_pt%3A134056\n   ID: iad_pt:134056\n   Last changed: 2026-09-23\n   Ask Cubi: https://www.cubi.estate/chat?listing_id=iad_pt%3A134056&intent=ask\n   Tags: 1300 square meters of building capacity, Flat Land, quiet location, walls of olive, almond\n",
+ "case": "h_en05"
+}
