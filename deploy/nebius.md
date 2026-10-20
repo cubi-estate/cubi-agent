@@ -52,7 +52,9 @@ curl -s "$ENDPOINT_URL/api/health"    # want "forwarded": true
 An endpoint's image can't be changed in place: create a new endpoint, smoke
 test it, then delete the old one. Its URL changes, so the URL given to judges
 is a stable redirect (`https://www.cubi.estate/agent` → the current endpoint),
-not the endpoint URL itself.
+not the endpoint URL itself. The redirect is `CUBI_AGENT_DEMO_URL` in
+`cubi-estate/property_chat/next.config.ts` (a 307, so browsers don't cache it).
+Change it to the new endpoint's URL and push to `main`; Vercel deploys it.
 
 ## Cost
 

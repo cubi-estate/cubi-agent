@@ -31,8 +31,8 @@ Gate: the public URL works for an outside tester. **Met.**
 
 ## Open
 
-- A stable link for Devpost (proposed: `www.cubi.estate/agent` → the endpoint
-  URL), because an image change means a new endpoint and a new URL.
+- ~~Stable link for Devpost~~: **https://www.cubi.estate/agent** is a 307 to the
+  endpoint (cubi-estate `2bb0b20`), checked live for both www and apex.
 - Warm the Cubi read set before judging, or have the agent retry
   `filter_listings` once before falling back.
 - Monitor uptime until Dec 15. Billing runs from create to delete.
