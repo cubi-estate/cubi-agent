@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Cubi Agent</title>
+  <meta name="description" content="Search European homes in six languages with an open-model agent: NVIDIA Nemotron on Nebius Token Factory, over Cubi Estate's listings.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f766e'/%3E%3Cpath d='M8 16 16 9l8 7v8h-5v-5h-6v5H8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>Cubi Agent</h1>
+        <p class="sub">European homes, any of six languages · NVIDIA Nemotron on Nebius Token Factory</p>
+      </div>
+    </div>
+    <button id="new" class="ghost" type="button" title="Start a new conversation">New chat</button>
+  </header>
+
+  <main id="log" aria-live="polite">
+    <section id="empty" class="empty">
+      <h2>What are you looking for?</h2>
+      <p>Ask for homes in your own language, then ask about one: its price against similar homes, or how to contact the agent. Or compare two places to live.</p>
+      <div class="examples" id="examples">
+        <button type="button">2-bed apartment in Lisbon under 450k</button>
+        <button type="button">Wohnung mit Balkon in München bis 600.000 Euro</button>
+        <button type="button">Moradia T3 com piscina em Loulé</button>
+        <button type="button">Appartement à louer à Lyon, 1 200 € par mois max</button>
+        <button type="button">Compare schools and public transport in Porto and Valencia</button>
+      </div>
+    </section>
+  </main>
+
+  <form id="form" class="composer" autocomplete="off">
+    <label for="input" class="sr">Message</label>
+    <textarea id="input" rows="1" maxlength="500" placeholder="Ask in any of six languages…" required></textarea>
+    <button id="send" type="submit" aria-label="Send">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 11.5 21 3l-8.5 18-2-7.5z" fill="currentColor"/></svg>
+    </button>
+  </form>
+
+  <footer class="notice">
+    Your messages go to <b>Nebius Token Factory</b> (NVIDIA Nemotron; served from the US or EU) and to
+    <a href="https://www.cubi.estate" target="_blank" rel="noopener">Cubi Estate</a>'s listing connector;
+    area questions also go to <b>Tavily</b> (US) as place names and topics. This demo keeps a conversation in memory
+    for 30 minutes and stores no chat text.
+    Listings link to their original sources. Asking prices aren't valuations.
+    <a href="https://www.cubi.estate/privacy-policy" target="_blank" rel="noopener">Privacy</a> ·
+    <a href="https://github.com/cubi-estate/cubi-agent" target="_blank" rel="noopener">Source</a>
+  </footer>
+
+  <template id="tpl-turn">
+    <article class="turn">
+      <div class="bubble user"></div>
+      <details class="steps" open>
+        <summary><span class="spinner" aria-hidden="true"></span><span class="label">Working…</span></summary>
+        <ol></ol>
+      </details>
+      <div class="bubble bot" hidden></div>
+      <div class="filter" hidden></div>
+      <div class="cards"></div>
+      <div class="followups"></div>
+    </article>
+  </template>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -30,12 +30,28 @@ cp .env.example .env   # add NEBIUS_API_KEY (and TAVILY_API_KEY later)
 .venv/bin/python -m pytest -q                   # offline tests
 ```
 
+## Run it
+
+```bash
+.venv/bin/python cli.py                                            # chat in the terminal
+.venv/bin/uvicorn agent.server:app --port 8080                     # web app → http://localhost:8080
+CUBI_OFFLINE=1 .venv/bin/uvicorn agent.server:app --port 8080      # same, replaying fixtures/ (no connector calls)
+```
+
+The web app streams each turn as NDJSON from `POST /api/chat`. It shows what the
+agent does as a short action log, never model reasoning. Homes appear as cards
+built from the connector's output, linking to the original listing. Limits for a
+public deployment are environment variables in `agent/server.py`: per-IP turns per
+minute and per day, and a daily turn budget for the whole demo.
+
 ## Data and privacy
 
 Requests go to Nebius Token Factory (model inference; some Nemotron models are served
 from the US region) and to Cubi Estate's connector, which logs tool calls as described in
-the [Cubi Estate privacy policy](https://www.cubi.estate/privacy-policy). This repo stores
-no conversations.
+the [Cubi Estate privacy policy](https://www.cubi.estate/privacy-policy). Area questions
+send place names and topics, never listing data, to Tavily (US). The web app keeps a
+conversation in memory for 30 minutes after the last message. It writes no chat text
+to disk or logs; the log records counters only.
 
 ## License
 

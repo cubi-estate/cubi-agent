@@ -232,8 +232,8 @@ def test_offline_turn_end_to_end(tmp_path):
     answer = ("Apartments in Porto:\n"
               "1. 2-bed, €310k — https://cubi.estate/r/test_pt%3A1\n"
               "2. 4-bed villa, €390k, Foz — https://cubi.estate/r/test_pt%3A99\n")
-    llm = _ScriptedLLM([SimpleNamespace(content="", tool_calls=[_tool_call("search_homes", {"request": "2-bed in Porto under 400k"})]),
-                        SimpleNamespace(content=answer, tool_calls=None)], f.model_dump_json())
+    # The search runs in code (no model round trip); the model only writes the summary.
+    llm = _ScriptedLLM([SimpleNamespace(content=answer, tool_calls=None)], f.model_dump_json())
     agent = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=llm)
     events = list(agent.turn("2-bed apartment in Porto under 400k"))
     final = events[-1]
@@ -243,6 +243,8 @@ def test_offline_turn_end_to_end(tmp_path):
     assert agent.stats["filter_searches"] == 1 and agent.stats["fallback_searches"] == 0
     assert any(name.startswith("mcp filter_listings") for name, _ in final["timings"])
     assert [c["id"] for c in final["listings"]] == ["test_pt:1", "test_pt:2"]  # cards come from the tool
+    loop_calls = [c for c in llm.calls if not c.get("response_format")]
+    assert len(loop_calls) == 1 and not any(t["function"]["name"] == "search_homes" for t in loop_calls[0]["tools"] or [])
 
 
 def test_offline_miss_is_an_error_not_a_crash(tmp_path):

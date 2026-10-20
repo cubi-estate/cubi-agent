@@ -73,20 +73,51 @@ BASE_RULES = (
 )
 
 
-def _describe(f: SearchFilter) -> str:
-    bits = [f.transaction_type]
+# Words for the one-line filter summary, per UI language. Types and features
+# are the schema's canonical names; anything missing stays in English.
+_WORDS = {
+    "en": {"sale": "for sale", "rent": "to rent", "bed": "bed", "parking": "parking", "in": "in", "month": "/month"},
+    "pt": {"sale": "venda", "rent": "arrendamento", "bed": "quartos", "parking": "estacionamento", "in": "em", "month": "/mês",
+           "apartment": "apartamento", "house": "moradia", "villa": "moradia", "studio": "estúdio", "land": "terreno",
+           "Pool": "piscina", "Terrace": "terraço", "Balcony": "varanda", "Garden": "jardim", "Elevator": "elevador",
+           "Sea View": "vista mar"},
+    "es": {"sale": "venta", "rent": "alquiler", "bed": "hab.", "parking": "garaje", "in": "en", "month": "/mes",
+           "apartment": "piso", "house": "casa", "villa": "chalet", "studio": "estudio", "penthouse": "ático", "land": "terreno",
+           "Pool": "piscina", "Terrace": "terraza", "Balcony": "balcón", "Garden": "jardín", "Elevator": "ascensor",
+           "Sea View": "vistas al mar"},
+    "fr": {"sale": "à vendre", "rent": "à louer", "bed": "ch.", "parking": "parking", "in": "à", "month": "/mois",
+           "apartment": "appartement", "house": "maison", "land": "terrain", "Pool": "piscine", "Terrace": "terrasse",
+           "Balcony": "balcon", "Garden": "jardin", "Elevator": "ascenseur", "Sea View": "vue mer"},
+    "de": {"sale": "Kauf", "rent": "Miete", "bed": "Schlafzi.", "parking": "Stellplatz", "in": "in", "month": "/Monat",
+           "apartment": "Wohnung", "house": "Haus", "land": "Grundstück", "Pool": "Pool", "Terrace": "Terrasse",
+           "Balcony": "Balkon", "Garden": "Garten", "Elevator": "Aufzug", "Sea View": "Meerblick"},
+    "nl": {"sale": "koop", "rent": "huur", "bed": "slpk", "parking": "parkeerplaats", "in": "in", "month": "/maand",
+           "apartment": "appartement", "house": "huis", "land": "grond", "Pool": "zwembad", "Terrace": "terras",
+           "Balcony": "balkon", "Garden": "tuin", "Elevator": "lift", "Sea View": "zeezicht"},
+}
+
+
+def _describe(f: SearchFilter, lang: str = "en") -> str:
+    w = {**_WORDS["en"], **_WORDS.get(lang, {})}
+    tr = lambda x: w.get(x, x)  # noqa: E731
+    bits = [tr(f.transaction_type)]
     if f.type:
-        bits.append("/".join(f.type))
+        bits.append("/".join(tr(t) for t in f.type))
     if f.min_bedrooms:
-        bits.append(f"{f.min_bedrooms}+ bed")
-    if f.max_price:
-        bits.append(f"≤ €{f.max_price:,.0f}" + ("/month" if f.transaction_type == "rent" else ""))
+        bits.append(f"{f.min_bedrooms}+ {w['bed']}")
+    month = w["month"] if f.transaction_type == "rent" else ""
+    if f.min_price and f.max_price:
+        bits.append(f"€{f.min_price:,.0f}–{f.max_price:,.0f}{month}")
+    elif f.max_price:
+        bits.append(f"≤ €{f.max_price:,.0f}{month}")
+    elif f.min_price:
+        bits.append(f"≥ €{f.min_price:,.0f}{month}")
     if f.features:
-        bits.append("+".join(f.features))
+        bits.append(" + ".join(tr(x) for x in f.features))
     if f.has_parking:
-        bits.append("parking")
+        bits.append(w["parking"])
     if f.location:
-        bits.append("in " + ", ".join(f.location))
+        bits.append(f"{w['in']} " + ", ".join(f.location))
     return " · ".join(bits)
 
 
@@ -250,13 +281,42 @@ class Agent:
         tool_text, used = "", set()
         extra = None if LOOP_THINKING else llm.NO_THINK
 
+        def run_call(name: str, args: dict, call_id: str) -> Iterator[dict]:
+            nonlocal tool_text
+            used.add(name)
+            try:
+                result = ""
+                for ev in self._run_tool(name, args):
+                    if isinstance(ev, dict):
+                        yield ev
+                    else:
+                        result = ev
+            except MCPError as e:
+                result = f"error: {e}"
+                yield {"type": "action", "text": f"Tool error: {e}"}
+            tool_text += result
+            messages.append({"role": "tool", "tool_call_id": call_id, "content": result[:TOOL_TEXT_CAP]})
+            turn_msgs.append({"role": "tool", "tool_call_id": call_id, "content": result[:HISTORY_TOOL_CAP]})
+
+        # A find-homes turn that doesn't point at a card on screen is a search: run it
+        # in code. Saves a round trip, and the model can't answer "from memory" with no
+        # cards — it did, when a search was repeated word for word.
+        if skill.name == "find-homes" and ordinals.ordinal(text, len(self.shown)) is None:
+            call = {"id": "auto_search", "type": "function",
+                    "function": {"name": "search_homes", "arguments": json.dumps({"request": text}, ensure_ascii=False)}}
+            call_msg = {"role": "assistant", "content": "", "tool_calls": [call]}
+            messages.append(call_msg)
+            turn_msgs.append(call_msg)
+            yield from run_call("search_homes", {"request": text}, "auto_search")
+            tools = [t for t in tools if t["function"]["name"] != "search_homes"]
+
         answer = ""
         for step in range(MAX_STEPS + 1):
             force_answer = step == MAX_STEPS
             t_llm = time.monotonic()
             r = self.cli.chat.completions.create(
                 model=llm.model(LOOP_ROLE), messages=messages, temperature=0.2, max_tokens=1500,
-                tools=None if force_answer else tools, extra_body=extra,
+                tools=None if force_answer or not tools else tools, extra_body=extra,
             )
             out_tok = (r.usage.completion_tokens or 0) if r.usage else 0
             self._timed(f"loop step {step} ({llm.model(LOOP_ROLE).split('/')[-1]}, {out_tok} tokens out)", t_llm)
@@ -276,20 +336,7 @@ class Agent:
                     args = json.loads(tc.function.arguments or "{}")
                 except json.JSONDecodeError:
                     args = {}
-                used.add(tc.function.name)
-                try:
-                    result = ""
-                    for ev in self._run_tool(tc.function.name, args):
-                        if isinstance(ev, dict):
-                            yield ev
-                        else:
-                            result = ev
-                except MCPError as e:
-                    result = f"error: {e}"
-                    yield {"type": "action", "text": f"Tool error: {e}"}
-                tool_text += result
-                messages.append({"role": "tool", "tool_call_id": tc.id, "content": result[:TOOL_TEXT_CAP]})
-                turn_msgs.append({"role": "tool", "tool_call_id": tc.id, "content": result[:HISTORY_TOOL_CAP]})
+                yield from run_call(tc.function.name, args, tc.id)
 
         for c in self.mcp.calls[calls0:]:
             self.timings.append((f"mcp {c['tool']}" + (" (error)" if c["is_error"] else ""), c["seconds"]))
