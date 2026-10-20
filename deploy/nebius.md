@@ -49,12 +49,19 @@ curl -s "$ENDPOINT_URL/api/health"    # want "forwarded": true
 
 ## Updating
 
-An endpoint's image can't be changed in place: create a new endpoint, smoke
-test it, then delete the old one. Its URL changes, so the URL given to judges
-is a stable redirect (`https://www.cubi.estate/agent` → the current endpoint),
-not the endpoint URL itself. The redirect is `CUBI_AGENT_DEMO_URL` in
-`cubi-estate/property_chat/next.config.ts` (a 307, so browsers don't cache it).
-Change it to the new endpoint's URL and push to `main`; Vercel deploys it.
+The endpoint runs `ghcr.io/cubi-estate/cubi-agent:latest`, and a restart pulls
+the image again under the **same URL** (verified 2026-10-20: build `d885cf4` →
+`fb98742`). To redeploy:
+
+```bash
+git push origin main                          # CI: tests, then the image (:latest and :<sha>)
+nebius ai endpoint restart aiendpoint-e04mtgmr4t1stq5k81
+curl -s https://www.cubi.estate/agent/api/health   # "build" = the new commit
+```
+
+Only *recreating* the endpoint (a new size or new secrets) changes the URL. Then
+update `CUBI_AGENT_DEMO_URL` in `cubi-estate/property_chat/next.config.ts`, the
+307 behind `https://www.cubi.estate/agent`, and push to `main` (Vercel deploys).
 
 ## Cost
 
@@ -65,14 +72,13 @@ endpoint stop`) when it isn't needed. Judging runs until Dec 15.
 
 | | |
 |---|---|
-| endpoint | `aiendpoint-e04ka37zfce17bcjb7` (`cubi-agent-demo`) |
-| URL | https://port8080-mjzwgfk7vxespzx.tunnel.applications.eu-west2.nebius.cloud |
+| endpoint | `aiendpoint-e04mtgmr4t1stq5k81` (`cubi-agent`) |
+| URL | https://port8080-myw5s0tbthpk9rt.tunnel.applications.eu-west2.nebius.cloud, behind https://www.cubi.estate/agent |
 | project | `default-project-eu-west2` (Paris). eu-north1 has a CPU quota of 0 for this tenant |
 | size | `cpu-d3` / `2vcpu-8gb`, not preemptible |
-| image | `ghcr.io/cubi-estate/cubi-agent:b2c62256cec846ccfb6062ba7021aadd3d020033` |
+| image | `ghcr.io/cubi-estate/cubi-agent:latest`; `/api/health` → `build` names the commit |
 | secrets | MysteryBox `cubi-agent-env` (`mbsec-e04s94mfh3fqmgyc9x`): `NEBIUS_API_KEY`, `TAVILY_API_KEY`, `CUBI_MCP_TOKEN` via `--env-secret` |
 | auth | none (public page); the app's own limits apply |
 
-Checked from outside: `/api/health` → `forwarded: true`, so per-IP limits see
-real visitors. A Lisbon search ran through the structured filter in 3.3s
-(the very first call hit a cold cache on Cubi's side and fell back to free text, 34s).
+The first endpoint (`aiendpoint-e04ka37zfce17bcjb7`, pinned to a sha) was deleted
+once the redirect moved.
