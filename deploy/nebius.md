@@ -58,3 +58,19 @@ not the endpoint URL itself.
 
 Billed from create to delete, idle included. Stop the endpoint (`nebius ai
 endpoint stop`) when it isn't needed. Judging runs until Dec 15.
+
+## Current deployment (2026-10-20)
+
+| | |
+|---|---|
+| endpoint | `aiendpoint-e04ka37zfce17bcjb7` (`cubi-agent-demo`) |
+| URL | https://port8080-mjzwgfk7vxespzx.tunnel.applications.eu-west2.nebius.cloud |
+| project | `default-project-eu-west2` (Paris). eu-north1 has a CPU quota of 0 for this tenant |
+| size | `cpu-d3` / `2vcpu-8gb`, not preemptible |
+| image | `ghcr.io/cubi-estate/cubi-agent:b2c62256cec846ccfb6062ba7021aadd3d020033` |
+| secrets | MysteryBox `cubi-agent-env` (`mbsec-e04s94mfh3fqmgyc9x`): `NEBIUS_API_KEY`, `TAVILY_API_KEY`, `CUBI_MCP_TOKEN` via `--env-secret` |
+| auth | none (public page); the app's own limits apply |
+
+Checked from outside: `/api/health` → `forwarded: true`, so per-IP limits see
+real visitors. A Lisbon search ran through the structured filter in 3.3s
+(the very first call hit a cold cache on Cubi's side and fell back to free text, 34s).
