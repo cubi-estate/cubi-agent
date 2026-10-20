@@ -223,8 +223,12 @@ async def reset(body: dict):
 
 
 @app.get("/api/health")
-async def health():
-    return JSONResponse({"ok": True, "sessions": len(sessions)})
+async def health(request: Request):
+    # `forwarded` tells an operator whether the platform's proxy passes the client
+    # address; without it every visitor shares one per-IP limit.
+    return JSONResponse({"ok": True, "sessions": len(sessions),
+                         "forwarded": bool(request.headers.get("x-forwarded-for")),
+                         "trust_proxy": TRUST_PROXY})
 
 
 @app.get("/")
