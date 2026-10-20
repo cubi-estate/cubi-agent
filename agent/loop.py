@@ -245,8 +245,7 @@ class Agent:
             self.stats["tavily_searches"] = self.stats.get("tavily_searches", 0) + st["searches"]
             self.timings.append((f"tavily ({st['searches']} searches)", st["seconds"]))
             self.sources.update(st["sources"])
-            yield (text + f"\n\nCite sources by their number, e.g. [S2], right after the claim — never write "
-                   f"URLs. Write the whole answer in {LANG_NAMES.get(self.lang, 'English')}.")
+            yield (text + "\n\nCite sources by their number, e.g. [S2], right after the claim — never write URLs.")
             return
         label = {"get_listing": "Opening the listing", "compare_asking_prices": "Comparing asking prices nearby",
                  "get_contact_options": "Looking up contact options"}.get(name, name)
@@ -264,7 +263,15 @@ class Agent:
         # The detected language of this turn, always: the model copies an earlier
         # turn's lang from history (an English question got a Dutch contact reply).
         args["lang"] = self.lang
-        yield self.mcp.call_tool(name, args)["text"]
+        res = self.mcp.call_tool(name, args)
+        if res["is_error"]:
+            # Said plainly, or the model explains the failure itself ("probably too few
+            # comparables") — a reason nobody measured.
+            yield {"type": "action", "text": f"{label}: not available right now"}
+            yield (f"error: the {name} call failed ({res['text'][:200].strip()}). Tell the user this could "
+                   f"not be checked right now and offer to try again; do not guess a reason or a result.")
+            return
+        yield res["text"]
 
     # ---- turn --------------------------------------------------------------
     def turn(self, text: str) -> Iterator[dict]:
@@ -297,7 +304,12 @@ class Agent:
                 result = f"error: {e}"
                 yield {"type": "action", "text": f"Tool error: {e}"}
             tool_text += result
-            messages.append({"role": "tool", "tool_call_id": call_id, "content": result[:TOOL_TEXT_CAP]})
+            # Named at the end of every tool result, where the model looks last: a
+            # system-prompt rule alone lost to history (an English question after
+            # Dutch turns was answered in Dutch, live 2026-10-20).
+            lang_note = f"\n\n[Answer in {LANG_NAMES.get(self.lang, 'English')}.]"
+            messages.append({"role": "tool", "tool_call_id": call_id,
+                             "content": result[:TOOL_TEXT_CAP] + lang_note})
             turn_msgs.append({"role": "tool", "tool_call_id": call_id, "content": result[:HISTORY_TOOL_CAP]})
 
         # A find-homes turn that doesn't point at a card on screen is a search: run it

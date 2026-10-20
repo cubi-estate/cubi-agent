@@ -352,3 +352,13 @@ def test_connector_calls_use_this_turns_language(tmp_path):
     agent_.mcp.call_tool = lambda name, args: sent.append(args) or {"text": "ok", "is_error": False}
     list(agent_._run_tool("get_contact_options", {"listing_id": "test_pt:1", "lang": "nl"}))
     assert sent == [{"listing_id": "test_pt:1", "lang": "en"}]
+
+
+def test_tool_failure_is_reported_as_failure(tmp_path):
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=SimpleNamespace())
+    agent_.shown = listings.parse(CARDS)
+    agent_.seen_refs = {"test_pt:1", "test_pt:2"}
+    agent_.lang, agent_._message = "en", "is #2 overpriced?"
+    out = list(agent_._run_tool("compare_asking_prices", {}))
+    assert out[-1].startswith("error: the compare_asking_prices call failed")
+    assert "do not guess" in out[-1]
