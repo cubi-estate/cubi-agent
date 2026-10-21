@@ -306,6 +306,9 @@ def test_research_area_numbers_sources_and_links_citations(monkeypatch):
     ans = 'Porto has bilingual schools [S1]【{"id":0,"cursor":0}】. Valencia too [S1, S2]. Made up [S9].'
     out, n = tavily_tool.link_citations(ans, st["sources"])
     assert n == 3 and "【" not in out and "[S9]" not in out
+    wide, nw = tavily_tool.link_citations("Porto has schools【S1】 and so does Valencia【S1，S2】.", st["sources"])
+    assert nw == 3 and "schools [S1](https://example.org/porto)" in wide and "【" not in wide
+    assert "[S1](https://example.org/porto) [S2](https://example.org/valencia)." in wide
     assert "[S1](https://example.org/porto)" in out and "[S2](https://example.org/valencia)" in out
     assert "**Sources**\n- [S1](https://example.org/porto)" in out
     bare, n0 = tavily_tool.link_citations("Both are fine.", st["sources"], "de")
@@ -362,3 +365,57 @@ def test_tool_failure_is_reported_as_failure(tmp_path):
     out = list(agent_._run_tool("compare_asking_prices", {}))
     assert out[-1].startswith("error: the compare_asking_prices call failed")
     assert "do not guess" in out[-1]
+
+
+def test_multi_place_search_runs_once_per_place(tmp_path):
+    """Live 2026-10-21: Porto + Valencia in one filter came back all Valencia, and the
+    model said Porto had nothing. Each place now gets its own search."""
+    vlc = CARDS.replace("test_pt", "test_es").replace("Porto, Portugal, Porto District", "Valencia, Spain")
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=SimpleNamespace())
+    sent = []
+
+    def call(name, args):
+        sent.append(args)
+        return {"is_error": False, "text": CARDS if args["location"] == ["Porto"] else vlc}
+
+    agent_.mcp.call_tool = call
+    f = _f(location=["Porto", "Valencia"], type=["apartment"], max_price=400000)
+    res, _ = _drain(agent_._filter_per_place(f.to_filter_args(limit=6), ["Porto", "Valencia"]))
+    assert [a["location"] for a in sent] == [["Porto"], ["Valencia"]] and {a["limit"] for a in sent} == {3}
+    cards = listings.parse(res["text"])
+    assert [c["n"] for c in cards] == [1, 2, 3, 4]
+    assert [c["id"] for c in cards] == ["test_pt:1", "test_pt:2", "test_es:1", "test_es:2"]
+    assert "Porto: 2 shown; Valencia: 2 shown" in res["text"]
+    assert "Long description" not in res["text"]
+
+
+def _drain(gen):
+    try:
+        while True:
+            next(gen)
+    except StopIteration as stop:
+        return stop.value
+
+
+def test_source_date_falls_back_to_the_url():
+    from agent.tavily_tool import source_date
+    assert source_date({"url": "https://x.eu/news/free-sundays-2022-05-09_en"}) == "2022-05-09 (from the URL)"
+    assert source_date({"url": "https://x.com/2024/03/guide"}) == "2024-03 (from the URL)"
+    assert source_date({"url": "https://x.com/guide-123456"}) is None
+    assert source_date({"url": "https://x.com/2022-05-09", "published_date": "2025-01-02"}) == "2025-01-02"
+
+
+def test_uncited_area_answer_is_retried_once(monkeypatch, tmp_path):
+    src = {"S1": {"url": "https://example.org/porto", "title": "Porto schools", "date": None}}
+    monkeypatch.setattr(tavily_tool, "research_area", lambda places, topics: ("[S1] Porto schools", {
+        "searches": 1, "seconds": 0.1, "sources": src}))
+    llm = _ScriptedLLM([
+        SimpleNamespace(content="", tool_calls=[_tool_call("research_area", {"places": ["Porto, Portugal"], "topics": ["schools"]})]),
+        SimpleNamespace(content="Porto has many schools.", tool_calls=None),
+        SimpleNamespace(content="Porto has many schools [S1].", tool_calls=None),
+    ], "{}")
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=llm)
+    final = list(agent_.turn("Compare schools in Porto and Valencia"))[-1]
+    assert final["skill"] == "compare-areas"
+    assert "[S1](https://example.org/porto)" in final["text"] and "one by one" not in final["text"]
+    assert agent_.stats["citation_retries"] == 1

@@ -23,7 +23,10 @@ model produced 6/6 valid extractions, and latency fell from 3–9s to about 1s
 **2. Internal citation markup reaches the answer.** Given web sources to cite, Super
 wrote `【{"id":0,"cursor":0,"loc":0}】` in place of links, in two of two runs. We
 now give the model numbered sources (`[S1]`) without URLs, strip `【…】` in code,
-and link the numbers ourselves (`agent/tavily_tool.py`).
+and link the numbers ourselves (`agent/tavily_tool.py`). Even then, Super often wrote
+our own numbers in the same brackets, `【S1】`, so the strip removed real citations
+too, and every English answer in a rehearsal came out uncited. We now read `【S1】` as
+`[S1]` before stripping.
 - *Would help:* a documented citation convention for Nemotron, or the serving layer
   stripping this markup when the client didn't ask for it.
 

@@ -113,13 +113,29 @@ def research_area(places: list[str], topics: list[str], http: httpx.Client | Non
                 if sid is None:
                     sid = seen[url] = f"S{len(seen) + 1}"
                     sources[sid] = {"url": url, "title": (res.get("title") or "").strip(),
-                                    "date": res.get("published_date")}
+                                    "date": source_date(res)}
                 excerpt = " ".join((res.get("content") or "").split())[:EXCERPT_CHARS]
-                date = res.get("published_date") or "undated"
+                date = sources[sid]["date"] or "undated"
                 out.append(f"[{sid}] {sources[sid]['title']} ({_domain(url)}, {date})\n   {excerpt}")
         out.append("")
     stats["sources"] = sources
     return "\n".join(out), stats
+
+
+_URL_DATE = re.compile(r"(?<!\d)(20\d\d)[-/_](0[1-9]|1[0-2])(?:[-/_](0[1-9]|[12]\d|3[01]))?(?!\d)")
+
+
+def source_date(res: dict) -> str | None:
+    """Tavily's published_date, else a date written in the URL (".../2022-05-09_en").
+
+    General-topic results came back without published_date every time, and the
+    model then dated an old page to this year (a 2022 announcement told as 2026)."""
+    if res.get("published_date"):
+        return str(res["published_date"])
+    m = _URL_DATE.search(res.get("url") or "")
+    if not m:
+        return None
+    return "-".join(g for g in m.groups() if g) + " (from the URL)"
 
 
 def query_for(place: str, topic: str) -> str:
@@ -148,10 +164,20 @@ def _domain(url: str) -> str:
 _JUNK_CITATION = re.compile(r"【[^】]*】")
 
 
+CITATION = re.compile(r"\[((?:S\d+\s*,\s*)*S\d+)\](?!\()")
+_WIDE_CITATION = re.compile(r"【\s*((?:S\d+\s*[,，]\s*)*S\d+)\s*】")
+
+
+def normalise_citations(answer: str) -> str:
+    """Nemotron often cites as 【S1】; make it [S1] before the junk markup is stripped,
+    or the real citations go with it (live 2026-10-21: every source dropped)."""
+    return _WIDE_CITATION.sub(lambda m: "[" + re.sub(r"\s*[,，]\s*", ", ", m.group(1)) + "]", answer)
+
+
 def link_citations(answer: str, sources: dict[str, dict], lang: str = "en") -> tuple[str, int]:
     """[S3] → [S3](url). Unknown ids and the model's internal citation markup are removed.
     Returns (answer, citations linked)."""
-    answer = _JUNK_CITATION.sub("", answer)
+    answer = _JUNK_CITATION.sub("", normalise_citations(answer))
     n = 0
 
     def repl(m: re.Match) -> str:
@@ -161,7 +187,8 @@ def link_citations(answer: str, sources: dict[str, dict], lang: str = "en") -> t
         n += len(links)
         return " ".join(links)
 
-    answer = re.sub(r"\[((?:S\d+\s*,\s*)*S\d+)\](?!\()", repl, answer)
+    answer = CITATION.sub(repl, answer)
+    answer = re.sub(r"(?<=[^\s(\[])\[(S\d+)\]\(", r" [\1](", answer)  # "schools[S1]" → "schools [S1]"
     answer = re.sub(r"[ \t]+([.,;:])", r"\1", answer)
     return answer.rstrip() + "\n\n" + _footer(answer, sources, n, lang), n
 
@@ -170,7 +197,7 @@ _SOURCES = {"en": ("Sources", "The answer above does not cite them one by one; c
             "pt": ("Fontes", "A resposta acima não as cita uma a uma; confirme antes de confiar nela."),
             "es": ("Fuentes", "La respuesta no las cita una por una; compruébelo antes de fiarse."),
             "fr": ("Sources", "La réponse ci-dessus ne les cite pas une à une ; vérifiez avant de vous y fier."),
-            "de": ("Quellen", "Die Antwort oben belegt sie nicht einzeln; bitte vor dem Verlassen darauf prüfen."),
+            "de": ("Quellen", "Die Antwort oben belegt sie nicht einzeln; bitte prüfen, bevor Sie sich darauf verlassen."),
             "nl": ("Bronnen", "Het antwoord hierboven verwijst er niet per bewering naar; controleer dit eerst.")}
 
 

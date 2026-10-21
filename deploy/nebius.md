@@ -56,7 +56,7 @@ the image again under the **same URL** (verified 2026-10-20: build `d885cf4` →
 ```bash
 git push origin main                          # CI: tests, then the image (:latest and :<sha>)
 nebius ai endpoint restart aiendpoint-e04mtgmr4t1stq5k81
-curl -s https://www.cubi.estate/agent/api/health   # "build" = the new commit
+curl -s "$(curl -sLo /dev/null -w "%{url_effective}" https://www.cubi.estate/agent)/api/health"   # "build" = the new commit
 ```
 
 Only *recreating* the endpoint (a new size or new secrets) changes the URL. Then
@@ -82,3 +82,11 @@ endpoint stop`) when it isn't needed. Judging runs until Dec 15.
 
 The first endpoint (`aiendpoint-e04ka37zfce17bcjb7`, pinned to a sha) was deleted
 once the redirect moved.
+
+## Uptime
+
+`.github/workflows/uptime.yml` runs every 30 minutes: it follows the
+`www.cubi.estate/agent` redirect, wants `"ok":true` from `/api/health`, and checks
+that `mcp.cubi.estate/mcp` answers below HTTP 500. A failed scheduled run emails
+the repo's watchers. GitHub pauses schedules after 60 days without a commit, so
+keep a commit landing before mid-December, or run it by hand (`gh workflow run uptime`).

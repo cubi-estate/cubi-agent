@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import os
 import time
-from typing import Iterator
+from typing import Generator, Iterator
 
 from . import extract as extractmod
 from . import guards, lang as langmod, listings, llm, ordinals, skills as skillsmod, tavily_tool
@@ -30,6 +30,9 @@ from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
 
 MAX_STEPS = 5
+CITE_AGAIN = ("Rewrite that answer with the same content, putting the number of the source each point comes "
+              "from right after it, like [S2]. Drop any point no source supports. Answer in {lang}.")
+MAX_SEARCH_PLACES = 3  # a multi-place search runs once per place, up to this many
 LANG_NAMES = {"en": "English", "pt": "European Portuguese", "es": "Spanish", "fr": "French", "de": "German",
               "nl": "Dutch"}
 TOOL_TEXT_CAP = 12000
@@ -180,6 +183,48 @@ class Agent:
             return self.shown[0]["id"], "the only card on screen"
         return None, "unknown"
 
+    def _filter_call(self, args: dict) -> Generator[dict, None, tuple[dict, str]]:
+        """filter_listings, relaxed once without features when nothing matches."""
+        res = self.mcp.call_tool("filter_listings", args)
+        header = f"[searched with filter_listings {json.dumps(args, ensure_ascii=False)}]\n"
+        if not res["is_error"] and not listings.parse(res["text"]) and args.get("features"):
+            # Features are hard filters on the connector, and tagging is uneven (a
+            # studio with a lift is rarely tagged "Elevator"): relax once, say so.
+            args = dict(args)
+            dropped = args.pop("features")
+            self.stats["relaxed_searches"] = self.stats.get("relaxed_searches", 0) + 1
+            yield {"type": "action", "text": "No exact matches — searching again without: " + ", ".join(dropped)}
+            res = self.mcp.call_tool("filter_listings", args)
+            header = (f"[no exact matches; searched again without the features {dropped} — say so to the "
+                      f"user, these homes are not confirmed to have them] "
+                      f"[filter_listings {json.dumps(args, ensure_ascii=False)}]\n")
+        return res, header
+
+    def _filter_per_place(self, args: dict, places: list[str]) -> Generator[dict, None, tuple[dict, str]]:
+        """One filter_listings call per place, cards grouped by place and renumbered."""
+        per = max(2, -(-self.limit // len(places)))
+        merged: list[dict] = []
+        notes, failed = [], []
+        for place in places:
+            yield {"type": "action", "text": f"Searching listings in {place} (structured filter)"}
+            res, header = yield from self._filter_call({**args, "location": [place], "limit": per})
+            if res["is_error"]:
+                failed.append(place)
+                notes.append(f"{place}: the search failed")
+                continue
+            cards = listings.parse(res["text"])
+            notes.append(f"{place}: {len(cards)} shown" + ("" if cards else " (no matches)")
+                         + (" — " + header.strip() if "no exact matches" in header else ""))
+            merged.extend(cards)
+        if failed and len(failed) == len(places):
+            return res, ""
+        for i, c in enumerate(merged, 1):
+            c["n"] = i
+        head = (f"[searched with filter_listings once per place {json.dumps({**args, 'limit': per}, ensure_ascii=False)}]\n"
+                f"Per place: " + "; ".join(notes) + ". Cards are grouped by place. Report each place's "
+                "result as given here; a place with no matches had none under these filters.")
+        return {"is_error": False, "text": listings.render_cards(head, merged)}, ""
+
     def _search_homes(self, request: str) -> Iterator[dict | str]:
         ex = extractmod.extract(request, current=self.filter, cli=self.cli)
         self.timings.append((f"extract ({ex.model.split('/')[-1]}, {ex.attempts} attempt(s))", ex.latency_s))
@@ -191,19 +236,15 @@ class Agent:
             yield {"type": "action", "text": f"Understood: {_describe(ex.filter)}", "model": ex.model,
                    "latency_s": ex.latency_s}
             args = ex.filter.to_filter_args(limit=self.limit)
-            yield {"type": "action", "text": "Searching listings (structured filter)"}
-            res = self.mcp.call_tool("filter_listings", args)
-            header = f"[searched with filter_listings {json.dumps(args, ensure_ascii=False)}]\n"
-            if not res["is_error"] and not listings.parse(res["text"]) and args.get("features"):
-                # Features are hard filters on the connector, and tagging is uneven (a
-                # studio with a lift is rarely tagged "Elevator"): relax once, say so.
-                dropped = args.pop("features")
-                self.stats["relaxed_searches"] = self.stats.get("relaxed_searches", 0) + 1
-                yield {"type": "action", "text": "No exact matches — searching again without: " + ", ".join(dropped)}
-                res = self.mcp.call_tool("filter_listings", args)
-                header = (f"[no exact matches; searched again without the features {dropped} — say so to the "
-                          f"user, these homes are not confirmed to have them] "
-                          f"[filter_listings {json.dumps(args, ensure_ascii=False)}]\n")
+            places = list(args.get("location") or [])
+            if len(places) > 1:
+                # One search per place: a single multi-place filter returns whichever
+                # place sorts first (Porto + Valencia came back all Valencia), and the
+                # model then said Porto had nothing.
+                res, header = yield from self._filter_per_place(args, places[:MAX_SEARCH_PLACES])
+            else:
+                yield {"type": "action", "text": "Searching listings (structured filter)"}
+                res, header = yield from self._filter_call(args)
             if res["is_error"]:
                 self.stats["fallback_searches"] += 1
                 yield {"type": "action", "text": "Structured search could not finish — retrying with Cubi's "
@@ -354,6 +395,20 @@ class Agent:
 
         for c in self.mcp.calls[calls0:]:
             self.timings.append((f"mcp {c['tool']}" + (" (error)" if c["is_error"] else ""), c["seconds"]))
+        if self.sources and answer and not tavily_tool.CITATION.search(tavily_tool.normalise_citations(answer)):
+            # Uncited area answers happen: ask once more
+            # with the rule restated, and keep the first answer if the retry fails too.
+            t_llm = time.monotonic()
+            r = self.cli.chat.completions.create(
+                model=llm.model(LOOP_ROLE), temperature=0.2, max_tokens=1500, extra_body=extra,
+                messages=[*messages, {"role": "assistant", "content": answer},
+                          {"role": "user", "content": CITE_AGAIN.format(lang=LANG_NAMES.get(self.lang, "English"))}],
+            )
+            self._timed("citation retry", t_llm)
+            retry = r.choices[0].message.content or ""
+            self.stats["citation_retries"] = self.stats.get("citation_retries", 0) + 1
+            if tavily_tool.CITATION.search(tavily_tool.normalise_citations(retry)):
+                answer = retry
         cited = 0
         if "research_area" in used:
             answer, cited = tavily_tool.link_citations(answer, self.sources, self.lang)

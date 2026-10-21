@@ -1,0 +1,30 @@
+# Uptime check for the judged demo (judging runs until 2026-12-15). A failed run
+# emails the repo's watchers; the run log says which check failed.
+name: uptime
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Demo page (through the www.cubi.estate/agent redirect)
+        run: |
+          base=$(curl -sS -o /dev/null -w '%{url_effective}' -L --max-time 30 https://www.cubi.estate/agent)
+          base=${base%/}
+          echo "redirect -> $base"
+          case "$base" in *nebius.cloud*) ;; *) echo "::error::redirect does not reach the endpoint"; exit 1;; esac
+          curl -sS --fail --max-time 30 "$base/api/health" | tee health.json
+          grep -q '"ok":true' health.json
+      - name: Cubi connector
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 https://mcp.cubi.estate/mcp)
+          echo "mcp.cubi.estate/mcp -> HTTP $code"
+          [ "$code" -lt 500 ]
