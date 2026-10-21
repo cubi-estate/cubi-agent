@@ -40,4 +40,8 @@ TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
 
 CUBI_MCP_URL = os.environ.get("CUBI_MCP_URL", "https://mcp.cubi.estate/mcp")
 CUBI_MCP_TOKEN = os.environ.get("CUBI_MCP_TOKEN", "")
-USER_AGENT = os.environ.get("CUBI_AGENT_USER_AGENT", "cubi-agent/0.1 (+https://github.com/cubi-estate/cubi-agent)")
+# The build is in the User-Agent so Cubi's usage stats can tell the hosted demo
+# (a commit sha, set by the Dockerfile) from local runs and evals ("build dev").
+BUILD = os.environ.get("CUBI_AGENT_BUILD", "dev")[:12] or "dev"
+USER_AGENT = os.environ.get("CUBI_AGENT_USER_AGENT",
+                            f"cubi-agent/0.1 (build {BUILD}; +https://github.com/cubi-estate/cubi-agent)")

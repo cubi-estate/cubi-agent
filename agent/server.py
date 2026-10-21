@@ -32,6 +32,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.concurrency import iterate_in_threadpool
 
+from . import config
 from .loop import Agent, _describe
 
 log = logging.getLogger("cubi_agent")
@@ -228,7 +229,7 @@ async def health(request: Request):
     # address; without it every visitor shares one per-IP limit.
     return JSONResponse({"ok": True, "sessions": len(sessions),
                          "forwarded": bool(request.headers.get("x-forwarded-for")),
-                         "trust_proxy": TRUST_PROXY, "build": os.environ.get("CUBI_AGENT_BUILD", "dev")[:12]})
+                         "trust_proxy": TRUST_PROXY, "build": config.BUILD})
 
 
 @app.get("/")
