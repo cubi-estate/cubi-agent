@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cubi Agent video cards</title>
+<!-- Title cards for the demo video. Open in a browser, press F for full screen,
+     → / ← (or click) to move between cards. Record at 1920×1080. No external files. -->
+<style>
+  :root { --bg: #f7f7f5; --panel: #fff; --ink: #1c1f23; --muted: #5f6670; --line: #e3e4e0;
+          --accent: #0f766e; --accent-soft: #e6f2f0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+               font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .card { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 6vw; }
+  .card.on { display: flex; }
+  .inner { width: min(1500px, 100%); }
+  .logo { width: 4.2vw; height: 4.2vw; min-width: 44px; min-height: 44px; border-radius: 22%; background: var(--accent);
+          display: inline-block; vertical-align: middle; margin-right: 1.2vw;
+          -webkit-mask: none; position: relative; }
+  .logo::after { content: ""; position: absolute; inset: 22%;
+          background: #fff; clip-path: polygon(0 50%, 50% 6%, 100% 50%, 100% 100%, 64% 100%, 64% 66%, 36% 66%, 36% 100%, 0 100%); }
+  h1 { font-size: 5.2vw; line-height: 1.05; margin: 0 0 2vw; letter-spacing: -0.02em; }
+  h2 { font-size: 3.4vw; margin: 0 0 2.4vw; letter-spacing: -0.01em; }
+  p.lead { font-size: 2.1vw; color: var(--muted); margin: 0; max-width: 60ch; }
+  .tag { display: inline-block; font-size: 1.3vw; padding: .35em .8em; border-radius: 999px;
+         background: var(--accent-soft); color: var(--accent); font-weight: 600; margin: 0 .5em .6em 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 1.75vw; background: var(--panel);
+          border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  th, td { text-align: left; padding: .7em 1em; border-bottom: 1px solid var(--line); }
+  th { font-size: 1.3vw; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .hi { color: var(--accent); font-weight: 700; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4vw; }
+  .foot { margin-top: 2vw; font-size: 1.3vw; color: var(--muted); }
+  .big { font-size: 3vw; font-weight: 700; color: var(--accent); }
+  .hint { position: fixed; right: 1.2vw; bottom: 1vw; font-size: 12px; color: var(--muted); opacity: .6; }
+  body.rec .hint { display: none; }
+</style>
+</head>
+<body>
+
+<section class="card on">
+  <div class="inner">
+    <h1><span class="logo" aria-hidden="true"></span>Moving across a border<br>shouldn't mean five portals<br>in five languages.</h1>
+    <p class="lead">Cubi Agent: ask in your own language for homes anywhere in Europe, then ask about one of them.</p>
+  </div>
+</section>
+
+<section class="card">
+  <div class="inner">
+    <h2>How it's built</h2>
+    <div>
+      <span class="tag">NVIDIA Nemotron 3 Super</span><span class="tag">Nebius Token Factory</span>
+      <span class="tag">Nebius AI Cloud endpoint</span><span class="tag">Tavily</span>
+      <span class="tag">Cubi Estate connector · 2.3M+ listings · 20 countries</span>
+    </div>
+    <p class="lead" style="margin-top:2vw">Nemotron reads the request and writes the answer. Code decides the rest:
+      language, sale or rent, which card “#2” is, and every link, which must appear in the tool output.</p>
+  </div>
+</section>
+
+<section class="card">
+  <div class="inner">
+    <h2>Measured, on requests the rules never saw</h2>
+    <div class="grid">
+      <table>
+        <tr><th>36 requests · 6 languages</th><th>all fields</th></tr>
+        <tr><td>Nemotron 3 Nano</td><td class="num">34/36</td></tr>
+        <tr><td>Nemotron 3.5 Lightning</td><td class="num">36/36</td></tr>
+        <tr><td class="hi">Nemotron 3 Super (used)</td><td class="num hi">36/36</td></tr>
+        <tr><td>Nemotron 3 Ultra</td><td class="num">36/36</td></tr>
+      </table>
+      <table>
+        <tr><th>31 searches</th><th>agent</th><th>direct</th></tr>
+        <tr><td>meets every constraint</td><td class="num">90%</td><td class="num">94%</td></tr>
+        <tr><td>latency p50</td><td class="num hi">1.35 s</td><td class="num">5.97 s</td></tr>
+        <tr><td>connector quota</td><td class="num hi">33</td><td class="num">310</td></tr>
+      </table>
+    </div>
+    <p class="foot">Agent = Nemotron → structured filter. Direct = the same request sent to Cubi's own free-text search.
+      Rules and set by the same author: an upper bound. Reports in the repo.</p>
+  </div>
+</section>
+
+<section class="card">
+  <div class="inner">
+    <h1><span class="logo" aria-hidden="true"></span>Try it</h1>
+    <p class="big">cubi.estate/agent</p>
+    <p class="lead" style="margin-top:1.2vw">No account. Free through Dec 15.<br>
+      Source, evals and feedback: github.com/cubi-estate/cubi-agent · Apache-2.0</p>
+  </div>
+</section>
+
+<div class="hint">← → · F full screen · H hide this hint</div>
+<script>
+  const cards = [...document.querySelectorAll(".card")];
+  let i = 0;
+  const show = n => { i = Math.max(0, Math.min(cards.length - 1, n)); cards.forEach((c, k) => c.classList.toggle("on", k === i)); };
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") show(i + 1);
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") show(i - 1);
+    else if (e.key === "f" || e.key === "F") document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    else if (e.key === "h" || e.key === "H") document.body.classList.toggle("rec");
+  });
+  document.addEventListener("click", () => show(i + 1));
+</script>
+</body>
+</html>
