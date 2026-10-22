@@ -419,3 +419,13 @@ def test_uncited_area_answer_is_retried_once(monkeypatch, tmp_path):
     assert final["skill"] == "compare-areas"
     assert "[S1](https://example.org/porto)" in final["text"] and "one by one" not in final["text"]
     assert agent_.stats["citation_retries"] == 1
+
+
+def test_a_place_search_asks_for_the_city_not_its_district():
+    assert _f(location=["Porto"]).to_filter_args()["city_only"] is True
+    assert "city_only" not in _f(location=[]).to_filter_args()
+
+
+def test_fixture_keys_ignore_city_only():
+    a = {"location": ["Porto"], "limit": 6}
+    assert fixtures.key("filter_listings", a) == fixtures.key("filter_listings", {**a, "city_only": True})

@@ -56,7 +56,11 @@ def _canon(v, k: str = ""):
     if isinstance(v, list):
         return sorted(_canon(x) for x in v)
     if isinstance(v, dict):
-        return {k: _canon(x, k) for k, x in sorted(v.items()) if k not in ("limit", "parent_request_id")}
+        # city_only is ignored like limit: the recorded fixtures predate it (they
+        # were recorded unpinned), and the offline eval checks extraction, not
+        # which district towns a live search admits.
+        return {k: _canon(x, k) for k, x in sorted(v.items())
+                if k not in ("limit", "parent_request_id", "city_only")}
     return v
 
 

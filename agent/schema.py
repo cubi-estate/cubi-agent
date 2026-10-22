@@ -46,6 +46,11 @@ class SearchFilter(BaseModel):
                 args[key] = value
         if self.has_parking:  # never send false: the connector would exclude homes with parking
             args["has_parking"] = True
+        if self.location:
+            # "Porto" is also its district and "Valencia" its province: a Porto search
+            # listed Felgueiras, 60 km out (live 2026-10-22). The connector pins names
+            # that have a city reading to the city; others (Algarve) are unaffected.
+            args["city_only"] = True
         return args
 
 
