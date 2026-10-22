@@ -69,7 +69,7 @@ def test_skill_selection():
 
 def test_skills_load_from_vendored_pack():
     loaded = skills.load()
-    assert set(loaded) == {"find-homes", "check-asking-price", "contact-agent", "compare-areas", "compare-budget"}
+    assert set(loaded) == {"find-homes", "check-asking-price", "contact-agent", "compare-areas", "compare-budget", "similar-elsewhere"}
     assert "filter_listings" in loaded["find-homes"].body
 
 

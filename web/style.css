@@ -110,6 +110,22 @@ main { flex: 1; width: 100%; max-width: 860px; margin: 0 auto; padding: 16px 16p
 .budget .bwas { margin-left: 6px; }
 .budget .bwas::before { content: "· "; }
 .budget .bnote { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+.similar { margin-top: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 0 12px; }
+.similar .simwrap { overflow-x: auto; }
+.similar table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+.similar th, .similar td { padding: 6px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+.similar thead th { font-weight: 600; white-space: nowrap; }
+.similar thead th span:not(.n) { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.similar thead .n { font-size: 11.5px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 0 7px; }
+.similar tbody th { font-weight: 400; color: var(--muted); min-width: 150px; }
+.similar tr.big td { font-size: 15px; }
+.similar tr.grp th { padding-top: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink); font-weight: 600; }
+.similar .ok { color: var(--accent); font-weight: 700; }
+.similar .no { color: var(--warn); font-weight: 700; }
+.similar .ns { color: var(--muted); }
+.similar small { color: var(--muted); }
+.similar .simnote, .similar .simnone { margin: 10px 12px 0; font-size: 12.5px; color: var(--muted); }
+.similar .simnone { color: var(--warn); }
 .filter { margin: 12px 0 0; font-size: 13.5px; color: var(--muted); }
 .filter b { color: var(--ink); font-weight: 600; }
 

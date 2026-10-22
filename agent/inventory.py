@@ -47,22 +47,28 @@ def _price_text(price) -> str:
     return f"{int(price):,}".replace(",", " ") + " EUR"
 
 
+def card(c: dict, n: int) -> dict:
+    """One connector card (structured_card fields) as the app's numbered card,
+    the same shape listings.parse gives."""
+    out = {"n": n, "id": c.get("id"), "type": c.get("object_type") or "Home",
+           "location": ", ".join(x for x in (c.get("city"), c.get("region"), c.get("country")) if x),
+           "price": c.get("price"), "price_text": _price_text(c["price"]) if c.get("price") else None,
+           "url": c.get("url"), "ask_url": c.get("ask_cubi_url"),
+           "updated": str(c.get("updated_at") or "")[:10] or None}
+    for key in ("bedrooms", "bathrooms", "living_area"):
+        if c.get(key) is not None:
+            out[key] = float(c[key])
+    return {k: v for k, v in out.items() if v is not None}
+
+
 def to_cards(result: dict) -> list[dict]:
-    """The sample listings as the app's numbered cards (same shape as listings.parse)."""
+    """The sample listings as the app's numbered cards."""
     cards: list[dict] = []
     for place in result.get("places") or []:
         for c in place.get("listings") or []:
             if not c.get("price"):
                 continue  # "price on request" passes a cap but can't illustrate a budget
-            card = {"n": len(cards) + 1, "id": c.get("id"), "type": c.get("object_type") or "Home",
-                    "location": ", ".join(x for x in (c.get("city"), c.get("region"), c.get("country")) if x),
-                    "price": c.get("price"), "price_text": _price_text(c.get("price")),
-                    "url": c.get("url"), "ask_url": c.get("ask_cubi_url"),
-                    "updated": str(c.get("updated_at") or "")[:10] or None}
-            for key in ("bedrooms", "bathrooms", "living_area"):
-                if c.get(key) is not None:
-                    card[key] = float(c[key])
-            cards.append({k: v for k, v in card.items() if v is not None})
+            cards.append(card(c, len(cards) + 1))
     return cards
 
 

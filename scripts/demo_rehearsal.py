@@ -20,6 +20,7 @@ TURNS = [
     "What does 400k buy in Lisbon vs Porto? 2-bed flats",
     "And up to 500k?",
     "How do I contact the agent for #2?",
+    "Show me homes like #2 in Porto",  # not in the video: the side-by-side table
 ]
 
 
@@ -69,6 +70,12 @@ def main() -> int:
         for r in (ans.get("inventory") or {}).get("rows", []):
             was = f" (was {r['previous_pct']}%)" if r.get("previous_pct") is not None else ""
             print(f"    ▮ {r['place']}: {r.get('share_pct')}% · {r.get('within')} of {r.get('of')}{was}")
+        sim = ans.get("similar") or {}
+        for c in sim.get("columns", []):
+            env = sum(1 for a in (c.get("environment") or {}).values() if a.get("state") != "unknown")
+            feats = [k for k, v in (c.get("features") or {}).items() if v == "stated"]
+            print(f"    ▤ {c['role']} #{c.get('card')} {c.get('city')}: €{c.get('price') or 0:,.0f} · "
+                  f"{env}/8 environment readings · stated: {', '.join(feats) or '—'}")
         for s in out["actions"]:
             print("    ·", s)
         for e in out["errors"]:

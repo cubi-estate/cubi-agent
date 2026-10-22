@@ -23,6 +23,7 @@ Built for the Nebius × NVIDIA Global AI Hackathon, Best Apps and Agents track.
 | "How do I contact the agent?" | calls `get_contact_options` | Cubi's consented contact routes and a sign-in link. Nothing is sent for you |
 | "Compare schools and public transport in Porto and Valencia" | calls Tavily once per place and topic | a side-by-side answer, each point linked to its source |
 | "What does 400k buy in Lisbon vs Porto? 2-bed flats", then "And up to 500k?" | calls Cubi's `compare_inventory`: per city, the share of its priced listings of that kind within the budget | one bar per city drawn from Cubi's counts (a budget change keeps the cities and marks the earlier share), with example homes from the counted set. Shares, not counts: a count shows Cubi's coverage, not the market |
+| "Show me homes like #2 in Porto" | resolves "#2" in code; calls Cubi's `find_similar_elsewhere`, which matches on the home (same bedrooms, area within 15%, stated features and surroundings), never on price | one table: the home beside up to two matches — asking price, €/m², features as each listing states them, environment readings (quiet, clean air, leafy, coast, flood, wildfire, seismic, ground motion), walking and driving minutes, regional climate. "Not stated" and "no reading" are shown as such, never as "no" |
 
 While it works, the page shows a short **action log** ("Understood: for sale ·
 apartment · 2+ bed · ≤ €400,000 · in Porto" → "Searching listings"). It never shows
@@ -163,7 +164,7 @@ connector's public tool schemas (`fixtures/mcp_tools.json`).
 ```
 agent/       loop, extraction + normaliser, guards, listing cards, Tavily tool, MCP client, web server
 web/         the page (no build step, no external scripts)
-skills/      skills this app adds (compare-areas, compare-budget); the rest come from vendor/cubi-estate-plugin
+skills/      skills this app adds (compare-areas, compare-budget, similar-elsewhere); the rest come from vendor/cubi-estate-plugin
 evals/       eval sets and runners;   reports/ their results
 fixtures/    connector tool schemas + facts-only recorded replies for offline mode
 deploy/      Nebius runbook;   Dockerfile, .github/workflows/image.yml

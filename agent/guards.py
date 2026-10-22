@@ -225,6 +225,12 @@ def drop_unbacked_percentages(answer: str, tool_text: str) -> tuple[str, int]:
     return "\n".join(out_lines).strip(), dropped
 
 
+# "a saving of €40k", "a Lisbon premium": a difference in asking prices is
+# neither (find_similar_elsewhere).
+_SAVING = re.compile(r"\b(sav(e|es|ing|ings)|premium|poupa|poupan[çc]a|ahorr|[ée]conomi|spar(en|st|t)\b|ersparnis|"
+                     r"bespa(ar|ring)|aufpreis|surco[uû]t|sobreprecio|sobrecusto)", re.I)
+
+
 def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple[str, dict]:
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
     answer, scrubbed = scrub_contacts(answer)
@@ -234,6 +240,10 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
         answer = ensure_not_a_valuation(answer, lang)
     if "get_contact_options" in used_tools:
         answer, sent = drop_sent_claims(answer, lang)
+    if "find_similar_elsewhere" in used_tools:
+        answer, v1 = drop_price_verdicts(answer, lang)
+        answer, v2 = _drop_sentences(answer, _SAVING)
+        verdicts += v1 + v2
     pct = 0
     if "compare_inventory" in used_tools:
         answer, pct = drop_unbacked_percentages(answer, tool_text)

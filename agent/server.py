@@ -183,6 +183,7 @@ def _turn(sid: str, sess: _Session, message: str) -> Iterator[bytes]:
                 ev = {"type": "answer", "text": ev["text"],
                       "listings": [_card(c, f) for c in ev.get("listings", [])],
                       "inventory": ev.get("inventory"),
+                      "similar": ev.get("similar"),
                       "filter": _describe(f, ev["lang"]) if f else None,
                       "skill": ev["skill"], "lang": ev["lang"], "latency_s": ev["latency_s"]}
             else:

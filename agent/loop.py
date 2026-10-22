@@ -24,7 +24,7 @@ import time
 from typing import Generator, Iterator
 
 from . import extract as extractmod
-from . import guards, inventory, lang as langmod, listings, llm, ordinals, skills as skillsmod, tavily_tool
+from . import guards, inventory, lang as langmod, listings, llm, ordinals, similar as similarmod, skills as skillsmod, tavily_tool
 from .fixtures import connect, listing_ref
 from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
@@ -147,6 +147,7 @@ class Agent:
         self.last_skill: str | None = None
         self.inventory: dict | None = None  # last budget comparison: {"args", "result"}
         self.bars: dict | None = None  # this turn's budget bars, for the page
+        self.similar: dict | None = None  # this turn's side-by-side table, for the page
 
     # ---- tools -------------------------------------------------------------
     def _timed(self, stage: str, t0: float) -> None:
@@ -356,8 +357,10 @@ class Agent:
             yield (text + "\n\nCite sources by their number, e.g. [S2], right after the claim — never write URLs.")
             return
         label = {"get_listing": "Opening the listing", "compare_asking_prices": "Comparing asking prices nearby",
-                 "get_contact_options": "Looking up contact options"}.get(name, name)
-        if "listing_id" in args or name in ("get_listing", "compare_asking_prices", "get_contact_options"):
+                 "get_contact_options": "Looking up contact options",
+                 similarmod.TOOL: f"Finding homes like it in {args.get('city') or '?'}"}.get(name, name)
+        how = ""
+        if "listing_id" in args or name in ("get_listing", "compare_asking_prices", "get_contact_options", similarmod.TOOL):
             ref, how = self._resolve_listing(str(args.get("listing_id") or ""))
             if ref is None:
                 yield {"type": "action", "text": f"{label}: which home? (no card number or known id)"}
@@ -367,6 +370,8 @@ class Agent:
             args["listing_id"] = ref
             self.focus = ref
             label += f" — {how} ({ref})"
+        else:
+            how = ""
         yield {"type": "action", "text": label}
         # The detected language of this turn, always: the model copies an earlier
         # turn's lang from history (an English question got a Dutch contact reply).
@@ -379,7 +384,35 @@ class Agent:
             yield (f"error: the {name} call failed ({res['text'][:200].strip()}). Tell the user this could "
                    f"not be checked right now and offer to try again; do not guess a reason or a result.")
             return
+        if name == similarmod.TOOL:
+            yield from self._similar_result(res["text"], how)
+            return
         yield res["text"]
+
+    def _similar_result(self, text: str, how: str) -> Iterator[dict | str]:
+        """The side-by-side table from find_similar_elsewhere; its matches become the cards."""
+        try:
+            result = json.loads(text)
+        except json.JSONDecodeError:
+            result = {}
+        if result.get("error") == "same_city":
+            yield "error: the home is already in that city. Offer its price check instead, or another city."
+            return
+        if not result.get("ok") or not result.get("seed"):
+            yield {"type": "action", "text": "Similar homes: not available right now"}
+            yield ("error: the comparison could not be run right now. Tell the user and offer to try again; "
+                   "do not guess any figure.")
+            return
+        seed_n = ordinals.ordinal(how, 99) if how.startswith("card") else None
+        cards = similarmod.to_cards(result)
+        self.similar = similarmod.table(result, seed_card=seed_n)
+        self.cards = cards
+        if cards:
+            self.shown = cards
+            self.seen_refs |= {c["id"].lower() for c in cards if c.get("id")}
+        yield {"type": "action", "text": f"{len(cards)} matching home(s) in {result.get('city')}, matched on "
+                                         f"features and surroundings, not price"}
+        yield similarmod.tool_text(result, cards, f"#{seed_n}" if seed_n else "the home asked about")
 
     # ---- turn --------------------------------------------------------------
     def turn(self, text: str) -> Iterator[dict]:
@@ -389,6 +422,7 @@ class Agent:
         self._message = text
         self.sources = {}
         self.bars = None
+        self.similar = None
         calls0 = len(self.mcp.calls)
         self.lang = langmod.detect(text, default=self.lang)
         skill = self.skills[skillsmod.select(text, self.has_results, self.last_skill)]
@@ -498,4 +532,5 @@ class Agent:
         self.history += turn_msgs
         yield {"type": "answer", "text": answer, "skill": skill.name, "lang": self.lang,
                "guards": report, "latency_s": round(time.monotonic() - t0, 2), "stats": dict(self.stats),
-               "timings": list(self.timings), "listings": list(self.cards), "inventory": self.bars}
+               "timings": list(self.timings), "listings": list(self.cards), "inventory": self.bars,
+               "similar": self.similar}

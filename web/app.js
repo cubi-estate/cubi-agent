@@ -151,6 +151,105 @@ function budget(el, b, t, lang) {
     el.querySelectorAll(".bfill").forEach(f => { f.style.width = f.dataset.w + "%"; })));
 }
 
+// Labels for the side-by-side table. Row keys match agent/similar.py.
+const SIM = {
+  en: { home: "This home", in: c => `In ${c}`, price: "Asking price", m2: "€/m²", area: "Living area", rooms: "Bedrooms · bathrooms",
+        features: "Stated in the listing", env: "Surroundings (area data)", minutes: "Minutes away", climate: "Regional climate",
+        legend: "✓ stated · – not stated (the listing doesn't say; not a “no”) · ? no reading. Matched on the home, never on price. Asking prices, not valuations.",
+        none: c => `No listing in ${c} with the same bedrooms and a similar size.`,
+        f: { balcony: "Balcony", terrace: "Terrace", lift: "Lift", parking: "Parking", air_conditioning: "Air conditioning", garden: "Garden", pool: "Pool", camp_site_nearby: "Campsite nearby" },
+        e: { quiet: "Quiet (road/rail < 65 dB)", clean_air: "Clean air (PM2.5 ≤ 15)", leafy: "Leafy", coastal: "Within 5 km of the coast", flood_safe: "Outside river-flood zones", wildfire_safer: "Lower wildfire weather", seismic_safer: "Lower seismic hazard", stable_ground: "Stable ground" },
+        m: { "walk_time.metro_station": "Walk to metro", "walk_time.railway_station": "Walk to train", "walk_time.supermarket": "Walk to supermarket", "walk_time.school": "Walk to school", "walk_time.park": "Walk to a park", "drive_time.coast": "Drive to the coast", "drive_time.airport": "Drive to the airport" },
+        c: { sunshine_hours: "Sunshine, h/yr", sea_temp_summer_c: "Sea in summer, °C", summer_max_c: "Summer high, °C", winter_min_c: "Winter low, °C" } },
+  pt: { home: "Esta casa", in: c => `Em ${c}`, price: "Preço pedido", m2: "€/m²", area: "Área útil", rooms: "Quartos · WC",
+        features: "Indicado no anúncio", env: "Envolvente (dados da zona)", minutes: "Minutos", climate: "Clima regional",
+        legend: "✓ indicado · – não indicado (o anúncio não diz; não é um “não”) · ? sem dados. Escolhidas pela casa, nunca pelo preço. Preços pedidos, não avaliações.",
+        none: c => `Nenhum anúncio em ${c} com os mesmos quartos e área semelhante.`,
+        f: { balcony: "Varanda", terrace: "Terraço", lift: "Elevador", parking: "Estacionamento", air_conditioning: "Ar condicionado", garden: "Jardim", pool: "Piscina", camp_site_nearby: "Parque de campismo perto" },
+        e: { quiet: "Sossegado (estrada/ferrovia < 65 dB)", clean_air: "Ar limpo (PM2.5 ≤ 15)", leafy: "Arborizado", coastal: "A ≤ 5 km da costa", flood_safe: "Fora de zonas de cheia", wildfire_safer: "Menos risco meteorológico de incêndio", seismic_safer: "Menor perigo sísmico", stable_ground: "Solo estável" },
+        m: { "walk_time.metro_station": "A pé até ao metro", "walk_time.railway_station": "A pé até ao comboio", "walk_time.supermarket": "A pé até ao supermercado", "walk_time.school": "A pé até à escola", "walk_time.park": "A pé até um parque", "drive_time.coast": "De carro até à costa", "drive_time.airport": "De carro até ao aeroporto" },
+        c: { sunshine_hours: "Sol, h/ano", sea_temp_summer_c: "Mar no verão, °C", summer_max_c: "Máx. de verão, °C", winter_min_c: "Mín. de inverno, °C" } },
+  es: { home: "Esta vivienda", in: c => `En ${c}`, price: "Precio de oferta", m2: "€/m²", area: "Superficie", rooms: "Dormitorios · baños",
+        features: "Indicado en el anuncio", env: "Entorno (datos de zona)", minutes: "Minutos", climate: "Clima regional",
+        legend: "✓ indicado · – no indicado (el anuncio no lo dice; no es un “no”) · ? sin datos. Elegidas por la vivienda, nunca por el precio. Precios de oferta, no tasaciones.",
+        none: c => `Ningún anuncio en ${c} con los mismos dormitorios y una superficie similar.`,
+        f: { balcony: "Balcón", terrace: "Terraza", lift: "Ascensor", parking: "Garaje", air_conditioning: "Aire acondicionado", garden: "Jardín", pool: "Piscina", camp_site_nearby: "Camping cerca" },
+        e: { quiet: "Tranquilo (carretera/tren < 65 dB)", clean_air: "Aire limpio (PM2.5 ≤ 15)", leafy: "Arbolado", coastal: "A ≤ 5 km de la costa", flood_safe: "Fuera de zonas inundables", wildfire_safer: "Menor riesgo meteorológico de incendio", seismic_safer: "Menor peligro sísmico", stable_ground: "Terreno estable" },
+        m: { "walk_time.metro_station": "A pie al metro", "walk_time.railway_station": "A pie al tren", "walk_time.supermarket": "A pie al supermercado", "walk_time.school": "A pie al colegio", "walk_time.park": "A pie a un parque", "drive_time.coast": "En coche a la costa", "drive_time.airport": "En coche al aeropuerto" },
+        c: { sunshine_hours: "Sol, h/año", sea_temp_summer_c: "Mar en verano, °C", summer_max_c: "Máx. de verano, °C", winter_min_c: "Mín. de invierno, °C" } },
+  fr: { home: "Ce bien", in: c => `À ${c}`, price: "Prix demandé", m2: "€/m²", area: "Surface", rooms: "Chambres · sdb",
+        features: "Indiqué dans l'annonce", env: "Environnement (données de zone)", minutes: "Minutes", climate: "Climat régional",
+        legend: "✓ indiqué · – non indiqué (l'annonce ne le dit pas ; pas un « non ») · ? pas de donnée. Choisis sur le bien, jamais sur le prix. Prix demandés, pas des estimations.",
+        none: c => `Aucune annonce à ${c} avec le même nombre de chambres et une surface proche.`,
+        f: { balcony: "Balcon", terrace: "Terrasse", lift: "Ascenseur", parking: "Parking", air_conditioning: "Climatisation", garden: "Jardin", pool: "Piscine", camp_site_nearby: "Camping à proximité" },
+        e: { quiet: "Calme (route/rail < 65 dB)", clean_air: "Air sain (PM2.5 ≤ 15)", leafy: "Arboré", coastal: "À ≤ 5 km de la côte", flood_safe: "Hors zones inondables", wildfire_safer: "Moindre risque météo d'incendie", seismic_safer: "Aléa sismique plus faible", stable_ground: "Sol stable" },
+        m: { "walk_time.metro_station": "À pied au métro", "walk_time.railway_station": "À pied à la gare", "walk_time.supermarket": "À pied au supermarché", "walk_time.school": "À pied à l'école", "walk_time.park": "À pied à un parc", "drive_time.coast": "En voiture à la côte", "drive_time.airport": "En voiture à l'aéroport" },
+        c: { sunshine_hours: "Soleil, h/an", sea_temp_summer_c: "Mer en été, °C", summer_max_c: "Max. d'été, °C", winter_min_c: "Min. d'hiver, °C" } },
+  de: { home: "Dieses Objekt", in: c => `In ${c}`, price: "Angebotspreis", m2: "€/m²", area: "Wohnfläche", rooms: "Schlafzimmer · Bäder",
+        features: "Im Inserat genannt", env: "Umgebung (Gebietsdaten)", minutes: "Minuten", climate: "Regionales Klima",
+        legend: "✓ genannt · – nicht genannt (das Inserat sagt es nicht; kein „nein“) · ? keine Daten. Nach dem Objekt ausgewählt, nie nach dem Preis. Angebotspreise, keine Bewertungen.",
+        none: c => `Kein Inserat in ${c} mit gleich vielen Schlafzimmern und ähnlicher Fläche.`,
+        f: { balcony: "Balkon", terrace: "Terrasse", lift: "Aufzug", parking: "Stellplatz", air_conditioning: "Klimaanlage", garden: "Garten", pool: "Pool", camp_site_nearby: "Campingplatz in der Nähe" },
+        e: { quiet: "Ruhig (Straße/Bahn < 65 dB)", clean_air: "Saubere Luft (PM2,5 ≤ 15)", leafy: "Grün", coastal: "≤ 5 km zur Küste", flood_safe: "Außerhalb von Hochwasserzonen", wildfire_safer: "Geringere Waldbrandwetterlage", seismic_safer: "Geringere Erdbebengefahr", stable_ground: "Stabiler Boden" },
+        m: { "walk_time.metro_station": "Zu Fuß zur Metro", "walk_time.railway_station": "Zu Fuß zum Bahnhof", "walk_time.supermarket": "Zu Fuß zum Supermarkt", "walk_time.school": "Zu Fuß zur Schule", "walk_time.park": "Zu Fuß zum Park", "drive_time.coast": "Mit dem Auto zur Küste", "drive_time.airport": "Mit dem Auto zum Flughafen" },
+        c: { sunshine_hours: "Sonne, h/Jahr", sea_temp_summer_c: "Meer im Sommer, °C", summer_max_c: "Sommerhoch, °C", winter_min_c: "Wintertief, °C" } },
+  nl: { home: "Deze woning", in: c => `In ${c}`, price: "Vraagprijs", m2: "€/m²", area: "Woonoppervlak", rooms: "Slaapkamers · badkamers",
+        features: "Vermeld in de advertentie", env: "Omgeving (gebiedsdata)", minutes: "Minuten", climate: "Regionaal klimaat",
+        legend: "✓ vermeld · – niet vermeld (de advertentie zegt het niet; geen “nee”) · ? geen meting. Gekozen op de woning, nooit op prijs. Vraagprijzen, geen taxaties.",
+        none: c => `Geen advertentie in ${c} met evenveel slaapkamers en een vergelijkbaar oppervlak.`,
+        f: { balcony: "Balkon", terrace: "Terras", lift: "Lift", parking: "Parkeerplaats", air_conditioning: "Airco", garden: "Tuin", pool: "Zwembad", camp_site_nearby: "Camping in de buurt" },
+        e: { quiet: "Rustig (weg/spoor < 65 dB)", clean_air: "Schone lucht (PM2,5 ≤ 15)", leafy: "Groen", coastal: "≤ 5 km van de kust", flood_safe: "Buiten overstromingsgebied", wildfire_safer: "Minder bosbrandweer", seismic_safer: "Lager aardbevingsgevaar", stable_ground: "Stabiele bodem" },
+        m: { "walk_time.metro_station": "Lopen naar de metro", "walk_time.railway_station": "Lopen naar het station", "walk_time.supermarket": "Lopen naar de supermarkt", "walk_time.school": "Lopen naar school", "walk_time.park": "Lopen naar een park", "drive_time.coast": "Rijden naar de kust", "drive_time.airport": "Rijden naar de luchthaven" },
+        c: { sunshine_hours: "Zon, u/jaar", sea_temp_summer_c: "Zee in de zomer, °C", summer_max_c: "Zomermax., °C", winter_min_c: "Wintermin., °C" } },
+};
+
+// The side-by-side table: this home, then each match (numbered as its card).
+// Every cell is drawn from find_similar_elsewhere's result, escaped.
+function similarTable(el, s, lang) {
+  const L = SIM[lang] || SIM.en, cols = s.columns || [];
+  if (!cols.length) return;
+  const num = v => (v == null || v === "") ? "" : Math.round(Number(v)).toLocaleString(lang || "en").replace(/,/g, " ");
+  const head = cols.map(c => c.role === "seed"
+    ? `<th scope="col">${esc(L.home)}${c.card ? ` <span class="n">#${esc(c.card)}</span>` : ""}<span>${esc(c.city || "")}</span></th>`
+    : `<th scope="col">${esc(L.in(c.city || s.city))} <span class="n">#${esc(c.card)}</span><span>${esc(c.city || "")}</span></th>`).join("");
+  const row = (label, cells, cls = "") => `<tr class="${cls}"><th scope="row">${esc(label)}</th>${cells.map(x => `<td>${x}</td>`).join("")}</tr>`;
+  const group = label => `<tr class="grp"><th colspan="${cols.length + 1}">${esc(label)}</th></tr>`;
+  const any = vals => vals.some(v => v != null && v !== "");
+  let body = "";
+  body += row(L.price, cols.map(c => c.price ? `<b>€${esc(num(c.price))}</b>` : "–"), "big");
+  if (any(cols.map(c => c.eur_per_m2))) body += row(L.m2, cols.map(c => c.eur_per_m2 ? `€${esc(num(c.eur_per_m2))}` : "–"));
+  if (any(cols.map(c => c.living_area))) body += row(L.area, cols.map(c => c.living_area ? `${esc(num(c.living_area))} m²` : "–"));
+  body += row(L.rooms, cols.map(c => `${esc(c.bedrooms ?? "–")} · ${esc(c.bathrooms ?? "–")}`));
+  const feats = Object.keys(L.f).filter(k => cols.some(c => (c.features || {})[k] === "stated"));
+  if (feats.length) {
+    body += group(L.features);
+    for (const k of feats) body += row(L.f[k], cols.map(c => (c.features || {})[k] === "stated" ? `<span class="ok">✓</span>` : `<span class="ns">–</span>`));
+  }
+  const envs = Object.keys(L.e).filter(k => cols.some(c => ((c.environment || {})[k] || {}).state !== "unknown"));
+  if (envs.length) {
+    body += group(L.env);
+    for (const k of envs) body += row(L.e[k], cols.map(c => {
+      const a = (c.environment || {})[k] || { state: "unknown" };
+      const mark = a.state === "yes" ? `<span class="ok">✓</span>` : a.state === "no" ? `<span class="no">✗</span>` : `<span class="ns">?</span>`;
+      return mark + (a.value != null ? ` <small>${esc(a.value)}${a.unit ? " " + esc(a.unit) : ""}</small>` : "");
+    }));
+  }
+  const mins = Object.keys(L.m).filter(k => any(cols.map(c => (c.minutes || {})[k])));
+  if (mins.length) {
+    body += group(L.minutes);
+    for (const k of mins) body += row(L.m[k], cols.map(c => (c.minutes || {})[k] != null ? `${esc(num(c.minutes[k]))} min` : "?"));
+  }
+  const clim = Object.keys(L.c).filter(k => any(cols.map(c => (c.climate || {})[k])));
+  if (clim.length) {
+    body += group(L.climate);
+    for (const k of clim) body += row(L.c[k], cols.map(c => (c.climate || {})[k] != null ? esc(num(c.climate[k])) : "?"));
+  }
+  el.innerHTML = `<div class="simwrap"><table><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>
+    ${cols.length < 2 ? `<p class="simnone">${esc(L.none(s.city))}</p>` : ""}
+    <p class="simnote">${esc(L.legend)}</p>`;
+  el.hidden = false;
+}
+
 function followups(box, t, n) {
   for (const text of [t.price(n), t.contact(n)]) {
     const b = document.createElement("button");
@@ -212,6 +311,7 @@ async function ask(text) {
             filter.hidden = false;
             filter.innerHTML = `${esc(t.searched)}: <b>${esc(ev.filter)}</b>`;
           }
+          if (ev.similar) similarTable(turn.querySelector(".similar"), ev.similar, ev.lang);
           if (ev.inventory) {
             budget(turn.querySelector(".budget"), ev.inventory, t, ev.lang);
             const next = (Number(ev.inventory.max_price) || 0) + 100000;

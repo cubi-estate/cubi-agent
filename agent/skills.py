@@ -24,10 +24,14 @@ TOOLS = {
     "compare-areas": ["research_area"],  # local tool: Tavily web search (agent/tavily_tool.py)
     # Run in code before the model writes (agent/inventory.py), like a search turn.
     "compare-budget": ["compare_inventory"],
+    "similar-elsewhere": ["find_similar_elsewhere"],
 }
 
 _PATTERNS = {
+    # "in line with" phrasings are the page's own follow-up buttons (web/app.js T.price).
     "check-asking-price": r"overpric|expensive|cheap|good deal|fair price|price compar|worth|"
+                          r"price in line|in line with|em linha com|en l[ií]nea con|im rahmen|"
+                          r"coh[ée]rent avec|in lijn met|"
                           r"caro|barato|vale a pena|preço justo|precio justo|"
                           r"teuer|günstig|preiswert|zu viel|cher|bon prix|trop|duur|goedkoop",
     "contact-agent": r"contact|agent|viewing|visit|call|phone|email|"
@@ -51,6 +55,14 @@ _PATTERNS = {
                       r"was bekomm|was kauft man|wat koop je|wat krijg je|"
                       r"qu'est-ce qu'on (peut )?ach[eè]te|que peut-on acheter|ce qu'on ach[eè]te",
 }
+
+# "Homes like #2 in Lisbon" — about a home on screen, somewhere else. Checked
+# after the price and contact skills: "is #1's price in line with similar
+# homes?" is a price check, not this.
+_PATTERNS["similar-elsewhere"] = (
+    r"\bsimilar\b|\b(homes?|flats?|apartments?|something|anything|one|ones)\s+like\b|like (this|that|it|#)|"
+    r"parecid|semelhante|similares?\b|ähnlich|vergleichbar|vergelijkbar|zoals (#|deze|die)|"
+    r"comme (celui|celle|ça|le n|la n)|semblable|pareil")
 
 # A budget refinement right after a comparison ("and up to 500k?", "what about
 # 350 000?") stays a comparison rather than turning into a search.
@@ -103,7 +115,7 @@ def select(message: str, has_results: bool, last_skill: str | None = None) -> st
             and not re.search(r"#\s*\d|\bn[º°o]\s*\d", low)):
         return "compare-budget"
     if has_results:
-        for name in ("check-asking-price", "contact-agent"):
+        for name in ("check-asking-price", "contact-agent", "similar-elsewhere"):
             if re.search(_PATTERNS[name], low):
                 return name
     if re.search(_PATTERNS["compare-areas"], low) and not _looks_like_home_search(low):
