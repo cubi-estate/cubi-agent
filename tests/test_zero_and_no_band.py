@@ -40,8 +40,10 @@ RENT = {"location": ["Lyon"], "type": ["apartment"], "transaction_type": "rent",
 def test_no_rentals_at_any_price_is_named_not_the_budget(tmp_path):
     agent, calls = _agent(tmp_path, lambda a: CARD if "transaction_type" not in a else NONE)
     _, header = _run(agent._filter_call(dict(RENT)))
-    assert "rental listings don't cover Lyon" in header and "do not suggest a higher budget" in header
+    assert "rental listings don't cover Lyon" in header and "a higher rent would not help" in header
     assert len(calls) == 3 and "max_price" not in calls[1] and "transaction_type" not in calls[2]
+    assert agent.sale_only == ["Lyon"]
+    assert agent._suggestions("find-homes", "x") == ["Homes for sale in Lyon"]
 
 
 def test_budget_named_when_it_is_the_reason(tmp_path):

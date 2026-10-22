@@ -146,6 +146,7 @@ class Agent:
         self.filter: SearchFilter | None = None
         self.has_results = False
         self.lang = "en"
+        self.sale_only: list[str] = []
         self.stats = {"llm_in": 0, "llm_out": 0, "fallback_searches": 0, "filter_searches": 0}
         self.timings: list[tuple[str, float]] = []  # this turn's stages, seconds
         self.cards: list[dict] = []  # listings from this turn's last search, shown as cards
@@ -243,9 +244,12 @@ class Agent:
             sale = {k: v for k, v in priced.items() if k not in ("transaction_type", "price_period")}
             self.stats["zero_probes"] = self.stats.get("zero_probes", 0) + 1
             if self._any(sale):
+                self.sale_only += list(args.get("location") or [])
                 return (f"[why none: Cubi lists no homes like this to rent in {where} at any price, though it "
-                        f"has some for sale there. Say that Cubi's rental listings don't cover {where} yet; "
-                        f"do not suggest a higher budget, and offer homes for sale there instead]\n")
+                        f"has homes for sale there. Say this, in the user's language, and add nothing else — "
+                        f"no other budget, town or search to try: \"Cubi has no listings like this to rent in "
+                        f"{where} yet: its rental listings don't cover {where}, so a higher rent would not "
+                        f"help. It does list homes for sale there.\"]\n")
         if priced != args:
             return (f"[why none: Cubi has no homes like this in {where} at any price. Say so; do not "
                     f"suggest a higher budget]\n")
@@ -277,6 +281,7 @@ class Agent:
         return {"is_error": False, "text": listings.render_cards(head, merged)}, ""
 
     def _search_homes(self, request: str) -> Iterator[dict | str]:
+        self.sale_only = []   # places _why_none found with homes for sale but none to rent
         ex = extractmod.extract(request, current=self.filter, cli=self.cli)
         self.timings.append((f"extract ({ex.model.split('/')[-1]}, {ex.attempts} attempt(s))", ex.latency_s))
         self.stats["llm_in"] += ex.usage.get("in", 0)
@@ -747,6 +752,8 @@ class Agent:
         if skill in ("check-asking-price", "contact-agent", "home-news"):
             focus = ordinals.ordinal(text, len(self.shown))
         cap = ((self.inventory or {}).get("args") or {}).get("max_price") if skill == "compare-budget" else None
+        if skill == "find-homes" and self.sale_only:
+            return [suggest.for_sale(self.lang, p) for p in self.sale_only[:suggest.MAX]]
         return suggest.next_questions(skill, self.lang, places=places,
                                       max_price=self.filter.max_price if self.filter else None,
                                       shown=self.shown, focus_n=focus, budget_cap=cap, done=self.done)

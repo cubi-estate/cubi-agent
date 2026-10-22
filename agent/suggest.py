@@ -16,29 +16,29 @@ import unicodedata
 MAX = 3
 
 T = {
-    "en": {"news": "Has #{n}'s price dropped, and what's new in {city}?", "leaders": "Compare #{n} and #{m} feature by feature", "price": "Is #{n}'s price in line with similar homes?", "contact": "How do I contact the agent for #{n}?",
+    "en": {"forsale": "Homes for sale in {a}", "news": "Has #{n}'s price dropped, and what's new in {city}?", "leaders": "Compare #{n} and #{m} feature by feature", "price": "Is #{n}'s price in line with similar homes?", "contact": "How do I contact the agent for #{n}?",
            "similar": "Show me homes like #{n} in {city}", "budget": "What does {p} buy in {a} vs {b}?",
            "more": "And up to {p}?", "areas": "Compare schools and public transport in {a} and {b}",
            "search": "Homes in {a} or {b} up to {p}"},
-    "pt": {"news": "O preço da #{n} baixou, e que novidades há em {city}?", "leaders": "Compara a #{n} e a #{m} característica a característica", "price": "O preço do #{n} está em linha com casas semelhantes?", "contact": "Como contacto o agente do #{n}?",
+    "pt": {"forsale": "Casas à venda em {a}", "news": "O preço da #{n} baixou, e que novidades há em {city}?", "leaders": "Compara a #{n} e a #{m} característica a característica", "price": "O preço do #{n} está em linha com casas semelhantes?", "contact": "Como contacto o agente do #{n}?",
            "similar": "Mostra casas parecidas com a #{n} em {city}", "budget": "O que se compra com {p} em {a} e {b}?",
            "more": "E até {p}?", "areas": "Compara escolas e transportes públicos em {a} e {b}",
            "search": "Casas em {a} ou {b} até {p}"},
-    "es": {"news": "¿Ha bajado el precio de la #{n} y qué hay de nuevo en {city}?", "leaders": "Compara la #{n} y la #{m} característica por característica", "price": "¿El precio del #{n} está en línea con viviendas similares?",
+    "es": {"forsale": "Viviendas en venta en {a}", "news": "¿Ha bajado el precio de la #{n} y qué hay de nuevo en {city}?", "leaders": "Compara la #{n} y la #{m} característica por característica", "price": "¿El precio del #{n} está en línea con viviendas similares?",
            "contact": "¿Cómo contacto con el agente del #{n}?",
            "similar": "Muéstrame viviendas parecidas a la #{n} en {city}", "budget": "¿Qué se compra con {p} en {a} y {b}?",
            "more": "¿Y hasta {p}?", "areas": "Compara colegios y transporte público en {a} y {b}",
            "search": "Viviendas en {a} o {b} hasta {p}"},
-    "fr": {"news": "Le prix du n°{n} a-t-il baissé, et quoi de neuf à {city} ?", "leaders": "Compare le n°{n} et le n°{m} point par point", "price": "Le prix du n°{n} est-il cohérent avec des biens similaires ?",
+    "fr": {"forsale": "Logements à vendre à {a}", "news": "Le prix du n°{n} a-t-il baissé, et quoi de neuf à {city} ?", "leaders": "Compare le n°{n} et le n°{m} point par point", "price": "Le prix du n°{n} est-il cohérent avec des biens similaires ?",
            "contact": "Comment contacter l'agent du n°{n} ?",
            "similar": "Montre des biens semblables au n°{n} à {city}", "budget": "Que peut-on acheter avec {p} à {a} et {b} ?",
            "more": "Et jusqu'à {p} ?", "areas": "Compare les écoles et les transports en commun à {a} et {b}",
            "search": "Logements à {a} ou {b} jusqu'à {p}"},
-    "de": {"news": "Ist der Preis von #{n} gesunken, und was gibt es Neues in {city}?", "leaders": "Vergleiche #{n} und #{m} Merkmal für Merkmal", "price": "Liegt der Preis von #{n} im Rahmen ähnlicher Objekte?", "contact": "Wie erreiche ich den Makler von #{n}?",
+    "de": {"forsale": "Wohnungen und Häuser zum Kauf in {a}", "news": "Ist der Preis von #{n} gesunken, und was gibt es Neues in {city}?", "leaders": "Vergleiche #{n} und #{m} Merkmal für Merkmal", "price": "Liegt der Preis von #{n} im Rahmen ähnlicher Objekte?", "contact": "Wie erreiche ich den Makler von #{n}?",
            "similar": "Zeig mir ähnliche Wohnungen wie #{n} in {city}", "budget": "Was bekommt man für {p} in {a} und {b}?",
            "more": "Und bis {p}?", "areas": "Vergleiche Schulen und öffentlichen Verkehr in {a} und {b}",
            "search": "Wohnungen in {a} oder {b} bis {p}"},
-    "nl": {"news": "Is de prijs van #{n} gedaald, en wat is er nieuw in {city}?", "leaders": "Vergelijk #{n} en #{m} kenmerk voor kenmerk", "price": "Ligt de prijs van #{n} in lijn met vergelijkbare woningen?", "contact": "Hoe bereik ik de makelaar van #{n}?",
+    "nl": {"forsale": "Woningen te koop in {a}", "news": "Is de prijs van #{n} gedaald, en wat is er nieuw in {city}?", "leaders": "Vergelijk #{n} en #{m} kenmerk voor kenmerk", "price": "Ligt de prijs van #{n} in lijn met vergelijkbare woningen?", "contact": "Hoe bereik ik de makelaar van #{n}?",
            "similar": "Toon vergelijkbare woningen als #{n} in {city}", "budget": "Wat koop je voor {p} in {a} en {b}?",
            "more": "En tot {p}?", "areas": "Vergelijk scholen en openbaar vervoer in {a} en {b}",
            "search": "Woningen in {a} of {b} tot {p}"},
@@ -131,6 +131,11 @@ def _cross_country(shown: list[dict]) -> bool:
     """True when the cards on screen sit in more than one country."""
     countries = {_fold((c.get("location") or "").split(",")[-1].strip()) for c in shown if c.get("location")}
     return len(countries) > 1
+
+
+def for_sale(lang: str, place: str) -> str:
+    """After a rental search found nothing because Cubi has no rentals there."""
+    return T.get(lang, T["en"])["forsale"].format(a=place)
 
 
 def norm(text: str) -> str:

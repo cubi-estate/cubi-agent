@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT))
 from agent import skills, suggest  # noqa: E402
 
 ROUTE = {"news": "home-news", "leaders": "similar-elsewhere", "price": "check-asking-price", "contact": "contact-agent", "similar": "similar-elsewhere",
-         "budget": "compare-budget", "areas": "compare-areas", "search": "find-homes"}
+         "budget": "compare-budget", "areas": "compare-areas", "search": "find-homes", "forsale": "find-homes"}
 FILL = dict(n=2, m=4, city="Porto", a="Lisboa", b="Porto")
 
 
