@@ -231,6 +231,29 @@ _SAVING = re.compile(r"\b(sav(e|es|ing|ings)|premium|poupa|poupan[çc]a|ahorr|[�
                      r"bespa(ar|ring)|aufpreis|surco[uû]t|sobreprecio|sobrecusto)", re.I)
 
 
+# find_similar_elsewhere reports a feature as "stated" or "not stated": a
+# listing that doesn't mention parking says nothing about whether the flat has
+# it. "absent from"/"missing from the listing" is true of the listing but reads
+# as the flat lacking it (live 2026-10-22), so it is reworded; a sentence that
+# says the home lacks something is dropped. "does not mention" stays.
+_ABSENT_FROM = re.compile(r"\b(absent|missing) from\b", re.I)
+_ABSENCE_CLAIM = re.compile(
+    r"\b(lacks?|lacking|does(?:n't| not) (?:have|include|offer|come with)|(?:has|have) no|there is no|"
+    r"comes? without|without (?:a |an )?(?:balcony|terrace|lift|elevator|parking|garage|garden|pool|air)|"
+    r"n[ãa]o (?:tem|possui|disp[õo]e)|sem (?:varanda|terra[çc]o|elevador|estacionamento|garagem|jardim|piscina)|"
+    r"no (?:tiene|dispone|cuenta con)|carece|sin (?:balc[óo]n|terraza|ascensor|garaje|parking|jard[íi]n|piscina)|"
+    r"hat (?:kein|keine)|verf[üu]gt (?:nicht|über kein)|ohne (?:balkon|terrasse|aufzug|stellplatz|garage|garten|pool)|"
+    r"n'a pas|ne (?:dispose|poss[èe]de) pas|sans (?:balcon|terrasse|ascenseur|parking|garage|jardin|piscine)|"
+    r"heeft geen|beschikt niet|zonder (?:balkon|terras|lift|parkeer|garage|tuin|zwembad))", re.I)
+
+
+def fix_absence_wording(answer: str) -> tuple[str, int]:
+    """Reword "absent from the listing", drop "the home lacks …". Returns (answer, changes)."""
+    answer, reworded = _ABSENT_FROM.subn("not mentioned in", answer)
+    answer, dropped = _drop_sentences(answer, _ABSENCE_CLAIM)
+    return answer, reworded + dropped
+
+
 def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple[str, dict]:
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
     answer, scrubbed = scrub_contacts(answer)
@@ -240,12 +263,15 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
         answer = ensure_not_a_valuation(answer, lang)
     if "get_contact_options" in used_tools:
         answer, sent = drop_sent_claims(answer, lang)
+    absence = 0
     if "find_similar_elsewhere" in used_tools:
         answer, v1 = drop_price_verdicts(answer, lang)
         answer, v2 = _drop_sentences(answer, _SAVING)
         verdicts += v1 + v2
+        answer, absence = fix_absence_wording(answer)
     pct = 0
     if "compare_inventory" in used_tools:
         answer, pct = drop_unbacked_percentages(answer, tool_text)
     return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
-                    "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct}
+                    "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
+                    "absence_wording_fixed": absence}

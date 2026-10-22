@@ -5,6 +5,8 @@ model is scripted. These pin what the page gets (the table comes from the
 tool, the matches become the cards), the card the user named, and the guards
 on "saving"/"premium" wording."""
 import json
+
+import pytest
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -150,3 +152,34 @@ def test_two_cards_named_runs_the_pair_in_code_and_keeps_the_cards(tmp_path):
     assert [c["n"] for c in agent.shown] == [1, 2, 4]          # "#4" still means the Porto home
     loop_calls = [c for c in llm.calls]
     assert len(loop_calls) == 1 and not loop_calls[0].get("tools")
+
+
+def test_absent_from_is_reworded_and_lacks_is_dropped():
+    live = ("The Porto match #2 cites lift, parking, garden and a nearby campsite absent from the Lisbon listing, "
+            "and it is closer to the metro.")
+    out, n = guards.fix_absence_wording(live)
+    assert n == 1 and "not mentioned in the Lisbon listing" in out and "absent" not in out
+    out, n = guards.fix_absence_wording("Both ask about €400,000. The Lisbon home lacks parking. "
+                                        "The Porto listing mentions a lift; the Lisbon listing doesn't say.")
+    assert n == 1 and "lacks" not in out and out.startswith("Both ask about €400,000.")
+    assert "doesn't say" in out
+
+
+@pytest.mark.parametrize("sentence", [
+    "O apartamento de Lisboa não tem estacionamento.", "El piso de Lisboa no tiene garaje.",
+    "Die Lissabonner Wohnung hat keinen Aufzug.", "L'appartement de Lisbonne n'a pas de parking.",
+    "De woning in Lissabon heeft geen lift.", "The Lisbon flat comes without a balcony.",
+])
+def test_absence_claims_are_dropped_in_every_language(sentence):
+    out, n = guards.fix_absence_wording("Ok. " + sentence)
+    assert n == 1 and out == "Ok."
+
+
+def test_does_not_mention_is_kept():
+    text = "The Lisbon listing does not mention parking."
+    assert guards.fix_absence_wording(text) == (text, 0)
+
+
+def test_the_guard_runs_only_for_similar_homes():
+    answer, rep = guards.apply("Parking is absent from the listing.", "", "en", {"get_listing"})
+    assert "absent" in answer and rep["absence_wording_fixed"] == 0
