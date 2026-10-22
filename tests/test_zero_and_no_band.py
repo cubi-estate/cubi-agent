@@ -67,3 +67,16 @@ def test_no_band_gives_a_ready_sentence():
     assert "vary too much" in spread
     band = json.dumps({"band": {"low": 1, "median": 2, "high": 3}})
     assert Agent._no_band_brief(band, "card #1") == band
+
+
+def test_for_sale_button_switches_to_sale_without_the_extractor(tmp_path):
+    from agent.schema import SearchFilter
+    agent, calls = _agent(tmp_path, lambda a: CARD)
+    agent.lang = "fr"
+    agent.filter = SearchFilter(location=["Lyon"], type=["apartment"], transaction_type="rent", min_price=None,
+                                max_price=1200, min_bedrooms=None, max_bedrooms=None, min_living_area=None,
+                                has_parking=None, features=[], lang="fr", needs_free_text_search=False)
+    agent.sale_only = ["Lyon"]
+    list(agent._search_homes("Logements à vendre à Lyon"))
+    assert calls[0]["transaction_type"] == "sale" and "max_price" not in calls[0]
+    assert "price_period" not in calls[0] and agent.sale_only == []

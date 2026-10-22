@@ -281,8 +281,15 @@ class Agent:
         return {"is_error": False, "text": listings.render_cards(head, merged)}, ""
 
     def _search_homes(self, request: str) -> Iterator[dict | str]:
+        offered = [p for p in self.sale_only if suggest.norm(suggest.for_sale(self.lang, p)) == suggest.norm(request)]
         self.sale_only = []   # places _why_none found with homes for sale but none to rent
-        ex = extractmod.extract(request, current=self.filter, cli=self.cli)
+        if offered and self.filter is not None:
+            # The "homes for sale in Lyon" button: the extractor kept "to rent" from
+            # the search before it (live 2026-10-22), so the switch is made here.
+            f = self.filter.model_copy(update={"transaction_type": "sale", "min_price": None, "max_price": None})
+            ex = extractmod.Extraction(f, extractmod.route_for(f), "button", 0.0, 0, {})
+        else:
+            ex = extractmod.extract(request, current=self.filter, cli=self.cli)
         self.timings.append((f"extract ({ex.model.split('/')[-1]}, {ex.attempts} attempt(s))", ex.latency_s))
         self.stats["llm_in"] += ex.usage.get("in", 0)
         self.stats["llm_out"] += ex.usage.get("out", 0)
