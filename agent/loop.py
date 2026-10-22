@@ -467,7 +467,8 @@ class Agent:
         # over the listing's stored city: live 2026-10-22 a card shown in "Lisboa"
         # was stored as Cascais, and the news search went to the wrong town.
         card = next((c for c in self.shown if c.get("id") == ref), {})
-        city = next(iter(listings.places(card.get("location") or "")), "") or (hist or {}).get("city") or ""
+        searched = list(self.filter.location) if self.filter and self.filter.location else []
+        city = suggest.news_place(card, searched) or (hist or {}).get("city") or ""
         country = (hist or {}).get("country") or ""
         if city:
             place = f"{city}, {country}" if country else city

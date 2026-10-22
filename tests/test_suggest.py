@@ -33,7 +33,7 @@ SHOWN = [{"n": 1, "location": "Lisboa, Lisboa, Portugal"}, {"n": 2, "location": 
 
 def test_after_a_search():
     qs = suggest.next_questions("find-homes", "en", places=["Lisbon", "Porto"], max_price=400000, shown=SHOWN)
-    assert qs == ["Compare #1 and #2 feature by feature", "Has #1's price dropped, and what's new in Lisboa?",
+    assert qs == ["Compare #1 and #2 feature by feature", "Has #1's price dropped, and what's new in Lisbon?",
                   "Is #1's price in line with similar homes?"]
 
 
@@ -111,3 +111,12 @@ def test_similar_in_lisboa_is_done_for_lisbon_too():
     qs = suggest.next_questions("check-asking-price", "en", places=["Lisbon", "Porto"], max_price=None,
                                 shown=shown, focus_n=2, done=done)
     assert not any("homes like" in q for q in qs)
+
+
+def test_news_is_about_the_searched_city_not_a_parish():
+    card = {"n": 2, "id": "iad:1", "location": "Modivas, Vila do Conde, Porto, Portugal, Porto District"}
+    assert suggest.news_place(card, ["Porto", "Valencia"]) == "Porto"
+    assert suggest.news_place(card, []) == "Modivas"                       # nothing searched: the card's own
+    qs = suggest.next_questions("check-asking-price", "en", places=["Porto", "Valencia"], max_price=400000,
+                                shown=[card], focus_n=2)
+    assert qs[0] == "Has #2's price dropped, and what's new in Porto?"

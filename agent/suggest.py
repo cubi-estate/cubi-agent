@@ -113,6 +113,20 @@ def leaders(shown: list[dict], places: list[str]) -> tuple[int, int] | None:
     return (firsts[0], firsts[1]) if firsts[0] != firsts[1] else None
 
 
+def news_place(card: dict, places: list[str]) -> str | None:
+    """The place a home's news is about: the searched city the card is in, else the
+    card's first place name. Used by the button and by the news search alike, so
+    they never disagree. ("what's new in Modivas?" — a parish of Vila do Conde,
+    the first name on a Porto-search card — would find no news; live 2026-10-22.)"""
+    parts = [w.strip() for w in (card.get("location") or "").split(",") if w.strip()]
+    for place in places:
+        if any(_same_place(place, w) for w in parts):
+            return place
+    last_digit = max((i for i, w in enumerate(parts) if re.search(r"\d", w)), default=-1)
+    names = [w for w in parts[last_digit + 1:] if _fold(w) not in _COUNTRIES and "district" not in w.lower()]
+    return names[0] if names else None
+
+
 def _cross_country(shown: list[dict]) -> bool:
     """True when the cards on screen sit in more than one country."""
     countries = {_fold((c.get("location") or "").split(",")[-1].strip()) for c in shown if c.get("location")}
@@ -152,11 +166,7 @@ def next_questions(skill: str, lang: str, *, places: list[str], max_price: float
                 q = t["leaders"].format(n=pair[0], m=pair[1])
                 k = key("pair", "+".join(sorted(str(ids.get(x)) for x in pair)))
         elif kind == "news" and card:
-            # The card's first place name after any street part ("Lisboa, Lisboa, Portugal" -> Lisboa).
-            parts = [w.strip() for w in (card.get("location") or "").split(",") if w.strip()]
-            last_digit = max((i for i, w in enumerate(parts) if re.search(r"\d", w)), default=-1)
-            names = [w for w in parts[last_digit + 1:] if _fold(w) not in _COUNTRIES and "district" not in w.lower()]
-            town = names[0] if names else None
+            town = news_place(card, places)
             if town:
                 q = t["news"].format(n=n, city=town)
                 k = key("news", ids.get(n))
