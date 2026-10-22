@@ -15,16 +15,16 @@ import urllib.request
 
 PAUSE_S = 8
 
-TURNS = [
+TURNS = [  # 1-7 are the video's filmed turns, in order (docs/video/SCRIPT.md); 8-9 are not filmed
     "Wir ziehen um: Wohnung zum Kauf in Porto oder Valencia, bis 400.000 €, mindestens 2 Schlafzimmer",
-    "Is #2 overpriced?",
     "Compare schools and public transport in Porto and Valencia",
     "What does 400k buy in Lisbon vs Porto? 2-bed flats",
     "And up to 500k?",
-    "<feature by feature>",  # not in the video: clicks the leaders suggestion the last answer offered
-    "How do I contact the agent for #2?",
-    "Show me homes like #2 in Porto",  # not in the video: the side-by-side table
-    "<price dropped>",  # not in the video: clicks the price-history + news suggestion
+    "<feature by feature>",  # clicks the leaders suggestion the last answer offered
+    "Has #1's price dropped, and what's new in Lisbon?",
+    "How do I contact the agent for #1?",
+    "Is #2 overpriced?",
+    "Show me homes like #1 in Porto",
 ]
 
 
