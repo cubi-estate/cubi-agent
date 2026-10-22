@@ -120,7 +120,9 @@ def news_place(card: dict, places: list[str]) -> str | None:
     the first name on a Porto-search card — would find no news; live 2026-10-22.)"""
     parts = [w.strip() for w in (card.get("location") or "").split(",") if w.strip()]
     for place in places:
-        if any(_same_place(place, w) for w in parts):
+        # "Lyon 8th Arrondissement" is in Lyon (a button said "what's new in
+        # Auvergne-Rhône-Alpes?", live 2026-10-22).
+        if any(_same_place(place, w) or _fold(w).startswith(_fold(place) + " ") for w in parts):
             return place
     last_digit = max((i for i, w in enumerate(parts) if re.search(r"\d", w)), default=-1)
     names = [w for w in parts[last_digit + 1:] if _fold(w) not in _COUNTRIES and "district" not in w.lower()]

@@ -120,3 +120,8 @@ def test_news_is_about_the_searched_city_not_a_parish():
     qs = suggest.next_questions("check-asking-price", "en", places=["Porto", "Valencia"], max_price=400000,
                                 shown=[card], focus_n=2)
     assert qs[0] == "Has #2's price dropped, and what's new in Porto?"
+
+
+def test_news_place_is_the_city_of_an_arrondissement():
+    card = {"n": 1, "location": "Lyon 8th Arrondissement, France, Auvergne-Rhône-Alpes"}
+    assert suggest.news_place(card, ["Lyon"]) == "Lyon"
