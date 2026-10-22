@@ -17,6 +17,8 @@ TURNS = [
     "Wir ziehen um: Wohnung zum Kauf in Porto oder Valencia, bis 400.000 €, mindestens 2 Schlafzimmer",
     "Is #2 overpriced?",
     "Compare schools and public transport in Porto and Valencia",
+    "What does 400k buy in Lisbon vs Porto? 2-bed flats",
+    "And up to 500k?",
     "How do I contact the agent for #2?",
 ]
 
@@ -64,6 +66,9 @@ def main() -> int:
         ans = out["answer"] or {}
         cards = len(ans.get("listings") or [])
         print(f"\n[{i}] {msg}\n    {out['seconds']}s · lang={ans.get('lang')} · cards={cards} · filter={ans.get('filter')!r}")
+        for r in (ans.get("inventory") or {}).get("rows", []):
+            was = f" (was {r['previous_pct']}%)" if r.get("previous_pct") is not None else ""
+            print(f"    ▮ {r['place']}: {r.get('share_pct')}% · {r.get('within')} of {r.get('of')}{was}")
         for s in out["actions"]:
             print("    ·", s)
         for e in out["errors"]:

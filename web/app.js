@@ -15,22 +15,28 @@ let busy = false;
 const T = {
   en: { open: "Open listing", ask: "Ask Cubi", updated: "Updated", bd: "bd", ba: "ba",
         price: n => `Is #${n}'s price in line with similar homes?`, contact: n => `How do I contact the agent for #${n}?`,
-        steps: (n, s) => `${n} step${n === 1 ? "" : "s"} · ${s}s`, searched: "Search", none: "No homes matched." },
+        steps: (n, s) => `${n} step${n === 1 ? "" : "s"} · ${s}s`, searched: "Search", none: "No homes matched.",
+        within: c => `Asking price up to ${c}`, of: (a, b) => `${a} of ${b} listings`, was: (p, c) => `${p}% at ${c}`, note: "Share of each city's listed homes of this kind on Cubi, by asking price — not sale prices. Counts show Cubi's coverage, not market size.", na: "not available right now", more: c => `And up to ${c}?` },
   pt: { open: "Ver anúncio", ask: "Perguntar à Cubi", updated: "Atualizado", bd: "qt", ba: "wc",
         price: n => `O preço do #${n} está em linha com casas semelhantes?`, contact: n => `Como contacto o agente do #${n}?`,
-        steps: (n, s) => `${n} passo${n === 1 ? "" : "s"} · ${s}s`, searched: "Pesquisa", none: "Nenhuma casa encontrada." },
+        steps: (n, s) => `${n} passo${n === 1 ? "" : "s"} · ${s}s`, searched: "Pesquisa", none: "Nenhuma casa encontrada.",
+        within: c => `Preço pedido até ${c}`, of: (a, b) => `${a} de ${b} anúncios`, was: (p, c) => `${p}% até ${c}`, note: "Percentagem dos anúncios deste tipo na Cubi em cada cidade, por preço pedido — não preços de venda. As contagens refletem a cobertura da Cubi, não o tamanho do mercado.", na: "indisponível de momento", more: c => `E até ${c}?` },
   es: { open: "Ver anuncio", ask: "Preguntar a Cubi", updated: "Actualizado", bd: "hab", ba: "baños",
         price: n => `¿El precio del #${n} está en línea con viviendas similares?`, contact: n => `¿Cómo contacto con el agente del #${n}?`,
-        steps: (n, s) => `${n} paso${n === 1 ? "" : "s"} · ${s}s`, searched: "Búsqueda", none: "Ninguna vivienda encontrada." },
+        steps: (n, s) => `${n} paso${n === 1 ? "" : "s"} · ${s}s`, searched: "Búsqueda", none: "Ninguna vivienda encontrada.",
+        within: c => `Precio de oferta hasta ${c}`, of: (a, b) => `${a} de ${b} anuncios`, was: (p, c) => `${p}% hasta ${c}`, note: "Porcentaje de los anuncios de este tipo en Cubi en cada ciudad, por precio de oferta — no precios de venta. Los recuentos reflejan la cobertura de Cubi, no el tamaño del mercado.", na: "no disponible ahora", more: c => `¿Y hasta ${c}?` },
   fr: { open: "Voir l'annonce", ask: "Demander à Cubi", updated: "Mis à jour", bd: "ch", ba: "sdb",
         price: n => `Le prix du n°${n} est-il cohérent avec des biens similaires ?`, contact: n => `Comment contacter l'agent du n°${n} ?`,
-        steps: (n, s) => `${n} étape${n === 1 ? "" : "s"} · ${s}s`, searched: "Recherche", none: "Aucun bien trouvé." },
+        steps: (n, s) => `${n} étape${n === 1 ? "" : "s"} · ${s}s`, searched: "Recherche", none: "Aucun bien trouvé.",
+        within: c => `Prix demandé jusqu'à ${c}`, of: (a, b) => `${a} sur ${b} annonces`, was: (p, c) => `${p} % jusqu'à ${c}`, note: "Part des annonces de ce type sur Cubi dans chaque ville, selon le prix demandé — pas les prix de vente. Les nombres reflètent la couverture de Cubi, pas la taille du marché.", na: "indisponible pour le moment", more: c => `Et jusqu'à ${c} ?` },
   de: { open: "Inserat öffnen", ask: "Cubi fragen", updated: "Aktualisiert", bd: "Schlafz.", ba: "Bad",
         price: n => `Liegt der Preis von #${n} im Rahmen ähnlicher Objekte?`, contact: n => `Wie erreiche ich den Makler von #${n}?`,
-        steps: (n, s) => `${n} Schritt${n === 1 ? "" : "e"} · ${s}s`, searched: "Suche", none: "Keine passenden Objekte." },
+        steps: (n, s) => `${n} Schritt${n === 1 ? "" : "e"} · ${s}s`, searched: "Suche", none: "Keine passenden Objekte.",
+        within: c => `Angebotspreis bis ${c}`, of: (a, b) => `${a} von ${b} Inseraten`, was: (p, c) => `${p} % bis ${c}`, note: "Anteil der Inserate dieser Art auf Cubi je Stadt, nach Angebotspreis — keine Verkaufspreise. Die Anzahlen zeigen Cubis Abdeckung, nicht die Marktgröße.", na: "gerade nicht verfügbar", more: c => `Und bis ${c}?` },
   nl: { open: "Advertentie openen", ask: "Vraag het Cubi", updated: "Bijgewerkt", bd: "slpk", ba: "badk",
         price: n => `Ligt de prijs van #${n} in lijn met vergelijkbare woningen?`, contact: n => `Hoe bereik ik de makelaar van #${n}?`,
-        steps: (n, s) => `${n} stap${n === 1 ? "" : "pen"} · ${s}s`, searched: "Zoekopdracht", none: "Geen woningen gevonden." },
+        steps: (n, s) => `${n} stap${n === 1 ? "" : "pen"} · ${s}s`, searched: "Zoekopdracht", none: "Geen woningen gevonden.",
+        within: c => `Vraagprijs tot ${c}`, of: (a, b) => `${a} van ${b} advertenties`, was: (p, c) => `${p}% tot ${c}`, note: "Aandeel van de advertenties van dit type op Cubi per stad, naar vraagprijs — geen verkoopprijzen. De aantallen tonen Cubi's dekking, niet de omvang van de markt.", na: "nu niet beschikbaar", more: c => `En tot ${c}?` },
 };
 
 function esc(s) {
@@ -114,6 +120,37 @@ function card(c, t) {
   return el;
 }
 
+function euro(n, lang) {
+  return "€" + Math.round(Number(n) || 0).toLocaleString(lang || "en").replace(/,/g, "\u202f");
+}
+
+// The budget comparison: one bar per city, the share of its priced listings
+// within the cap; after a budget change, a marker at the earlier share.
+function budget(el, b, t, lang) {
+  const pct = v => Math.max(0, Math.min(100, Number(v) || 0));
+  const rows = (b.rows || []).map(r => {
+    if (r.error || r.share_pct == null) {
+      return `<div class="brow"><div class="bplace">${esc(r.place)}</div><div class="bval na">${esc(t.na)}</div></div>`;
+    }
+    const prev = r.previous_pct != null && b.previous_max_price
+      ? `<div class="bprev" style="left:${pct(r.previous_pct)}%"></div>` : "";
+    const was = prev ? `<span class="bwas">${esc(t.was(r.previous_pct, euro(b.previous_max_price, lang)))}</span>` : "";
+    return `<div class="brow">
+      <div class="bplace">${esc(r.place)}</div>
+      <div class="btrack"><div class="bfill" data-w="${pct(r.share_pct)}"
+        style="width:${prev ? pct(r.previous_pct) : 0}%"></div>${prev}</div>
+      <div class="bval"><b>${esc(r.share_pct)}%</b> <span>${esc(t.of(r.within, r.of))}</span> ${was}</div>
+    </div>`;
+  }).join("");
+  el.innerHTML = `<div class="bhead">${esc(t.within(euro(b.max_price, lang)))}</div>${rows}
+    <div class="bnote">${esc(t.note)}${b.as_of ? ` · ${esc(String(b.as_of).slice(0, 10))}` : ""}</div>`;
+  el.hidden = false;
+  // Grow from zero, or after a budget change from the earlier share, so the
+  // change itself is what moves.
+  requestAnimationFrame(() => requestAnimationFrame(() =>
+    el.querySelectorAll(".bfill").forEach(f => { f.style.width = f.dataset.w + "%"; })));
+}
+
 function followups(box, t, n) {
   for (const text of [t.price(n), t.contact(n)]) {
     const b = document.createElement("button");
@@ -174,6 +211,15 @@ async function ask(text) {
           if (ev.filter && ev.listings && ev.listings.length) {
             filter.hidden = false;
             filter.innerHTML = `${esc(t.searched)}: <b>${esc(ev.filter)}</b>`;
+          }
+          if (ev.inventory) {
+            budget(turn.querySelector(".budget"), ev.inventory, t, ev.lang);
+            const next = (Number(ev.inventory.max_price) || 0) + 100000;
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = t.more(euro(next, ev.lang));
+            b.addEventListener("click", () => ask(b.textContent));
+            fups.appendChild(b);
           }
           (ev.listings || []).forEach(c => cards.appendChild(card(c, t)));
           if ((ev.listings || []).length) followups(fups, t, 1);

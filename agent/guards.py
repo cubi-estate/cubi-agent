@@ -189,6 +189,42 @@ def drop_sent_claims(answer: str, lang: str) -> tuple[str, int]:
     return out + "\n\n" + _NOT_SENT.get(lang, _NOT_SENT["en"]), n
 
 
+PCT_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s?%")
+# Figures derived from two shares: a ratio or a difference in points. Never in
+# the tool output, so any of them is the model's own arithmetic.
+DERIVED_RE = re.compile(r"\d+(?:[.,]\d+)?\s*(?:x|×|times|fold|vezes|veces|mal|fois|keer)\b|"
+                        r"percentage points?|pontos percentuais|puntos porcentuales|prozentpunkte|"
+                        r"points de pourcentage|procentpunten", re.I)
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=\S)")
+
+
+def _pct_key(x: str) -> str:
+    v = float(x.replace(",", "."))
+    return f"{v:g}"
+
+
+def drop_unbacked_percentages(answer: str, tool_text: str) -> tuple[str, int]:
+    """Drop every sentence carrying a percentage the tool output doesn't give.
+
+    The budget comparison's figures are the point of the answer, so a share the
+    model worked out itself ("Porto's share is 3x Lisbon's", "21 points higher")
+    reads as Cubi's number. Differences and ratios ("3.4 times", "21 points")
+    are left out by the skill; this catches the ones that slip through."""
+    allowed = {_pct_key(m) for m in PCT_RE.findall(tool_text)}
+    dropped = 0
+    out_lines = []
+    for line in answer.split("\n"):
+        kept = []
+        for sent in _SENTENCE_END.split(line):
+            if DERIVED_RE.search(sent) or any(_pct_key(m) not in allowed for m in PCT_RE.findall(sent)):
+                dropped += 1
+                continue
+            kept.append(sent)
+        if kept or not line.strip():
+            out_lines.append(" ".join(kept))
+    return "\n".join(out_lines).strip(), dropped
+
+
 def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple[str, dict]:
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
     answer, scrubbed = scrub_contacts(answer)
@@ -198,5 +234,8 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
         answer = ensure_not_a_valuation(answer, lang)
     if "get_contact_options" in used_tools:
         answer, sent = drop_sent_claims(answer, lang)
+    pct = 0
+    if "compare_inventory" in used_tools:
+        answer, pct = drop_unbacked_percentages(answer, tool_text)
     return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
-                    "verdicts_dropped": verdicts, "sent_claims_dropped": sent}
+                    "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct}

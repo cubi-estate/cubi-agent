@@ -24,7 +24,7 @@ import time
 from typing import Generator, Iterator
 
 from . import extract as extractmod
-from . import guards, lang as langmod, listings, llm, ordinals, skills as skillsmod, tavily_tool
+from . import guards, inventory, lang as langmod, listings, llm, ordinals, skills as skillsmod, tavily_tool
 from .fixtures import connect, listing_ref
 from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
@@ -106,7 +106,9 @@ def _describe(f: SearchFilter, lang: str = "en") -> str:
     bits = [tr(f.transaction_type)]
     if f.type:
         bits.append("/".join(tr(t) for t in f.type))
-    if f.min_bedrooms:
+    if f.min_bedrooms and f.max_bedrooms == f.min_bedrooms:
+        bits.append(f"{f.min_bedrooms} {w['bed']}")
+    elif f.min_bedrooms:
         bits.append(f"{f.min_bedrooms}+ {w['bed']}")
     month = w["month"] if f.transaction_type == "rent" else ""
     if f.min_price and f.max_price:
@@ -142,13 +144,17 @@ class Agent:
         self._message = ""
         self.focus: str | None = None  # the last home a price/contact/detail call was about
         self.sources: dict[str, dict] = {}  # this turn's area-research sources, S1.. → url
+        self.last_skill: str | None = None
+        self.inventory: dict | None = None  # last budget comparison: {"args", "result"}
+        self.bars: dict | None = None  # this turn's budget bars, for the page
 
     # ---- tools -------------------------------------------------------------
     def _timed(self, stage: str, t0: float) -> None:
         self.timings.append((stage, round(time.monotonic() - t0, 2)))
 
     def _tools_for(self, skill: skillsmod.Skill) -> list[dict]:
-        mcp_names = [t for t in skill.tools if t != "search_homes"]
+        # search_homes and the budget comparison run in code, not as model tools.
+        mcp_names = [t for t in skill.tools if t not in ("search_homes", inventory.TOOL)]
         t0 = time.monotonic()
         tools = self.mcp.openai_tools(mcp_names) if mcp_names else []
         self._timed("mcp tools/list (cached after the first turn)", t0)
@@ -269,9 +275,70 @@ class Agent:
                 self.seen_refs |= {c["id"].lower() for c in self.cards if c.get("id")}
         yield header + res["text"]
 
+    def _compare_budget(self, request: str) -> Iterator[dict | str]:
+        """compare_inventory for the cities and budget in the request. A refinement
+        ("and up to 500k?") keeps the cities and cohort; only the budget changes."""
+        ex = extractmod.extract(request, current=self.filter, cli=self.cli)
+        self.timings.append((f"extract ({ex.model.split('/')[-1]}, {ex.attempts} attempt(s))", ex.latency_s))
+        self.stats["llm_in"] += ex.usage.get("in", 0)
+        self.stats["llm_out"] += ex.usage.get("out", 0)
+        f, prev = ex.filter, self.inventory
+        if f is None:
+            yield "error: the request could not be read. Ask the user to name the cities and the budget."
+            return
+        places = list(f.location)
+        if len(places) < 2 and prev:
+            places = list(prev["args"]["places"])
+        if len(places) < 2:
+            yield {"type": "action", "text": "A budget comparison needs two or three cities"}
+            yield "error: fewer than two cities were named. Ask which two or three cities to compare."
+            return
+        if not f.max_price:
+            yield {"type": "action", "text": "A budget comparison needs a budget"}
+            yield "error: no budget was given. Ask the user for their budget (an asking-price cap)."
+            return
+        # The budget is a cap; a floor the extractor read from the same number
+        # ("400k" → 400k–400k) would show on screen though nothing counts it.
+        f = f.model_copy(update={"location": places[:inventory.MAX_PLACES], "transaction_type": "sale",
+                                 "min_price": None})
+        self.filter = f
+        args = inventory.args_for(f, places)
+        yield {"type": "action", "text": f"Understood: {_describe(f.model_copy(update={'has_parking': None}))}",
+               "model": ex.model, "latency_s": ex.latency_s}
+        yield {"type": "action", "text": f"Counting listings within budget in {', '.join(args['places'])} "
+                                         f"(Cubi compare_inventory)"}
+        res = self.mcp.call_tool(inventory.TOOL, args)
+        result = None
+        if not res["is_error"]:
+            try:
+                result = json.loads(res["text"])
+            except json.JSONDecodeError:
+                result = None
+        if not result or not result.get("ok"):
+            yield {"type": "action", "text": "Budget comparison: not available right now"}
+            yield ("error: the comparison could not be run right now. Tell the user and offer to try again; "
+                   "do not estimate any figure.")
+            return
+        same_cohort = prev and inventory.cohort_key(prev["args"]) == inventory.cohort_key(args)
+        previous = prev["result"] if same_cohort and prev["args"]["max_price"] != args["max_price"] else None
+        cards = inventory.to_cards(result)
+        self.cards = cards
+        if cards:
+            self.shown = cards
+            self.focus = None
+            self.seen_refs |= {c["id"].lower() for c in cards if c.get("id")}
+        self.has_results = True
+        self.bars = inventory.bars(result, previous)
+        self.inventory = {"args": args, "result": result}
+        text = inventory.tool_text(result, previous, cards)
+        yield text + ("\n" + inventory.PARKING_NOTE if f.has_parking else "")
+
     def _run_tool(self, name: str, args: dict) -> Iterator[dict | str]:
         if name == "search_homes":
             yield from self._search_homes(str(args.get("request", "")))
+            return
+        if name == inventory.TOOL:
+            yield from self._compare_budget(str(args.get("request", "")))
             return
         if name == "research_area":
             places, topics = list(args.get("places") or []), list(args.get("topics") or [])
@@ -321,9 +388,11 @@ class Agent:
         self.cards = []
         self._message = text
         self.sources = {}
+        self.bars = None
         calls0 = len(self.mcp.calls)
         self.lang = langmod.detect(text, default=self.lang)
-        skill = self.skills[skillsmod.select(text, self.has_results)]
+        skill = self.skills[skillsmod.select(text, self.has_results, self.last_skill)]
+        self.last_skill = skill.name
         tools = self._tools_for(skill)
         system = BASE_RULES.format(lang=self.lang) + "\n\n" + skill.body + self._on_screen()
         messages = [{"role": "system", "content": system}, *self.history, {"role": "user", "content": text}]
@@ -364,6 +433,16 @@ class Agent:
             turn_msgs.append(call_msg)
             yield from run_call("search_homes", {"request": text}, "auto_search")
             tools = [t for t in tools if t["function"]["name"] != "search_homes"]
+        elif skill.name == "compare-budget":
+            # Same reason: the figures come from one call made in code, and the
+            # model only writes around them.
+            call = {"id": "auto_budget", "type": "function",
+                    "function": {"name": inventory.TOOL, "arguments": json.dumps({"request": text}, ensure_ascii=False)}}
+            call_msg = {"role": "assistant", "content": "", "tool_calls": [call]}
+            messages.append(call_msg)
+            turn_msgs.append(call_msg)
+            yield from run_call(inventory.TOOL, {"request": text}, "auto_budget")
+            tools = []
 
         answer = ""
         for step in range(MAX_STEPS + 1):
@@ -419,4 +498,4 @@ class Agent:
         self.history += turn_msgs
         yield {"type": "answer", "text": answer, "skill": skill.name, "lang": self.lang,
                "guards": report, "latency_s": round(time.monotonic() - t0, 2), "stats": dict(self.stats),
-               "timings": list(self.timings), "listings": list(self.cards)}
+               "timings": list(self.timings), "listings": list(self.cards), "inventory": self.bars}

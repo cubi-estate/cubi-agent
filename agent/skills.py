@@ -22,6 +22,8 @@ TOOLS = {
     "check-asking-price": ["compare_asking_prices", "get_listing"],
     "contact-agent": ["get_contact_options"],
     "compare-areas": ["research_area"],  # local tool: Tavily web search (agent/tavily_tool.py)
+    # Run in code before the model writes (agent/inventory.py), like a search turn.
+    "compare-budget": ["compare_inventory"],
 }
 
 _PATTERNS = {
@@ -41,7 +43,19 @@ _PATTERNS = {
                      r"kwaliteit van leven|cost of living|custo de vida|coste de vida|co[uû]t de la vie|"
                      r"lebenshaltung|kosten van levensonderhoud|neighbou?rhood|bairro|barrio|quartier|"
                      r"viertel|buurt|which (town|city|area) is better|live in",
+    # What money buys across places — an analytic question, not a search. Phrased
+    # narrowly on purpose: "Porto or Valencia, up to 400k" is a home search.
+    "compare-budget": r"what (does|do|can|would|will) .{0,60}\bbuys?\b|how far does .{0,40}\bgo\b|"
+                      r"\bafford\b|share of (homes|flats|apartments|listings)|"
+                      r"o que (se )?compr[ao]|quanto (se )?compr[ao]|qu[eé] (se )?(puede )?compr[ao]|"
+                      r"was bekomm|was kauft man|wat koop je|wat krijg je|"
+                      r"qu'est-ce qu'on (peut )?ach[eè]te|que peut-on acheter|ce qu'on ach[eè]te",
 }
+
+# A budget refinement right after a comparison ("and up to 500k?", "what about
+# 350 000?") stays a comparison rather than turning into a search.
+_BUDGET_FOLLOW_UP = re.compile(r"\d|\bk\b|budget|instead|what about|and (at|for|up)|e (at[eé]|com|se)|"
+                               r"y (hasta|con|si)|und (bis|mit)|et (à|jusqu|si)|en (tot|met|als)")
 
 
 @dataclass(frozen=True)
@@ -79,10 +93,15 @@ def load(skills_dir: Path = SKILLS_DIR) -> dict[str, Skill]:
     return out
 
 
-def select(message: str, has_results: bool) -> str:
+def select(message: str, has_results: bool, last_skill: str | None = None) -> str:
     """Pick a skill. Price/contact questions only make sense about a home already shown;
     an area question needs no results. Anything else searches homes."""
     low = message.lower()
+    if re.search(_PATTERNS["compare-budget"], low):
+        return "compare-budget"
+    if (last_skill == "compare-budget" and _BUDGET_FOLLOW_UP.search(low)
+            and not re.search(r"#\s*\d|\bn[º°o]\s*\d", low)):
+        return "compare-budget"
     if has_results:
         for name in ("check-asking-price", "contact-agent"):
             if re.search(_PATTERNS[name], low):
