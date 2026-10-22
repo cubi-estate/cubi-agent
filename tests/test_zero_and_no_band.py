@@ -15,7 +15,7 @@ NONE = "No properties matched these filters."
 
 
 def _agent(tmp_path, reply):
-    agent = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=None)
+    agent = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=object())
     calls = []
 
     def call(name, args):
