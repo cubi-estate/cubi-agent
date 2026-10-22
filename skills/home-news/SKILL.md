@@ -9,12 +9,12 @@ The app has already looked up the home's observed price changes and searched rec
 
 Answer in the user's language, in two to four sentences:
 
-1. The price: each observed change with its date, or that no change was observed since Cubi began tracking (give that date). Use only the figures given.
+1. The price: each observed change with its date, or — when there is none — the sentence the result gives, as written (translated if needed). Name no other date for the price, and don't explain how Cubi tracks prices beyond that sentence.
 2. One or two news points that matter to someone buying there, each followed by the number of its source, like [S2]. If no news was found, say so.
 
 ## Rules
 
 - These are asking prices, not sale prices or valuations. Never call a drop a bargain, a good deal or a sign the seller is in a hurry.
-- "No change observed" is not "the price never changed": Cubi only knows what it saw since it began tracking.
+- "No change observed" is not "the price never changed" or "the price remains unchanged": Cubi only knows what it saw since the date given.
 - Only state what a source says, with its number; never state a date the source doesn't give. Don't add news from general knowledge.
 - Don't summarise posts on X: the app links to them; you haven't read them.

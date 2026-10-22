@@ -126,6 +126,16 @@ def _describe(f: SearchFilter, lang: str = "en") -> str:
     return " · ".join(bits)
 
 
+def _long_date(iso: str | None) -> str:
+    """'2026-05-02' -> '2 May 2026': one unambiguous form for the model to copy."""
+    import datetime as _dt
+    try:
+        d = _dt.date.fromisoformat(str(iso)[:10])
+    except (TypeError, ValueError):
+        return str(iso or "")
+    return f"{d.day} {d.strftime('%B')} {d.year}"
+
+
 class Agent:
     def __init__(self, mcp: CubiMCP | None = None, cli=None, limit: int = 6):
         self.mcp = mcp or connect()
@@ -430,16 +440,24 @@ class Agent:
             self.price_history = {**{k: hist.get(k) for k in ("current_price", "currency", "on_cubi_since",
                                                                "tracked_since", "changes", "total_change_pct",
                                                                "first_observed_price", "city")}, "card": n}
-            lines.append(f"[price history for {label}] Current asking price €{hist.get('current_price') or 0:,.0f}; "
-                         f"Cubi has watched this listing's price since {watched} (first seen "
-                         f"{hist.get('on_cubi_since')}).")
-            for c in hist.get("changes") or []:
-                lines.append(f"- {c['date']}: €{c['old_price']:,.0f} → €{c['new_price']:,.0f} ({c['pct']:+.1f}%)")
+            # One date, said one way. Given the log's start AND the first-seen date,
+            # the model wrote "first appeared on 2026-05-02 (initial sighting
+            # 2025-08-26)" (live 2026-10-22). So: only the date changes became
+            # visible from, and why, in a sentence to use as written.
+            why = ("when the listing first appeared on Cubi" if watched == hist.get("on_cubi_since")
+                   else "when Cubi's price log began")
+            when = _long_date(watched)
+            lines.append(f"[price history for {label}] Current asking price €{hist.get('current_price') or 0:,.0f}.")
             if not hist.get("changes"):
-                lines.append(f"- No change observed since {hist.get('tracked_since')}.")
-            elif hist.get("total_change_pct") is not None:
-                lines.append(f"Total since first observed (€{hist['first_observed_price']:,.0f}): "
-                             f"{hist['total_change_pct']:+.1f}%.")
+                lines.append(f"Say this, in the user's language: \"Cubi has seen no change in this home's asking "
+                             f"price since {when}, {why}.\" Do not mention any other date for the price.")
+            else:
+                lines.append(f"Observed changes since {when}, {why} (state each with its date):")
+                for c in hist.get("changes") or []:
+                    lines.append(f"- {_long_date(c['date'])}: €{c['old_price']:,.0f} → €{c['new_price']:,.0f} "
+                                 f"({c['pct']:+.1f}%)")
+                if hist.get("total_change_pct") is not None and len(hist["changes"]) > 1:
+                    lines.append(f"In total: {hist['total_change_pct']:+.1f}% (from €{hist['first_observed_price']:,.0f}).")
         # The place the user sees on the card (and that the suggestion named) wins
         # over the listing's stored city: live 2026-10-22 a card shown in "Lisboa"
         # was stored as Cascais, and the news search went to the wrong town.

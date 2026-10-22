@@ -77,7 +77,8 @@ def test_no_change_observed_is_said_with_the_tracking_date(tmp_path, monkeypatch
                          "No change observed since 2026-06-03.")
     list(agent.turn("Has #2's price dropped?"))
     tool_msg = [m for m in agent.cli.calls[0]["messages"] if m["role"] == "tool"][0]["content"]
-    assert "No change observed since 2026-06-03." in tool_msg   # first seen 06-03, after the log began
+    assert ("Cubi has seen no change in this home's asking price since 3 June 2026, when the listing first "
+            "appeared on Cubi.") in tool_msg
 
 
 def test_price_history_failure_still_searches_news(tmp_path, monkeypatch):
@@ -139,5 +140,21 @@ def test_tracking_starts_when_cubi_first_saw_the_listing(tmp_path, monkeypatch):
     final = list(agent.turn("Has #2's price dropped?"))[-1]
     assert final["price_history"]["tracked_since"] == "2026-10-21"
     tool_msg = [m for m in agent.cli.calls[0]["messages"] if m["role"] == "tool"][0]["content"]
-    assert "watched this listing's price since 2026-10-21" in tool_msg
-    assert "No change observed since 2026-10-21." in tool_msg
+    assert "since 21 October 2026, when the listing first appeared on Cubi" in tool_msg
+    assert "2026-05-02" not in tool_msg and "2 May" not in tool_msg     # one date only
+
+
+def test_listing_older_than_the_log_names_the_log_start_only(tmp_path, monkeypatch):
+    agent, _, _ = _agent(tmp_path, monkeypatch, {**HIST, "changes": [], "on_cubi_since": "2025-08-26"}, "ok")
+    list(agent.turn("Has #2's price dropped?"))
+    tool_msg = [m for m in agent.cli.calls[0]["messages"] if m["role"] == "tool"][0]["content"]
+    assert "since 2 May 2026, when Cubi's price log began" in tool_msg
+    assert "2025" not in tool_msg.split("##")[0]                             # no first-seen date to garble
+
+
+def test_changes_are_listed_with_long_dates(tmp_path, monkeypatch):
+    agent, _, _ = _agent(tmp_path, monkeypatch, HIST, "ok")
+    list(agent.turn("Has #2's price dropped?"))
+    tool_msg = [m for m in agent.cli.calls[0]["messages"] if m["role"] == "tool"][0]["content"]
+    assert "- 1 July 2026: €450,000 → €430,000 (-4.4%)" in tool_msg
+    assert "In total: -8.9% (from €450,000)." in tool_msg
