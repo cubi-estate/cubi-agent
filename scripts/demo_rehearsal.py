@@ -22,6 +22,7 @@ TURNS = [
     "<feature by feature>",  # not in the video: clicks the leaders suggestion the last answer offered
     "How do I contact the agent for #2?",
     "Show me homes like #2 in Porto",  # not in the video: the side-by-side table
+    "<price dropped>",  # not in the video: clicks the price-history + news suggestion
 ]
 
 
@@ -86,6 +87,12 @@ def main() -> int:
             feats = [k for k, v in (c.get("features") or {}).items() if v == "stated"]
             print(f"    ▤ {c['role']} #{c.get('card')} {c.get('city')}: €{c.get('price') or 0:,.0f} · "
                   f"{env}/8 environment readings · stated: {', '.join(feats) or '—'}")
+        ph = ans.get("price_history") or {}
+        if ph:
+            moves = ", ".join(f"{c['date']} {c['pct']:+.1f}%" for c in ph.get("changes") or []) or "no change observed"
+            print(f"    € price history #{ph.get('card')}: {moves} · on Cubi since {ph.get('on_cubi_since')}")
+        if ans.get("x_url"):
+            print(f"    𝕏 {ans['x_url']}")
         for q in ans.get("suggestions") or []:
             print(f"    → {q}")
         for s in out["actions"]:
