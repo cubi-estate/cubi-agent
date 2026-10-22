@@ -56,36 +56,89 @@ def _price(v) -> str:
     return "price on request" if not v else f"€{v:,.0f}"
 
 
+FEATURE_WORDS = {"air_conditioning": "air conditioning", "camp_site_nearby": "a campsite nearby"}
+MINUTE_WORDS = {"walk_time.metro_station": "the metro on foot", "walk_time.railway_station": "a train station on foot",
+                "walk_time.supermarket": "a supermarket on foot", "walk_time.school": "a school on foot",
+                "walk_time.park": "a park on foot", "drive_time.coast": "the coast by car",
+                "drive_time.airport": "the airport by car"}
+
+
+ENV_SENTENCES = {  # axis: (said of a home where it holds, said where it doesn't)
+    "quiet": ("is in a quiet spot (no loud road or rail noise)", "is near loud road or rail noise"),
+    "clean_air": ("has clean air (PM2.5 at most 15)", "has PM2.5 above 15"),
+    "leafy": ("has leafy surroundings", "has few trees around"),
+    "coastal": ("is within 5 km of the coast", "is more than 5 km from the coast"),
+    "flood_safe": ("is outside modelled river-flood zones", "is in a modelled river-flood zone"),
+    "wildfire_safer": ("is in an area of lower wildfire weather", "is in an area of high wildfire weather"),
+    "seismic_safer": ("is in an area of lower seismic hazard", "is in an area of higher seismic hazard"),
+    "stable_ground": ("is on ground with no notable movement", "is in an area of notable ground movement"),
+}
+
+
+def differences(seed: dict, m: dict, seed_name: str = "this home", match_name: str = "the match") -> list[str]:
+    """What tells the two homes apart, as finished sentences that name each home.
+    Computed here so the model never infers a shared feature ("both include
+    parking", when one listing stated it) and never has to map "this home / the
+    match" back to cities (it swapped sunshine hours and wildfire weather)."""
+    out = []
+    for k in FEATURES:
+        a, b = (seed.get("features") or {}).get(k), (m.get("features") or {}).get(k)
+        word = FEATURE_WORDS.get(k, k)
+        if a == "stated" and b != "stated":
+            out.append(f"The listing for {seed_name} mentions {word}; the listing for {match_name} doesn't say.")
+        elif b == "stated" and a != "stated":
+            out.append(f"The listing for {match_name} mentions {word}; the listing for {seed_name} doesn't say.")
+    for k in ENVIRONMENT:
+        a = ((seed.get("environment") or {}).get(k) or {}).get("state", "unknown")
+        b = ((m.get("environment") or {}).get(k) or {}).get("state", "unknown")
+        if a != b and "unknown" not in (a, b):
+            good, bad = ENV_SENTENCES[k]
+            out.append(f"{seed_name} {good if a == 'yes' else bad}; {match_name} {good if b == 'yes' else bad}.")
+    for k in MINUTES:
+        a, b = (seed.get("minutes") or {}).get(k), (m.get("minutes") or {}).get(k)
+        if a is not None and b is not None and abs(a - b) >= 5:
+            out.append(f"From {seed_name} it is {a:.0f} minutes to {MINUTE_WORDS[k]}; from {match_name}, {b:.0f}.")
+    a, b = (seed.get("climate") or {}).get("sunshine_hours"), (m.get("climate") or {}).get("sunshine_hours")
+    if a and b and abs(a - b) >= 150:
+        out.append(f"The region of {seed_name} gets about {a:,.0f} hours of sun a year; "
+                   f"the region of {match_name}, about {b:,.0f}.")
+    return out
+
+
+def _home(label: str, p: dict) -> str:
+    bits = [_price(p.get("price"))]
+    if p.get("eur_per_m2"):
+        bits.append(f"€{p['eur_per_m2']:,}/m²")
+    if p.get("living_area"):
+        bits.append(f"{p['living_area']:.0f} m²")
+    if p.get("bedrooms") is not None:
+        bits.append(f"{p['bedrooms']} bedrooms")
+    return f"{label} ({p.get('city')}): " + ", ".join(bits)
+
+
 def tool_text(result: dict, cards: list[dict], seed_label: str) -> str:
-    """What the loop model reads: the figures that matter, and how to relay them."""
+    """What the loop model reads: the prices, the differences computed here, and the rules."""
     seed, city = result["seed"], result.get("city")
     lines = [f"[find_similar_elsewhere {json.dumps({'listing_id': seed.get('id'), 'city': city}, ensure_ascii=False)}]",
-             f"This home ({seed_label}, {seed.get('city')}): {_price(seed.get('price'))}"
-             + (f", €{seed['eur_per_m2']:,}/m²" if seed.get("eur_per_m2") else "")
-             + (f", {seed['living_area']:.0f} m²" if seed.get("living_area") else "")]
+             _home(f"This home, {seed_label}", seed)]
     matches = result.get("matches") or []
     if not matches:
         pool = result.get("pool") or {}
         lines.append(f"No documented match in {city}: {pool.get('in_city', 0)} candidates there, none with the same "
                      f"bedrooms and a living area within 15%. Say so; do not suggest a looser match.")
     for i, m in enumerate(matches, 1):
-        stated = [k for k, v in (m.get("features") or {}).items() if v == "stated"]
-        lines.append(f"Match #{i} ({m.get('city')}): {_price(m.get('price'))}"
-                     + (f", €{m['eur_per_m2']:,}/m²" if m.get("eur_per_m2") else "")
-                     + (f", {m['living_area']:.0f} m²" if m.get("living_area") else "")
-                     + (f"; listing states: {', '.join(stated)}" if stated else ""))
-    env_diffs = []
-    for k in ENVIRONMENT:
-        states = [((p.get("environment") or {}).get(k) or {}).get("state", "unknown") for p in [seed, *matches]]
-        if len({s for s in states if s != "unknown"}) > 1:
-            env_diffs.append(f"{k}: " + " / ".join(states))
-    if env_diffs:
-        lines.append("Environment readings that differ (this home / matches): " + "; ".join(env_diffs))
+        lines.append(_home(f"Match #{i}", m))
+        diffs = differences(seed, m, f"the {seed.get('city')} home ({seed_label})",
+                            f"the {m.get('city')} match (#{i})")
+        lines.append(f"  Differences (copy one or two of these sentences as written, translated if needed): "
+                     + (" ".join(diffs) if diffs else "none recorded."))
     lines.append(
-        "The app shows everything above as a table, with the matches as numbered cards. Write two or three "
-        "sentences: the asking prices side by side and one or two differences that matter. Matches were "
-        "chosen on the home, never on price. Call a price difference a difference in asking prices, never a "
-        "saving, a bargain or a city premium. 'not stated' means the listing doesn't say; 'unknown' means "
-        "there is no reading: neither is a 'no'.")
+        "The app shows every row as a table, with the matches as numbered cards. Write two or three sentences: "
+        "the asking prices side by side, then one or two of the Differences sentences, keeping which home "
+        "each one is about exactly as written. "
+        "Mention nothing else about the homes: do not say what they have in common, and do not add rooms, "
+        "bathrooms or features that are not written above. Matches were chosen on the home, never on price. "
+        "Call a price difference a difference in asking prices, never a saving, a bargain or a city premium. "
+        "\"doesn't say\" and \"no reading\" are not a \"no\".")
     from .listings import render_cards
     return "\n".join(lines) + ("\n\n" + render_cards("Matches:", cards) if cards else "")

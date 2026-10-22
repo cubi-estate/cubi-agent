@@ -111,7 +111,20 @@ def test_same_city_and_failures_draw_nothing(tmp_path):
 
 def test_tool_text_names_the_differences_not_a_verdict():
     r = _result()
+    r["matches"][0]["features"]["parking"] = "stated"
     text = similar.tool_text(r, similar.to_cards(r), "#2")
-    assert "This home (#2, Porto): €350,000, €4,375/m², 80 m²" in text
-    assert "coastal: no / yes / yes" in text
+    assert "This home, #2 (Porto): €350,000, €4,375/m², 80 m², 2 bedrooms" in text
+    assert ("The listing for the Lisboa match (#1) mentions parking; the listing for the Porto home (#2) "
+            "doesn't say.") in text
+    assert ("the Porto home (#2) is more than 5 km from the coast; the Lisboa match (#1) is within 5 km "
+            "of the coast.") in text
+    assert "The region of the Porto home (#2) gets about 2,450 hours of sun a year; the region of the Lisboa match (#1), about 2,800." in text
+    assert "coastal" not in text.split("Matches:")[0]        # plain words, not internal keys
+    assert "do not say what they have in common" in text
     assert "never a saving" in text and "https://cubi.estate/r/lis%3A1" in text
+
+
+def test_unknown_readings_are_not_differences():
+    seed = {"environment": {"quiet": {"state": "unknown"}}, "features": {}}
+    m = {"environment": {"quiet": {"state": "yes"}}, "features": {}}
+    assert similar.differences(seed, m) == []
