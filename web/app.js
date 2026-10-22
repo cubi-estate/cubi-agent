@@ -250,8 +250,9 @@ function similarTable(el, s, lang) {
   el.hidden = false;
 }
 
-function followups(box, t, n) {
-  for (const text of [t.price(n), t.contact(n)]) {
+// Next questions, chosen by the server from the conversation (agent/suggest.py).
+function suggestions(box, list) {
+  for (const text of list.slice(0, 3)) {
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = text;
@@ -312,17 +313,9 @@ async function ask(text) {
             filter.innerHTML = `${esc(t.searched)}: <b>${esc(ev.filter)}</b>`;
           }
           if (ev.similar) similarTable(turn.querySelector(".similar"), ev.similar, ev.lang);
-          if (ev.inventory) {
-            budget(turn.querySelector(".budget"), ev.inventory, t, ev.lang);
-            const next = (Number(ev.inventory.max_price) || 0) + 100000;
-            const b = document.createElement("button");
-            b.type = "button";
-            b.textContent = t.more(euro(next, ev.lang));
-            b.addEventListener("click", () => ask(b.textContent));
-            fups.appendChild(b);
-          }
+          if (ev.inventory) budget(turn.querySelector(".budget"), ev.inventory, t, ev.lang);
           (ev.listings || []).forEach(c => cards.appendChild(card(c, t)));
-          if ((ev.listings || []).length) followups(fups, t, 1);
+          suggestions(fups, ev.suggestions || []);
           label.textContent = t.steps(nSteps, ev.latency_s ?? ((performance.now() - t0) / 1000).toFixed(1));
         }
         scrollDown();

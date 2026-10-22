@@ -39,12 +39,14 @@ def _column(p: dict) -> dict:
     }
 
 
-def table(result: dict, seed_card: int | None = None) -> dict:
+def table(result: dict, seed_card: int | None = None, match_cards: list[int] | None = None) -> dict:
     """What the page draws: the seed column, then one per match (numbered as its card)."""
     cols = [{**_column(result["seed"]), "role": "seed", "card": seed_card}]
     for i, m in enumerate(result.get("matches") or [], 1):
-        cols.append({**_column(m), "role": "match", "card": i})
-    return {"city": result.get("city"), "columns": cols, "reason": result.get("reason"),
+        n = match_cards[i - 1] if match_cards and i <= len(match_cards) else i
+        cols.append({**_column(m), "role": "match", "card": n})
+    return {"city": result.get("city"), "mode": result.get("mode") or "search", "columns": cols,
+            "reason": result.get("reason"),
             "rules": result.get("rules"), "pool": result.get("pool")}
 
 
@@ -116,7 +118,7 @@ def _home(label: str, p: dict) -> str:
     return f"{label} ({p.get('city')}): " + ", ".join(bits)
 
 
-def tool_text(result: dict, cards: list[dict], seed_label: str) -> str:
+def tool_text(result: dict, cards: list[dict], seed_label: str, match_labels: list[str] | None = None) -> str:
     """What the loop model reads: the prices, the differences computed here, and the rules."""
     seed, city = result["seed"], result.get("city")
     lines = [f"[find_similar_elsewhere {json.dumps({'listing_id': seed.get('id'), 'city': city}, ensure_ascii=False)}]",
@@ -127,9 +129,10 @@ def tool_text(result: dict, cards: list[dict], seed_label: str) -> str:
         lines.append(f"No documented match in {city}: {pool.get('in_city', 0)} candidates there, none with the same "
                      f"bedrooms and a living area within 15%. Say so; do not suggest a looser match.")
     for i, m in enumerate(matches, 1):
-        lines.append(_home(f"Match #{i}", m))
+        label = match_labels[i - 1] if match_labels and i <= len(match_labels) else f"#{i}"
+        lines.append(_home(f"{'Home' if match_labels else 'Match'} {label}", m))
         diffs = differences(seed, m, f"the {seed.get('city')} home ({seed_label})",
-                            f"the {m.get('city')} match (#{i})")
+                            f"the {m.get('city')} {'home' if match_labels else 'match'} ({label})")
         lines.append(f"  Differences (copy one or two of these sentences as written, translated if needed): "
                      + (" ".join(diffs) if diffs else "none recorded."))
     lines.append(

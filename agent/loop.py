@@ -24,7 +24,7 @@ import time
 from typing import Generator, Iterator
 
 from . import extract as extractmod
-from . import guards, inventory, lang as langmod, listings, llm, ordinals, similar as similarmod, skills as skillsmod, tavily_tool
+from . import guards, inventory, lang as langmod, listings, llm, ordinals, similar as similarmod, skills as skillsmod, suggest, tavily_tool
 from .fixtures import connect, listing_ref
 from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
@@ -148,6 +148,8 @@ class Agent:
         self.inventory: dict | None = None  # last budget comparison: {"args", "result"}
         self.bars: dict | None = None  # this turn's budget bars, for the page
         self.similar: dict | None = None  # this turn's side-by-side table, for the page
+        self.area_places: list[str] = []  # places of the last area research, for suggestions
+        self._pair: tuple[int, int] | None = None  # card numbers of a pair comparison in flight
 
     # ---- tools -------------------------------------------------------------
     def _timed(self, stage: str, t0: float) -> None:
@@ -354,11 +356,13 @@ class Agent:
             self.stats["tavily_searches"] = self.stats.get("tavily_searches", 0) + st["searches"]
             self.timings.append((f"tavily ({st['searches']} searches)", st["seconds"]))
             self.sources.update(st["sources"])
+            self.area_places = [p.split(",")[0].strip() for p in places[:tavily_tool.MAX_PLACES]]
             yield (text + "\n\nCite sources by their number, e.g. [S2], right after the claim — never write URLs.")
             return
         label = {"get_listing": "Opening the listing", "compare_asking_prices": "Comparing asking prices nearby",
                  "get_contact_options": "Looking up contact options",
-                 similarmod.TOOL: f"Finding homes like it in {args.get('city') or '?'}"}.get(name, name)
+                 similarmod.TOOL: (f"Comparing two homes feature by feature" if args.get("compare_with")
+                                   else f"Finding homes like it in {args.get('city') or '?'}")}.get(name, name)
         how = ""
         if "listing_id" in args or name in ("get_listing", "compare_asking_prices", "get_contact_options", similarmod.TOOL):
             ref, how = self._resolve_listing(str(args.get("listing_id") or ""))
@@ -389,6 +393,13 @@ class Agent:
             return
         yield res["text"]
 
+    def _two_cards(self, text: str) -> list[dict]:
+        """The two cards a message names by number ("#1 and #4"), when both are on screen."""
+        import re
+        nums = [int(x) for x in re.findall(r"(?:#|\bn[º°o]\.?\s*)(\d{1,2})\b", text.lower())]
+        cards = [next((c for c in self.shown if c.get("n") == n and c.get("id")), None) for n in nums[:2]]
+        return cards if len(cards) == 2 and all(cards) and cards[0] is not cards[1] else []
+
     def _similar_result(self, text: str, how: str) -> Iterator[dict | str]:
         """The side-by-side table from find_similar_elsewhere; its matches become the cards."""
         try:
@@ -402,6 +413,13 @@ class Agent:
             yield {"type": "action", "text": "Similar homes: not available right now"}
             yield ("error: the comparison could not be run right now. Tell the user and offer to try again; "
                    "do not guess any figure.")
+            return
+        pair, self._pair = self._pair, None
+        if result.get("mode") == "pair" and pair:
+            # Both homes are already cards on screen: keep them, and their numbers.
+            self.similar = similarmod.table(result, seed_card=pair[0], match_cards=[pair[1]])
+            yield {"type": "action", "text": f"Comparing #{pair[0]} and #{pair[1]} feature by feature"}
+            yield similarmod.tool_text(result, [], f"#{pair[0]}", match_labels=[f"#{pair[1]}"])
             return
         seed_n = ordinals.ordinal(how, 99) if how.startswith("card") else None
         cards = similarmod.to_cards(result)
@@ -467,6 +485,19 @@ class Agent:
             turn_msgs.append(call_msg)
             yield from run_call("search_homes", {"request": text}, "auto_search")
             tools = [t for t in tools if t["function"]["name"] != "search_homes"]
+        elif skill.name == "similar-elsewhere" and len(self._two_cards(text)) == 2:
+            # "Compare #1 and #4 feature by feature": both cards are on screen,
+            # so code resolves them and asks for the pair — no search, no guess.
+            a, b = self._two_cards(text)
+            args = {"listing_id": a["id"], "compare_with": b["id"]}
+            call = {"id": "auto_pair", "type": "function",
+                    "function": {"name": similarmod.TOOL, "arguments": json.dumps(args)}}
+            call_msg = {"role": "assistant", "content": "", "tool_calls": [call]}
+            messages.append(call_msg)
+            turn_msgs.append(call_msg)
+            self._pair = (a["n"], b["n"])
+            yield from run_call(similarmod.TOOL, args, "auto_pair")
+            tools = []
         elif skill.name == "compare-budget":
             # Same reason: the figures come from one call made in code, and the
             # model only writes around them.
@@ -530,7 +561,21 @@ class Agent:
         report["citations_linked"] = cited
         turn_msgs.append({"role": "assistant", "content": answer})
         self.history += turn_msgs
+        suggestions = self._suggestions(skill.name, text)
         yield {"type": "answer", "text": answer, "skill": skill.name, "lang": self.lang,
                "guards": report, "latency_s": round(time.monotonic() - t0, 2), "stats": dict(self.stats),
                "timings": list(self.timings), "listings": list(self.cards), "inventory": self.bars,
-               "similar": self.similar}
+               "similar": self.similar, "suggestions": suggestions}
+
+    def _suggestions(self, skill: str, text: str) -> list[str]:
+        """Up to three next questions for buttons under the answer (agent/suggest.py)."""
+        places = list(self.filter.location) if self.filter and self.filter.location else []
+        if skill == "compare-areas" and self.area_places:
+            places = self.area_places
+        focus = None
+        if skill in ("check-asking-price", "contact-agent"):
+            focus = ordinals.ordinal(text, len(self.shown))
+        cap = ((self.inventory or {}).get("args") or {}).get("max_price") if skill == "compare-budget" else None
+        return suggest.next_questions(skill, self.lang, places=places,
+                                      max_price=self.filter.max_price if self.filter else None,
+                                      shown=self.shown, focus_n=focus, budget_cap=cap)

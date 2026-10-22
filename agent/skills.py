@@ -28,7 +28,7 @@ TOOLS = {
 }
 
 _PATTERNS = {
-    # "in line with" phrasings are the page's own follow-up buttons (web/app.js T.price).
+    # "in line with" phrasings are the suggested next questions (agent/suggest.py).
     "check-asking-price": r"overpric|expensive|cheap|good deal|fair price|price compar|worth|"
                           r"price in line|in line with|em linha com|en l[ií]nea con|im rahmen|"
                           r"coh[ée]rent avec|in lijn met|"
@@ -62,7 +62,10 @@ _PATTERNS = {
 _PATTERNS["similar-elsewhere"] = (
     r"\bsimilar\b|\b(homes?|flats?|apartments?|something|anything|one|ones)\s+like\b|like (this|that|it|#)|"
     r"parecid|semelhante|similares?\b|ähnlich|vergleichbar|vergelijkbar|zoals (#|deze|die)|"
-    r"comme (celui|celle|ça|le n|la n)|semblable|pareil")
+    r"comme (celui|celle|ça|le n|la n)|semblable|pareil|"
+    # two cards side by side ("Compare #1 and #4 feature by feature")
+    r"feature by feature|side by side|caracter[ií]stica (a|por) caracter[ií]stica|point par point|"
+    r"merkmal f[uü]r merkmal|kenmerk voor kenmerk")
 
 # A budget refinement right after a comparison ("and up to 500k?", "what about
 # 350 000?") stays a comparison rather than turning into a search.

@@ -19,6 +19,7 @@ TURNS = [
     "Compare schools and public transport in Porto and Valencia",
     "What does 400k buy in Lisbon vs Porto? 2-bed flats",
     "And up to 500k?",
+    "<feature by feature>",  # not in the video: clicks the leaders suggestion the last answer offered
     "How do I contact the agent for #2?",
     "Show me homes like #2 in Porto",  # not in the video: the side-by-side table
 ]
@@ -62,8 +63,17 @@ def main() -> int:
     with urllib.request.urlopen(f"{base}/api/health", timeout=20) as r:
         print("health", r.read().decode())
     session, ok = None, True
+    last: dict = {}
     for i, msg in enumerate(TURNS, 1):
+        if msg.startswith("<"):
+            # Follow the suggestion the page would show, like a user clicking it.
+            msg = next((q for q in last.get("suggestions") or [] if msg.strip("<>") in q), None)
+            if msg is None:
+                print(f"\n[{i}] ! no suggestion matching {TURNS[i - 1]!r} — skipped")
+                ok = False
+                continue
         session, out = turn(base, msg, session)
+        last = out["answer"] or {}
         ans = out["answer"] or {}
         cards = len(ans.get("listings") or [])
         print(f"\n[{i}] {msg}\n    {out['seconds']}s · lang={ans.get('lang')} · cards={cards} · filter={ans.get('filter')!r}")
@@ -76,6 +86,8 @@ def main() -> int:
             feats = [k for k, v in (c.get("features") or {}).items() if v == "stated"]
             print(f"    ▤ {c['role']} #{c.get('card')} {c.get('city')}: €{c.get('price') or 0:,.0f} · "
                   f"{env}/8 environment readings · stated: {', '.join(feats) or '—'}")
+        for q in ans.get("suggestions") or []:
+            print(f"    → {q}")
         for s in out["actions"]:
             print("    ·", s)
         for e in out["errors"]:

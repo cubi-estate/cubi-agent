@@ -128,3 +128,25 @@ def test_unknown_readings_are_not_differences():
     seed = {"environment": {"quiet": {"state": "unknown"}}, "features": {}}
     m = {"environment": {"quiet": {"state": "yes"}}, "features": {}}
     assert similar.differences(seed, m) == []
+
+
+def test_two_cards_named_runs_the_pair_in_code_and_keeps_the_cards(tmp_path):
+    pair = _result(matches=1)
+    pair.update(mode="pair", city="Porto")
+    pair["seed"] = _profile("lis:1", "Lisboa", 430000, balcony=True)
+    pair["matches"][0].update(_profile("opo:4", "Porto", 350000, balcony=True))
+    llm = _LLM([SimpleNamespace(content="Lisbon #1 asks €430,000; Porto #4 asks €350,000.", tool_calls=None)])
+    agent = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=llm)
+    agent.shown = [{"n": 1, "id": "lis:1"}, {"n": 2, "id": "lis:2"}, {"n": 4, "id": "opo:4"}]
+    agent.has_results = True
+    sent = []
+    agent.mcp.call_tool = lambda name, args: (sent.append(args), {"is_error": False, "text": json.dumps(pair)})[1]
+    agent.mcp.openai_tools = lambda names=None: []
+    final = list(agent.turn("Compare #1 and #4 feature by feature"))[-1]
+    assert final["skill"] == "similar-elsewhere"
+    assert sent == [{"listing_id": "lis:1", "compare_with": "opo:4", "lang": "en"}]
+    assert [(c["role"], c["card"]) for c in final["similar"]["columns"]] == [("seed", 1), ("match", 4)]
+    assert final["similar"]["mode"] == "pair" and final["listings"] == []
+    assert [c["n"] for c in agent.shown] == [1, 2, 4]          # "#4" still means the Porto home
+    loop_calls = [c for c in llm.calls]
+    assert len(loop_calls) == 1 and not loop_calls[0].get("tools")
