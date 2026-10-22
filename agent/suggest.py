@@ -46,13 +46,13 @@ T = {
 
 # Which kinds to offer after each skill, in order of preference.
 AFTER = {
-    "find-homes": ["leaders", "news", "price", "budget", "similar", "areas"],
-    "check-asking-price": ["news", "similar", "contact", "areas"],
-    "contact-agent": ["similar", "budget", "areas"],
-    "home-news": ["similar", "contact", "price"],
+    "find-homes": ["leaders", "news", "price", "budget", "similar", "areas", "contact"],
+    "check-asking-price": ["news", "similar", "contact", "leaders", "areas", "budget"],
+    "contact-agent": ["similar", "budget", "areas", "news", "leaders", "price"],
+    "home-news": ["similar", "contact", "price", "leaders", "budget", "areas"],
     "compare-areas": ["budget", "search"],
-    "compare-budget": ["more", "leaders", "areas"],
-    "similar-elsewhere": ["news", "price", "contact", "budget"],
+    "compare-budget": ["more", "leaders", "areas", "news", "similar"],
+    "similar-elsewhere": ["news", "price", "contact", "budget", "areas"],
 }
 
 
@@ -75,6 +75,12 @@ ALIASES = {"lisbon": "lisboa", "lisbonne": "lisboa", "lissabon": "lisboa", "opor
 
 _COUNTRIES = {"portugal", "spain", "espana", "france", "germany", "deutschland", "italy", "italia",
               "netherlands", "nederland", "belgium", "greece", "croatia", "poland", "austria"}
+
+
+def english_city(name: str) -> str:
+    """One spelling per city for keys: "Lisbon"/"Lisboa" are the same search."""
+    f = _fold(name)
+    return ALIASES.get(f, f)
 
 
 def _same_place(a: str, b: str) -> bool:
@@ -113,19 +119,38 @@ def _cross_country(shown: list[dict]) -> bool:
     return len(countries) > 1
 
 
+def norm(text: str) -> str:
+    """Question text as compared for "already asked": case, accents and punctuation folded."""
+    return re.sub(r"[^a-z0-9#]+", " ", _fold(text)).strip()
+
+
+def key(kind: str, card_id: str | None = None, other: str | None = None) -> str:
+    """What a question does, independent of wording or card number — the agent
+    records the same keys for what it actually did (agent/loop.py)."""
+    return ":".join(x for x in (kind, card_id or "", _fold(other or "")) if x)
+
+
 def next_questions(skill: str, lang: str, *, places: list[str], max_price: float | None,
-                   shown: list[dict], focus_n: int | None = None, budget_cap: float | None = None) -> list[str]:
+                   shown: list[dict], focus_n: int | None = None, budget_cap: float | None = None,
+                   done: set[str] | None = None) -> list[str]:
+    """Up to MAX next questions. `done` holds what this conversation already did
+    (keys from key()) and asked (norm() of each message): neither is offered again
+    — after a price check on #1 the buttons offered news and contact for #1 that
+    had already been asked (live 2026-10-22)."""
+    done = done or set()
     t = T.get(lang, T["en"])
+    ids = {c.get("n"): c.get("id") for c in shown}
     a, b = (places + [None, None])[:2]
     n = focus_n or (1 if shown else None)
     card = next((c for c in shown if c.get("n") == n), None) if n else None
     out: list[str] = []
     for kind in AFTER.get(skill, []):
-        q = None
+        q, k = None, None
         if kind == "leaders":
             pair = leaders(shown, places)
             if pair:
                 q = t["leaders"].format(n=pair[0], m=pair[1])
+                k = key("pair", "+".join(sorted(str(ids.get(x)) for x in pair)))
         elif kind == "news" and card:
             # The card's first place name after any street part ("Lisboa, Lisboa, Portugal" -> Lisboa).
             parts = [w.strip() for w in (card.get("location") or "").split(",") if w.strip()]
@@ -134,12 +159,15 @@ def next_questions(skill: str, lang: str, *, places: list[str], max_price: float
             town = names[0] if names else None
             if town:
                 q = t["news"].format(n=n, city=town)
+                k = key("news", ids.get(n))
         elif kind in ("price", "contact") and n and shown:
             q = t[kind].format(n=n)
+            k = key(kind, ids.get(n))
         elif kind == "similar" and card:
             city = other_city(card, places)
             if city:
                 q = t["similar"].format(n=n, city=city)
+                k = key("similar", ids.get(n), english_city(city))
         elif kind == "budget" and a and b and max_price and not _cross_country(shown):
             # Across countries the shares mostly measure which agencies Cubi
             # covers in each (Porto vs Valencia did, 2026-10-22): not offered.
@@ -150,6 +178,8 @@ def next_questions(skill: str, lang: str, *, places: list[str], max_price: float
             q = t["areas"].format(a=a, b=b)
         elif kind == "search" and a and b and max_price:
             q = t["search"].format(a=a, b=b, p=money(max_price, lang))
+        if q and (k in done or norm(q) in done):
+            continue  # already done or asked in this conversation
         if q and q not in out:
             out.append(q)
         if len(out) == MAX:

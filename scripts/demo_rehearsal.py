@@ -28,6 +28,11 @@ TURNS = [
 ]
 
 
+def fold(text: str) -> str:
+    import re
+    return re.sub(r"[^a-z0-9#]+", " ", text.lower()).strip()
+
+
 def resolve(url: str) -> str:
     # https://www.cubi.estate/agent is a redirect; post to where it points.
     with urllib.request.urlopen(url, timeout=20) as r:
@@ -67,6 +72,7 @@ def main() -> int:
         print("health", r.read().decode())
     session, ok = None, True
     last: dict = {}
+    asked: set[str] = set()
     for i, msg in enumerate(TURNS, 1):
         if msg.startswith("<"):
             # Follow the suggestion the page would show, like a user clicking it.
@@ -97,8 +103,11 @@ def main() -> int:
             print(f"    € price history #{ph.get('card')}: {moves} · on Cubi since {ph.get('on_cubi_since')}")
         if ans.get("x_url"):
             print(f"    𝕏 {ans['x_url']}")
+        asked.add(fold(msg))
         for q in ans.get("suggestions") or []:
-            print(f"    → {q}")
+            repeat = fold(q) in asked
+            print(f"    → {q}" + ("   ! already asked in this session" if repeat else ""))
+            ok = ok and not repeat
         for s in out["actions"]:
             print("    ·", s)
         for e in out["errors"]:

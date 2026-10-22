@@ -52,7 +52,8 @@ def test_after_a_budget_comparison_the_next_budget_is_offered_first():
 
 def test_one_place_offers_nothing_that_needs_two():
     qs = suggest.next_questions("find-homes", "en", places=["Porto"], max_price=400000, shown=SHOWN)
-    assert qs == ["Has #1's price dropped, and what's new in Lisboa?", "Is #1's price in line with similar homes?"]
+    assert qs == ["Has #1's price dropped, and what's new in Lisboa?", "Is #1's price in line with similar homes?",
+                  "How do I contact the agent for #1?"]
 
 
 def test_nothing_on_screen_offers_no_card_questions():
@@ -73,3 +74,40 @@ def test_leaders_need_a_card_in_each_place():
     shown = [{"n": 1, "location": "Porto, Porto District, Portugal"}, {"n": 2, "location": "Porto, Portugal"}]
     assert suggest.leaders(shown, ["Porto", "Valencia"]) is None
     assert suggest.leaders(SHOWN, ["Lisbon", "Porto"]) == (1, 2)
+
+
+SHOWN_IDS = [{"n": 1, "id": "lis:1", "location": "Lisboa, Lisboa, Portugal"},
+             {"n": 2, "id": "opo:2", "location": "Porto, Porto District, Portugal"}]
+
+
+def test_what_was_done_on_this_listing_is_not_offered_again():
+    """The screenshot case: after news and contact for #1, a price check on #1
+    offered both again."""
+    done = {suggest.key("news", "lis:1"), suggest.key("contact", "lis:1")}
+    qs = suggest.next_questions("check-asking-price", "en", places=["Lisbon", "Porto"], max_price=500000,
+                                shown=SHOWN_IDS, focus_n=1, done=done)
+    assert not any("dropped" in q or "contact" in q for q in qs)
+    assert qs[0] == "Show me homes like #1 in Porto" and len(qs) == 3      # the slots refill
+
+
+def test_the_same_home_under_another_number_is_still_done():
+    # news was asked about lis:1 when it was card #3; it is #1 now
+    done = {suggest.key("news", "lis:1")}
+    qs = suggest.next_questions("find-homes", "en", places=["Lisbon", "Porto"], max_price=500000,
+                                shown=SHOWN_IDS, done=done)
+    assert not any("dropped" in q for q in qs)
+
+
+def test_a_question_typed_earlier_is_not_offered_again():
+    done = {suggest.norm("compare schools and public transport in Lisbon and Porto!")}
+    qs = suggest.next_questions("compare-budget", "en", places=["Lisbon", "Porto"], max_price=400000,
+                                shown=SHOWN_IDS, budget_cap=400000, done=done)
+    assert not any("schools" in q for q in qs)
+
+
+def test_similar_in_lisboa_is_done_for_lisbon_too():
+    shown = [{"n": 2, "id": "opo:2", "location": "Porto, Porto District, Portugal"}]
+    done = {suggest.key("similar", "opo:2", suggest.english_city("Lisboa"))}
+    qs = suggest.next_questions("check-asking-price", "en", places=["Lisbon", "Porto"], max_price=None,
+                                shown=shown, focus_n=2, done=done)
+    assert not any("homes like" in q for q in qs)

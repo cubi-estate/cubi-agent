@@ -70,12 +70,19 @@ function markdown(text) {
   const flushList = () => { if (list) { html += `</${list}>`; list = null; } };
   for (const raw of lines) {
     const line = raw.trimEnd();
-    const ul = line.match(/^\s*[-*•]\s+(.*)$/), ol = line.match(/^\s*\d+[.)]\s+(.*)$/), h = line.match(/^#{1,4}\s+(.*)$/);
-    if (ul || ol) {
+    const ul = line.match(/^\s*[-*•]\s+(.*)$/), ol = line.match(/^\s*(\d+)[.)]\s+(.*)$/), h = line.match(/^#{1,4}\s+(.*)$/);
+    if (ul && list === "ol" && /^\s{2,}/.test(raw)) {
+      // An indented bullet under a numbered item belongs inside that item.
+      const item = `<li>${inline(ul[1])}</li>`;
+      html = html.endsWith("</ul></li>") ? html.slice(0, -10) + item + "</ul></li>"
+                                         : html.replace(/<\/li>$/, `<ul>${item}</ul></li>`);
+    } else if (ul || ol) {
       flushPara();
       const kind = ul ? "ul" : "ol";
-      if (list !== kind) { flushList(); html += `<${kind}>`; list = kind; }
-      html += `<li>${inline((ul || ol)[1])}</li>`;
+      // Keep the model's own number: a list split by bullets or blank lines
+      // otherwise restarts at 1 ("1. … 1. … 1.", live 2026-10-22).
+      if (list !== kind) { flushList(); html += kind === "ol" ? `<ol start="${Number(ol[1])}">` : "<ul>"; list = kind; }
+      html += `<li>${inline(ul ? ul[1] : ol[2])}</li>`;
     } else if (h) {
       flushPara(); flushList(); html += `<h4>${inline(h[1])}</h4>`;
     } else if (!line.trim()) {

@@ -160,6 +160,7 @@ class Agent:
         self.similar: dict | None = None  # this turn's side-by-side table, for the page
         self.area_places: list[str] = []  # places of the last area research, for suggestions
         self._pair: tuple[int, int] | None = None  # card numbers of a pair comparison in flight
+        self.done: set[str] = set()  # what this conversation asked and did, so suggestions don't repeat it
         self.price_history: dict | None = None  # this turn's price timeline, for the page
         self.x_url: str | None = None  # this turn's link to X's live search for the home's city
 
@@ -389,6 +390,9 @@ class Agent:
             args["listing_id"] = ref
             self.focus = ref
             label += f" — {how} ({ref})"
+            done_kind = {"compare_asking_prices": "price", "get_contact_options": "contact"}.get(name)
+            if done_kind:
+                self.done.add(suggest.key(done_kind, ref))
         else:
             how = ""
         yield {"type": "action", "text": label}
@@ -417,6 +421,7 @@ class Agent:
             yield "error: no home is on screen or named. Ask the user which card number they mean."
             return
         self.focus = ref
+        self.done.add(suggest.key("news", ref))
         n = ordinals.ordinal(how, 99) if how.startswith("card") else None
         label = f"#{n}" if n else "this home"
         yield {"type": "action", "text": f"Checking the price history — {how} ({ref})"}
@@ -504,6 +509,12 @@ class Agent:
                    "do not guess any figure.")
             return
         pair, self._pair = self._pair, None
+        seed_id = (result.get("seed") or {}).get("id")
+        if result.get("mode") == "pair":
+            ids = sorted(str(x) for x in [seed_id] + [m.get("id") for m in result.get("matches") or []])
+            self.done.add(suggest.key("pair", "+".join(ids)))
+        elif result.get("city"):
+            self.done.add(suggest.key("similar", seed_id, suggest.english_city(result["city"])))
         if result.get("mode") == "pair" and pair:
             # Both homes are already cards on screen: keep them, and their numbers.
             self.similar = similarmod.table(result, seed_card=pair[0], match_cards=[pair[1]])
@@ -659,6 +670,7 @@ class Agent:
         report["citations_linked"] = cited
         turn_msgs.append({"role": "assistant", "content": answer})
         self.history += turn_msgs
+        self.done.add(suggest.norm(text))
         suggestions = self._suggestions(skill.name, text)
         yield {"type": "answer", "text": answer, "skill": skill.name, "lang": self.lang,
                "guards": report, "latency_s": round(time.monotonic() - t0, 2), "stats": dict(self.stats),
@@ -677,4 +689,4 @@ class Agent:
         cap = ((self.inventory or {}).get("args") or {}).get("max_price") if skill == "compare-budget" else None
         return suggest.next_questions(skill, self.lang, places=places,
                                       max_price=self.filter.max_price if self.filter else None,
-                                      shown=self.shown, focus_n=focus, budget_cap=cap)
+                                      shown=self.shown, focus_n=focus, budget_cap=cap, done=self.done)

@@ -8,7 +8,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from agent import fixtures, guards, skills, tavily_tool  # noqa: E402
+from agent import fixtures, guards, skills, suggest, tavily_tool  # noqa: E402
 from agent.loop import Agent  # noqa: E402
 
 HIST = {"listing_id": "remax:2", "city": "Lisboa", "country": "Portugal", "currency": "EUR",
@@ -158,3 +158,10 @@ def test_changes_are_listed_with_long_dates(tmp_path, monkeypatch):
     tool_msg = [m for m in agent.cli.calls[0]["messages"] if m["role"] == "tool"][0]["content"]
     assert "- 1 July 2026: €450,000 → €430,000 (-4.4%)" in tool_msg
     assert "In total: -8.9% (from €450,000)." in tool_msg
+
+
+def test_after_news_on_a_card_its_news_question_is_not_suggested(tmp_path, monkeypatch):
+    agent, _, _ = _agent(tmp_path, monkeypatch, HIST, "ok")
+    first = list(agent.turn("Has #2's price dropped, and what's new in Lisboa?"))[-1]
+    assert not any("dropped" in q for q in first["suggestions"])
+    assert suggest.key("news", "remax:2") in agent.done
