@@ -25,6 +25,8 @@ TOOLS = {
     # Run in code before the model writes (agent/inventory.py), like a search turn.
     "compare-budget": ["compare_inventory"],
     "similar-elsewhere": ["find_similar_elsewhere"],
+    # Run in code: get_price_history on the connector, then Tavily news (agent/loop.py _home_news).
+    "home-news": ["home_news"],
 }
 
 _PATTERNS = {
@@ -66,6 +68,14 @@ _PATTERNS["similar-elsewhere"] = (
     # two cards side by side ("Compare #1 and #4 feature by feature")
     r"feature by feature|side by side|caracter[ií]stica (a|por) caracter[ií]stica|point par point|"
     r"merkmal f[uü]r merkmal|kenmerk voor kenmerk")
+
+# "Has #2's price dropped, and what's new in Lisbon?" — about a home on screen.
+_PATTERNS["home-news"] = (
+    r"price (drop|cut|history|change)|\bdropped\b|\breduced\b|latest news|\bnews\b|what'?s new|"
+    r"baixou|redu[cz]i|novidades|not[ií]cias|ha bajado|bajada de precio|rebaj|qu[eé] hay de nuevo|"
+    r"gesunken|preissenkung|neuigkeiten|nachrichten|was gibt es neues|"
+    r"a-t-il baiss|baisse de prix|quoi de neuf|actualit[ée]s|"
+    r"gedaald|prijsdaling|nieuws|wat is er nieuw")
 
 # A budget refinement right after a comparison ("and up to 500k?", "what about
 # 350 000?") stays a comparison rather than turning into a search.
@@ -118,7 +128,7 @@ def select(message: str, has_results: bool, last_skill: str | None = None) -> st
             and not re.search(r"#\s*\d|\bn[º°o]\s*\d", low)):
         return "compare-budget"
     if has_results:
-        for name in ("check-asking-price", "contact-agent", "similar-elsewhere"):
+        for name in ("home-news", "check-asking-price", "contact-agent", "similar-elsewhere"):
             if re.search(_PATTERNS[name], low):
                 return name
     if re.search(_PATTERNS["compare-areas"], low) and not _looks_like_home_search(low):

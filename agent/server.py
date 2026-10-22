@@ -185,6 +185,8 @@ def _turn(sid: str, sess: _Session, message: str) -> Iterator[bytes]:
                       "inventory": ev.get("inventory"),
                       "similar": ev.get("similar"),
                       "suggestions": ev.get("suggestions") or [],
+                      "price_history": ev.get("price_history"),
+                      "x_url": ev.get("x_url"),
                       "filter": _describe(f, ev["lang"]) if f else None,
                       "skill": ev["skill"], "lang": ev["lang"], "latency_s": ev["latency_s"]}
             else:

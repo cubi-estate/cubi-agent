@@ -63,7 +63,7 @@ def _key(query: str) -> str:
     return hashlib.sha1(query.lower().encode()).hexdigest()[:12]
 
 
-def _search(query: str, http: httpx.Client) -> list[dict]:
+def _search(query: str, http: httpx.Client, topic: str = "general", days: int | None = None) -> list[dict]:
     if os.environ.get("CUBI_OFFLINE") == "1":
         f = FIXTURE_DIR / f"{_key(query)}.json"
         if not f.exists():
@@ -71,9 +71,11 @@ def _search(query: str, http: httpx.Client) -> list[dict]:
         return json.loads(f.read_text())["results"]
     if not config.TAVILY_API_KEY:
         raise TavilyError("area research is not configured (TAVILY_API_KEY is not set)")
-    r = http.post(URL, json={"query": query, "search_depth": "basic", "max_results": RESULTS_PER_QUERY,
-                             "include_answer": False, "topic": "general", "exclude_domains": EXCLUDE_DOMAINS},
-                  headers={"Authorization": f"Bearer {config.TAVILY_API_KEY}"})
+    body = {"query": query, "search_depth": "basic", "max_results": RESULTS_PER_QUERY,
+            "include_answer": False, "topic": topic, "exclude_domains": EXCLUDE_DOMAINS}
+    if days:
+        body["days"] = days
+    r = http.post(URL, json=body, headers={"Authorization": f"Bearer {config.TAVILY_API_KEY}"})
     if r.status_code in (401, 403):
         raise TavilyError("Tavily rejected the API key")
     if r.status_code == 429:
@@ -209,3 +211,94 @@ def _footer(answer: str, sources: dict[str, dict], cited: int, lang: str) -> str
             + (f", {sources[i]['date']}" if sources[i].get("date") else "") for i in used]
     head = f"**{label}**" + ("" if cited else f" — _{uncited}_")
     return head + "\n" + "\n".join(rows)
+
+
+NEWS_DAYS = 30
+
+# News about European cities is mostly written in English under the English
+# name: "Lisboa" matched nothing in the first live run (2026-10-22), "Lisbon"
+# found the week's housing protests. Local name -> English name.
+EXONYMS = {"lisboa": "Lisbon", "valencia": "Valencia", "sevilla": "Seville", "munchen": "Munich",
+           "koln": "Cologne", "milano": "Milan", "roma": "Rome", "firenze": "Florence", "napoli": "Naples",
+           "torino": "Turin", "venezia": "Venice", "genova": "Genoa", "wien": "Vienna", "praha": "Prague",
+           "warszawa": "Warsaw", "krakow": "Krakow", "bruxelles": "Brussels", "brussel": "Brussels",
+           "antwerpen": "Antwerp", "den haag": "The Hague", "athina": "Athens", "a coruna": "A Coruna",
+           "lisbonne": "Lisbon", "lissabon": "Lisbon"}
+
+
+def _fold(s: str) -> str:
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFKD", s or "") if not unicodedata.combining(c)).lower().strip()
+
+
+def english_name(town: str) -> str:
+    return EXONYMS.get(_fold(town), town)
+
+
+def news_queries(town: str, country: str = "") -> list[str]:
+    """Housing-focused on purpose: a plain "<city> news" brought a flight's
+    emergency landing and Europe-wide unrest pieces (2026-10-22). With the
+    country: "Valencia housing market" brought Valencia, CA and PA."""
+    en = english_name(town)
+    where = f"{en}, {country}" if country else en
+    return [f"{where} housing market", f"{where} property prices"]
+
+
+# Agencies' and portals' own pages come back as "news" (Dream Properties
+# Valencia, Immigrant Invest, Zillow): sales copy, not reporting. Idealista's
+# news section is journalism and is kept (its domain matches none of these).
+_SELLER_DOMAIN = re.compile(r"propert|realt|real-?estate|inmobiliari|imobiliari|immo|invest|homes?\.|"
+                            r"zillow|resideline|rightmove|sothebys|barnes|engelvoelkers|remax|kw\.com", re.I)
+
+
+def latest_news(place: str, http: httpx.Client | None = None, first_id: int = 1) -> tuple[str, dict]:
+    """Recent housing news about one place: Tavily's news topic, last NEWS_DAYS
+    days. Articles that name the town come first; if fewer than two, articles
+    about the country follow, labelled as such so they aren't told as city news.
+    Same numbered-source shape as research_area, so link_citations links them.
+    Only the place name is sent."""
+    http = http or httpx.Client(timeout=20.0)
+    town, _, country = (x.strip() for x in place.partition(","))
+    names = {town, english_name(town)}
+    queries = news_queries(town, country)
+    t0 = time.monotonic()
+    with ThreadPoolExecutor(max_workers=len(queries)) as pool:
+        found = list(pool.map(lambda q: _search(q, http, topic="news", days=NEWS_DAYS), queries))
+    city, national, seen = [], [], set()
+    for results in found:
+        for res in results:
+            url = res.get("url", "")
+            if not url or url in seen or _SELLER_DOMAIN.search(_domain(url)):
+                continue
+            seen.add(url)
+            if any(_mentions(res, n) for n in names):
+                city.append(res)
+            elif country and _mentions(res, country):
+                national.append(res)
+    sources: dict = {}
+    out = [f"## Recent housing news (last {NEWS_DAYS} days)"]
+
+    def add(res, label):
+        sid = f"S{first_id + len(sources)}"
+        sources[sid] = {"url": res["url"], "title": (res.get("title") or "").strip(), "date": source_date(res)}
+        excerpt = " ".join((res.get("content") or "").split())[:EXCERPT_CHARS]
+        out.append(f"[{sid}] {label}{sources[sid]['title']} ({_domain(res['url'])}, "
+                   f"{sources[sid]['date'] or 'undated'})\n   {excerpt}")
+
+    for res in city[:4]:
+        add(res, "")
+    if len(city) < 2:
+        for res in national[: 3 - len(city)]:
+            add(res, f"(about {country} as a whole, not {town} specifically) ")
+    if not sources:
+        out.append(f"(no housing news about {town} found in the last {NEWS_DAYS} days)")
+    return "\n".join(out), {"searches": len(queries), "seconds": round(time.monotonic() - t0, 2),
+                            "sources": sources}
+
+
+def x_search_url(place: str) -> str:
+    """X's own live search for the place, for the user to open. X has no search
+    Cubi can call without a paid API key, and its pages may not be scraped, so
+    the app links to X rather than reading it."""
+    from urllib.parse import quote
+    return f"https://x.com/search?q={quote(place.split(',')[0].strip())}&f=live"

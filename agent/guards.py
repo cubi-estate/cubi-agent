@@ -254,7 +254,13 @@ def fix_absence_wording(answer: str) -> tuple[str, int]:
     return answer, reworded + dropped
 
 
+# "#Lisbon home #2": the model copies "the Lisbon home (#2)" and keeps the "#".
+# Card references are "#" + digits, so a "#" glued to a capitalised word goes.
+_STRAY_HASH = re.compile(r"(^|[\s(])#(?=[A-ZÀ-Ý][a-zà-ÿ])")
+
+
 def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple[str, dict]:
+    answer = _STRAY_HASH.sub(r"\1", answer)
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
     answer, scrubbed = scrub_contacts(answer)
     verdicts = sent = 0
@@ -270,7 +276,10 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
         verdicts += v1 + v2
         answer, absence = fix_absence_wording(answer)
     pct = 0
-    if "compare_inventory" in used_tools:
+    if "home_news" in used_tools:
+        answer, v = drop_price_verdicts(answer, lang)   # "a bargain after the cut"
+        verdicts += v
+    if "compare_inventory" in used_tools or "home_news" in used_tools:
         answer, pct = drop_unbacked_percentages(answer, tool_text)
     return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,

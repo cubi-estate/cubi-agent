@@ -10,34 +10,35 @@ city and the budget comparison; after a budget comparison, the next budget up.
 """
 from __future__ import annotations
 
+import re
 import unicodedata
 
 MAX = 3
 
 T = {
-    "en": {"leaders": "Compare #{n} and #{m} feature by feature", "price": "Is #{n}'s price in line with similar homes?", "contact": "How do I contact the agent for #{n}?",
+    "en": {"news": "Has #{n}'s price dropped, and what's new in {city}?", "leaders": "Compare #{n} and #{m} feature by feature", "price": "Is #{n}'s price in line with similar homes?", "contact": "How do I contact the agent for #{n}?",
            "similar": "Show me homes like #{n} in {city}", "budget": "What does {p} buy in {a} vs {b}?",
            "more": "And up to {p}?", "areas": "Compare schools and public transport in {a} and {b}",
            "search": "Homes in {a} or {b} up to {p}"},
-    "pt": {"leaders": "Compara a #{n} e a #{m} característica a característica", "price": "O preço do #{n} está em linha com casas semelhantes?", "contact": "Como contacto o agente do #{n}?",
+    "pt": {"news": "O preço da #{n} baixou, e que novidades há em {city}?", "leaders": "Compara a #{n} e a #{m} característica a característica", "price": "O preço do #{n} está em linha com casas semelhantes?", "contact": "Como contacto o agente do #{n}?",
            "similar": "Mostra casas parecidas com a #{n} em {city}", "budget": "O que se compra com {p} em {a} e {b}?",
            "more": "E até {p}?", "areas": "Compara escolas e transportes públicos em {a} e {b}",
            "search": "Casas em {a} ou {b} até {p}"},
-    "es": {"leaders": "Compara la #{n} y la #{m} característica por característica", "price": "¿El precio del #{n} está en línea con viviendas similares?",
+    "es": {"news": "¿Ha bajado el precio de la #{n} y qué hay de nuevo en {city}?", "leaders": "Compara la #{n} y la #{m} característica por característica", "price": "¿El precio del #{n} está en línea con viviendas similares?",
            "contact": "¿Cómo contacto con el agente del #{n}?",
            "similar": "Muéstrame viviendas parecidas a la #{n} en {city}", "budget": "¿Qué se compra con {p} en {a} y {b}?",
            "more": "¿Y hasta {p}?", "areas": "Compara colegios y transporte público en {a} y {b}",
            "search": "Viviendas en {a} o {b} hasta {p}"},
-    "fr": {"leaders": "Compare le n°{n} et le n°{m} point par point", "price": "Le prix du n°{n} est-il cohérent avec des biens similaires ?",
+    "fr": {"news": "Le prix du n°{n} a-t-il baissé, et quoi de neuf à {city} ?", "leaders": "Compare le n°{n} et le n°{m} point par point", "price": "Le prix du n°{n} est-il cohérent avec des biens similaires ?",
            "contact": "Comment contacter l'agent du n°{n} ?",
            "similar": "Montre des biens semblables au n°{n} à {city}", "budget": "Que peut-on acheter avec {p} à {a} et {b} ?",
            "more": "Et jusqu'à {p} ?", "areas": "Compare les écoles et les transports en commun à {a} et {b}",
            "search": "Logements à {a} ou {b} jusqu'à {p}"},
-    "de": {"leaders": "Vergleiche #{n} und #{m} Merkmal für Merkmal", "price": "Liegt der Preis von #{n} im Rahmen ähnlicher Objekte?", "contact": "Wie erreiche ich den Makler von #{n}?",
+    "de": {"news": "Ist der Preis von #{n} gesunken, und was gibt es Neues in {city}?", "leaders": "Vergleiche #{n} und #{m} Merkmal für Merkmal", "price": "Liegt der Preis von #{n} im Rahmen ähnlicher Objekte?", "contact": "Wie erreiche ich den Makler von #{n}?",
            "similar": "Zeig mir ähnliche Wohnungen wie #{n} in {city}", "budget": "Was bekommt man für {p} in {a} und {b}?",
            "more": "Und bis {p}?", "areas": "Vergleiche Schulen und öffentlichen Verkehr in {a} und {b}",
            "search": "Wohnungen in {a} oder {b} bis {p}"},
-    "nl": {"leaders": "Vergelijk #{n} en #{m} kenmerk voor kenmerk", "price": "Ligt de prijs van #{n} in lijn met vergelijkbare woningen?", "contact": "Hoe bereik ik de makelaar van #{n}?",
+    "nl": {"news": "Is de prijs van #{n} gedaald, en wat is er nieuw in {city}?", "leaders": "Vergelijk #{n} en #{m} kenmerk voor kenmerk", "price": "Ligt de prijs van #{n} in lijn met vergelijkbare woningen?", "contact": "Hoe bereik ik de makelaar van #{n}?",
            "similar": "Toon vergelijkbare woningen als #{n} in {city}", "budget": "Wat koop je voor {p} in {a} en {b}?",
            "more": "En tot {p}?", "areas": "Vergelijk scholen en openbaar vervoer in {a} en {b}",
            "search": "Woningen in {a} of {b} tot {p}"},
@@ -45,12 +46,13 @@ T = {
 
 # Which kinds to offer after each skill, in order of preference.
 AFTER = {
-    "find-homes": ["leaders", "price", "budget", "similar", "areas"],
-    "check-asking-price": ["similar", "contact", "areas"],
+    "find-homes": ["leaders", "news", "price", "budget", "similar", "areas"],
+    "check-asking-price": ["news", "similar", "contact", "areas"],
     "contact-agent": ["similar", "budget", "areas"],
+    "home-news": ["similar", "contact", "price"],
     "compare-areas": ["budget", "search"],
     "compare-budget": ["more", "leaders", "areas"],
-    "similar-elsewhere": ["price", "contact", "budget"],
+    "similar-elsewhere": ["news", "price", "contact", "budget"],
 }
 
 
@@ -69,6 +71,10 @@ def _fold(s: str) -> str:
 
 ALIASES = {"lisbon": "lisboa", "lisbonne": "lisboa", "lissabon": "lisboa", "oporto": "porto",
            "valència": "valencia", "seville": "sevilla", "munich": "munchen"}
+
+
+_COUNTRIES = {"portugal", "spain", "espana", "france", "germany", "deutschland", "italy", "italia",
+              "netherlands", "nederland", "belgium", "greece", "croatia", "poland", "austria"}
 
 
 def _same_place(a: str, b: str) -> bool:
@@ -120,6 +126,14 @@ def next_questions(skill: str, lang: str, *, places: list[str], max_price: float
             pair = leaders(shown, places)
             if pair:
                 q = t["leaders"].format(n=pair[0], m=pair[1])
+        elif kind == "news" and card:
+            # The card's first place name after any street part ("Lisboa, Lisboa, Portugal" -> Lisboa).
+            parts = [w.strip() for w in (card.get("location") or "").split(",") if w.strip()]
+            last_digit = max((i for i, w in enumerate(parts) if re.search(r"\d", w)), default=-1)
+            names = [w for w in parts[last_digit + 1:] if _fold(w) not in _COUNTRIES and "district" not in w.lower()]
+            town = names[0] if names else None
+            if town:
+                q = t["news"].format(n=n, city=town)
         elif kind in ("price", "contact") and n and shown:
             q = t[kind].format(n=n)
         elif kind == "similar" and card:

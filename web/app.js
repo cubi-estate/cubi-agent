@@ -250,6 +250,48 @@ function similarTable(el, s, lang) {
   el.hidden = false;
 }
 
+const PH = {
+  en: { title: n => `Asking price on Cubi${n ? ` · #${n}` : ""}`, now: "Now", since: d => `On Cubi since ${d}`,
+        none: d => `No change observed since ${d}, when Cubi began tracking prices.`, total: "Since first seen",
+        x: "Latest posts on X", note: "Asking prices, not sale prices. Cubi records changes it sees in its daily syncs." },
+  pt: { title: n => `Preço pedido na Cubi${n ? ` · #${n}` : ""}`, now: "Agora", since: d => `Na Cubi desde ${d}`,
+        none: d => `Nenhuma alteração observada desde ${d}, quando a Cubi começou a acompanhar preços.`, total: "Desde o primeiro registo",
+        x: "Publicações recentes no X", note: "Preços pedidos, não preços de venda. A Cubi regista as alterações que vê nas sincronizações diárias." },
+  es: { title: n => `Precio de oferta en Cubi${n ? ` · #${n}` : ""}`, now: "Ahora", since: d => `En Cubi desde ${d}`,
+        none: d => `Sin cambios observados desde ${d}, cuando Cubi empezó a seguir los precios.`, total: "Desde el primer registro",
+        x: "Publicaciones recientes en X", note: "Precios de oferta, no de venta. Cubi registra los cambios que ve en sus sincronizaciones diarias." },
+  fr: { title: n => `Prix demandé sur Cubi${n ? ` · n°${n}` : ""}`, now: "Aujourd'hui", since: d => `Sur Cubi depuis le ${d}`,
+        none: d => `Aucun changement observé depuis le ${d}, début du suivi des prix par Cubi.`, total: "Depuis la première observation",
+        x: "Derniers posts sur X", note: "Prix demandés, pas des prix de vente. Cubi enregistre les changements vus lors de ses synchronisations quotidiennes." },
+  de: { title: n => `Angebotspreis auf Cubi${n ? ` · #${n}` : ""}`, now: "Jetzt", since: d => `Auf Cubi seit ${d}`,
+        none: d => `Keine Änderung beobachtet seit ${d}, als Cubi mit der Preisverfolgung begann.`, total: "Seit der ersten Erfassung",
+        x: "Neueste Beiträge auf X", note: "Angebotspreise, keine Verkaufspreise. Cubi erfasst Änderungen bei der täglichen Synchronisierung." },
+  nl: { title: n => `Vraagprijs op Cubi${n ? ` · #${n}` : ""}`, now: "Nu", since: d => `Op Cubi sinds ${d}`,
+        none: d => `Geen wijziging gezien sinds ${d}, toen Cubi prijzen begon te volgen.`, total: "Sinds eerste waarneming",
+        x: "Laatste berichten op X", note: "Vraagprijzen, geen verkoopprijzen. Cubi legt wijzigingen vast die het bij de dagelijkse synchronisatie ziet." },
+};
+
+// The home's observed price changes, and a link to X's live search for its city.
+function priceHistory(el, h, xUrl, lang) {
+  const L = PH[lang] || PH.en;
+  const eur = v => euro(v, lang);
+  let body = "";
+  if (h) {
+    const rows = (h.changes || []).map(c => `<tr><td>${esc(c.date)}</td><td>${esc(eur(c.old_price))} → <b>${esc(eur(c.new_price))}</b></td>
+      <td class="${c.pct < 0 ? "down" : "up"}">${c.pct > 0 ? "+" : ""}${esc(c.pct)}%</td></tr>`).join("");
+    body += `<div class="phhead">${esc(L.title(h.card))}</div>
+      <table>${rows}<tr class="now"><td>${esc(L.now)}</td><td><b>${esc(eur(h.current_price))}</b></td>
+      <td>${h.total_change_pct != null ? `<span class="${h.total_change_pct < 0 ? "down" : "up"}">${h.total_change_pct > 0 ? "+" : ""}${esc(h.total_change_pct)}%</span> <small>${esc(L.total)}</small>` : ""}</td></tr></table>
+      ${(h.changes || []).length ? "" : `<p class="phnone">${esc(L.none(h.tracked_since))}</p>`}
+      <p class="phnote">${esc(L.since(h.on_cubi_since || "?"))} · ${esc(L.note)}</p>`;
+  }
+  const x = safeUrl(xUrl);
+  if (x) body += `<a class="xlink" href="${esc(x)}" target="_blank" rel="noopener nofollow">${esc(L.x)} ↗</a>`;
+  if (!body) return;
+  el.innerHTML = body;
+  el.hidden = false;
+}
+
 // Next questions, chosen by the server from the conversation (agent/suggest.py).
 function suggestions(box, list) {
   for (const text of list.slice(0, 3)) {
@@ -313,6 +355,7 @@ async function ask(text) {
             filter.innerHTML = `${esc(t.searched)}: <b>${esc(ev.filter)}</b>`;
           }
           if (ev.similar) similarTable(turn.querySelector(".similar"), ev.similar, ev.lang);
+          if (ev.price_history || ev.x_url) priceHistory(turn.querySelector(".pricehist"), ev.price_history, ev.x_url, ev.lang);
           if (ev.inventory) budget(turn.querySelector(".budget"), ev.inventory, t, ev.lang);
           (ev.listings || []).forEach(c => cards.appendChild(card(c, t)));
           suggestions(fups, ev.suggestions || []);

@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT))
 
 from agent import skills, suggest  # noqa: E402
 
-ROUTE = {"leaders": "similar-elsewhere", "price": "check-asking-price", "contact": "contact-agent", "similar": "similar-elsewhere",
+ROUTE = {"news": "home-news", "leaders": "similar-elsewhere", "price": "check-asking-price", "contact": "contact-agent", "similar": "similar-elsewhere",
          "budget": "compare-budget", "areas": "compare-areas", "search": "find-homes"}
 FILL = dict(n=2, m=4, city="Porto", a="Lisboa", b="Porto")
 
@@ -33,15 +33,15 @@ SHOWN = [{"n": 1, "location": "Lisboa, Lisboa, Portugal"}, {"n": 2, "location": 
 
 def test_after_a_search():
     qs = suggest.next_questions("find-homes", "en", places=["Lisbon", "Porto"], max_price=400000, shown=SHOWN)
-    assert qs == ["Compare #1 and #2 feature by feature", "Is #1's price in line with similar homes?",
-                  "What does €400,000 buy in Lisbon vs Porto?"]
+    assert qs == ["Compare #1 and #2 feature by feature", "Has #1's price dropped, and what's new in Lisboa?",
+                  "Is #1's price in line with similar homes?"]
 
 
 def test_after_a_price_check_on_card_2_the_other_city_is_lisbon():
     qs = suggest.next_questions("check-asking-price", "de", places=["Lisbon", "Porto"], max_price=400000,
                                 shown=SHOWN, focus_n=2)
-    assert qs[0] == "Zeig mir ähnliche Wohnungen wie #2 in Lisbon"
-    assert qs[1] == "Wie erreiche ich den Makler von #2?"
+    assert qs[0] == "Ist der Preis von #2 gesunken, und was gibt es Neues in Porto?"
+    assert qs[1] == "Zeig mir ähnliche Wohnungen wie #2 in Lisbon"
 
 
 def test_after_a_budget_comparison_the_next_budget_is_offered_first():
@@ -52,7 +52,7 @@ def test_after_a_budget_comparison_the_next_budget_is_offered_first():
 
 def test_one_place_offers_nothing_that_needs_two():
     qs = suggest.next_questions("find-homes", "en", places=["Porto"], max_price=400000, shown=SHOWN)
-    assert qs == ["Is #1's price in line with similar homes?"]
+    assert qs == ["Has #1's price dropped, and what's new in Lisboa?", "Is #1's price in line with similar homes?"]
 
 
 def test_nothing_on_screen_offers_no_card_questions():
@@ -64,8 +64,9 @@ def test_no_budget_comparison_across_countries():
     shown = [{"n": 1, "location": "Porto, Porto District, Portugal"}, {"n": 4, "location": "Valencia, Spain"}]
     qs = suggest.next_questions("find-homes", "de", places=["Porto", "Valencia"], max_price=400000, shown=shown)
     assert not any("bekommt man" in q for q in qs)
-    assert qs == ["Vergleiche #1 und #4 Merkmal für Merkmal", "Liegt der Preis von #1 im Rahmen ähnlicher Objekte?",
-                  "Zeig mir ähnliche Wohnungen wie #1 in Valencia"]
+    assert qs == ["Vergleiche #1 und #4 Merkmal für Merkmal",
+                  "Ist der Preis von #1 gesunken, und was gibt es Neues in Porto?",
+                  "Liegt der Preis von #1 im Rahmen ähnlicher Objekte?"]
 
 
 def test_leaders_need_a_card_in_each_place():

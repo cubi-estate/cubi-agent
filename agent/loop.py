@@ -150,6 +150,8 @@ class Agent:
         self.similar: dict | None = None  # this turn's side-by-side table, for the page
         self.area_places: list[str] = []  # places of the last area research, for suggestions
         self._pair: tuple[int, int] | None = None  # card numbers of a pair comparison in flight
+        self.price_history: dict | None = None  # this turn's price timeline, for the page
+        self.x_url: str | None = None  # this turn's link to X's live search for the home's city
 
     # ---- tools -------------------------------------------------------------
     def _timed(self, stage: str, t0: float) -> None:
@@ -343,6 +345,9 @@ class Agent:
         if name == inventory.TOOL:
             yield from self._compare_budget(str(args.get("request", "")))
             return
+        if name == "home_news":
+            yield from self._home_news()
+            return
         if name == "research_area":
             places, topics = list(args.get("places") or []), list(args.get("topics") or [])
             yield {"type": "action", "text": f"Researching {', '.join(places[:tavily_tool.MAX_PLACES])} on the web "
@@ -393,6 +398,63 @@ class Agent:
             return
         yield res["text"]
 
+    def _home_news(self) -> Iterator[dict | str]:
+        """The home's observed price changes (Cubi) and recent news about its city
+        (Tavily, cited). X is linked, not read: no search API without a paid key."""
+        ref, how = self._resolve_listing("")
+        if ref is None:
+            yield {"type": "action", "text": "Price history: which home? (no card number or known id)"}
+            yield "error: no home is on screen or named. Ask the user which card number they mean."
+            return
+        self.focus = ref
+        n = ordinals.ordinal(how, 99) if how.startswith("card") else None
+        label = f"#{n}" if n else "this home"
+        yield {"type": "action", "text": f"Checking the price history — {how} ({ref})"}
+        hist = None
+        try:
+            res = self.mcp.call_tool("get_price_history", {"listing_id": ref})
+            hist = None if res["is_error"] else json.loads(res["text"])
+        except (MCPError, json.JSONDecodeError):
+            hist = None
+        lines = []
+        if not hist:
+            yield {"type": "action", "text": "Price history: not available right now"}
+            lines.append("[price history] Not available right now: say so; do not guess any price change.")
+        else:
+            self.price_history = {**{k: hist.get(k) for k in ("current_price", "currency", "on_cubi_since",
+                                                               "tracked_since", "changes", "total_change_pct",
+                                                               "first_observed_price", "city")}, "card": n}
+            lines.append(f"[price history for {label}] Current asking price €{hist.get('current_price') or 0:,.0f}; "
+                         f"on Cubi since {hist.get('on_cubi_since')}; Cubi tracks price changes since "
+                         f"{hist.get('tracked_since')}.")
+            for c in hist.get("changes") or []:
+                lines.append(f"- {c['date']}: €{c['old_price']:,.0f} → €{c['new_price']:,.0f} ({c['pct']:+.1f}%)")
+            if not hist.get("changes"):
+                lines.append(f"- No change observed since {hist.get('tracked_since')}.")
+            elif hist.get("total_change_pct") is not None:
+                lines.append(f"Total since first observed (€{hist['first_observed_price']:,.0f}): "
+                             f"{hist['total_change_pct']:+.1f}%.")
+        card = next((c for c in self.shown if c.get("id") == ref), {})
+        city = (hist or {}).get("city") or next(iter(listings.places(card.get("location") or "")), "")
+        country = (hist or {}).get("country") or ""
+        if city:
+            place = f"{city}, {country}" if country else city
+            yield {"type": "action", "text": f"Searching recent news about {city} (Tavily, last {tavily_tool.NEWS_DAYS} days)"}
+            try:
+                text, st = tavily_tool.latest_news(place, first_id=len(self.sources) + 1)
+                self.sources.update(st["sources"])
+                self.stats["tavily_searches"] = self.stats.get("tavily_searches", 0) + st["searches"]
+                self.timings.append((f"tavily news ({st['searches']} searches)", st["seconds"]))
+                lines.append("\n" + text + "\n\nCite news by its number, e.g. [S2], right after the point. "
+                             "Never write URLs.")
+            except tavily_tool.TavilyError as e:
+                yield {"type": "action", "text": f"News search unavailable: {e}"}
+                lines.append("[news] Unavailable right now: say so; do not answer from memory.")
+            self.x_url = tavily_tool.x_search_url(city)
+            lines.append("The app also shows a link to the latest posts about the city on X; you have not read "
+                         "them, so don't describe them.")
+        yield "\n".join(lines)
+
     def _two_cards(self, text: str) -> list[dict]:
         """The two cards a message names by number ("#1 and #4"), when both are on screen."""
         import re
@@ -441,6 +503,8 @@ class Agent:
         self.sources = {}
         self.bars = None
         self.similar = None
+        self.price_history = None
+        self.x_url = None
         calls0 = len(self.mcp.calls)
         self.lang = langmod.detect(text, default=self.lang)
         skill = self.skills[skillsmod.select(text, self.has_results, self.last_skill)]
@@ -498,6 +562,13 @@ class Agent:
             self._pair = (a["n"], b["n"])
             yield from run_call(similarmod.TOOL, args, "auto_pair")
             tools = []
+        elif skill.name == "home-news":
+            call = {"id": "auto_news", "type": "function", "function": {"name": "home_news", "arguments": "{}"}}
+            call_msg = {"role": "assistant", "content": "", "tool_calls": [call]}
+            messages.append(call_msg)
+            turn_msgs.append(call_msg)
+            yield from run_call("home_news", {}, "auto_news")
+            tools = []
         elif skill.name == "compare-budget":
             # Same reason: the figures come from one call made in code, and the
             # model only writes around them.
@@ -554,7 +625,7 @@ class Agent:
             if tavily_tool.CITATION.search(tavily_tool.normalise_citations(retry)):
                 answer = retry
         cited = 0
-        if "research_area" in used:
+        if "research_area" in used or "home_news" in used:
             answer, cited = tavily_tool.link_citations(answer, self.sources, self.lang)
             tool_text += "\n".join(src["url"] for src in self.sources.values())
         answer, report = guards.apply(answer, tool_text, self.lang, used)
@@ -565,7 +636,8 @@ class Agent:
         yield {"type": "answer", "text": answer, "skill": skill.name, "lang": self.lang,
                "guards": report, "latency_s": round(time.monotonic() - t0, 2), "stats": dict(self.stats),
                "timings": list(self.timings), "listings": list(self.cards), "inventory": self.bars,
-               "similar": self.similar, "suggestions": suggestions}
+               "similar": self.similar, "suggestions": suggestions,
+               "price_history": self.price_history, "x_url": self.x_url}
 
     def _suggestions(self, skill: str, text: str) -> list[str]:
         """Up to three next questions for buttons under the answer (agent/suggest.py)."""
@@ -573,7 +645,7 @@ class Agent:
         if skill == "compare-areas" and self.area_places:
             places = self.area_places
         focus = None
-        if skill in ("check-asking-price", "contact-agent"):
+        if skill in ("check-asking-price", "contact-agent", "home-news"):
             focus = ordinals.ordinal(text, len(self.shown))
         cap = ((self.inventory or {}).get("args") or {}).get("max_price") if skill == "compare-budget" else None
         return suggest.next_questions(skill, self.lang, places=places,
