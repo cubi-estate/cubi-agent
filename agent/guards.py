@@ -254,6 +254,33 @@ def fix_absence_wording(answer: str) -> tuple[str, int]:
     return answer, reworded + dropped
 
 
+# Area research: "No source indicated a lack of school information" — filler about
+# a gap there isn't (rehearsal 2026-10-22). "No source covered healthcare in
+# Porto" is a real gap and stays: only sources reporting a lack/missing go.
+_NO_SOURCE_FILLER = re.compile(
+    r"\b(?:no|neither|none of the)(?: \w+){0,2} sources?\b.{0,60}\b(?:lack|missing|absence|gap)|"
+    r"\bnenhuma (?:das )?fontes?\b.{0,60}\b(?:falta|aus[êe]ncia|lacuna)|"
+    r"\bninguna (?:de las )?fuentes?\b.{0,60}\b(?:falta|ausencia|carencia)|"
+    r"\baucune (?:des )?sources?\b.{0,60}\b(?:manque|absence|lacune)|"
+    r"\bkeine (?:der )?quellen?\b.{0,60}(?:fehlend|mangel|l[üu]cke)|"
+    r"\bgeen (?:van de )?bron(?:nen)?\b.{0,60}(?:gebrek|ontbre)", re.I)
+
+# Price band: "given the modest number of comparables, the comparison is thin"
+# said of 19 comparables (rehearsal 2026-10-22). Dropped when the band rests on
+# at least AMPLE_COMPS.
+AMPLE_COMPS = 10
+_THIN_HEDGE = re.compile(
+    r"\b(?:thin|modest number|few comparables|limited number of comparables|small number of comparables)\b|"
+    r"\b(?:poucos|pocos|peu de|wenige|weinig) (?:compar|vergleich|vergelijk)|\bd[üu]nn\b|\bescass", re.I)
+
+
+def drop_thin_hedge(answer: str, tool_text: str) -> tuple[str, int]:
+    m = re.search(r'"n_comps":\s*(\d+)', tool_text)
+    if not m or int(m.group(1)) < AMPLE_COMPS or '"band": null' in tool_text:
+        return answer, 0
+    return _drop_sentences(answer, _THIN_HEDGE)
+
+
 # "#Lisbon home #2": the model copies "the Lisbon home (#2)" and keeps the "#".
 # Card references are "#" + digits, so a "#" glued to a capitalised word goes.
 _STRAY_HASH = re.compile(r"(^|[\s(])#(?=[A-ZÀ-Ý][a-zà-ÿ])")
@@ -266,6 +293,8 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
     verdicts = sent = 0
     if "compare_asking_prices" in used_tools:
         answer, verdicts = drop_price_verdicts(answer, lang)
+        answer, thin = drop_thin_hedge(answer, tool_text)
+        verdicts += thin
         answer = ensure_not_a_valuation(answer, lang)
     if "get_contact_options" in used_tools:
         answer, sent = drop_sent_claims(answer, lang)
@@ -275,6 +304,9 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
         answer, v2 = _drop_sentences(answer, _SAVING)
         verdicts += v1 + v2
         answer, absence = fix_absence_wording(answer)
+    filler = 0
+    if "research_area" in used_tools:
+        answer, filler = _drop_sentences(answer, _NO_SOURCE_FILLER)
     pct = 0
     if "home_news" in used_tools:
         answer, v = drop_price_verdicts(answer, lang)   # "a bargain after the cut"
@@ -283,4 +315,4 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
         answer, pct = drop_unbacked_percentages(answer, tool_text)
     return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
-                    "absence_wording_fixed": absence}
+                    "absence_wording_fixed": absence, "source_filler_dropped": filler}

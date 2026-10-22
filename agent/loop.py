@@ -465,8 +465,13 @@ class Agent:
             body = json.loads(text)
         except json.JSONDecodeError:
             return text
-        if not isinstance(body, dict) or body.get("band"):
+        if not isinstance(body, dict):
             return text
+        if body.get("band"):
+            n = body.get("n_comps") or 0
+            how_many = ("Do not call the comparison thin or the comparables few."
+                        if n >= guards.AMPLE_COMPS else "You may say the comparison rests on few homes.")
+            return text + f"\n\n[{n} comparable homes] {how_many}"
         n_card = ordinals.ordinal(how, 99) if how.startswith("card") else None
         label = f"#{n_card}" if n_card else "this home"
         n, city = body.get("n_comps"), body.get("city") or "the same city"

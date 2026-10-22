@@ -65,8 +65,33 @@ def test_no_band_gives_a_ready_sentence():
     assert "only 2 comparable homes in Loulé" in out and "#1" in out and "Never say" in out
     spread = Agent._no_band_brief(json.dumps({**body, "reason": "comparables_disagree", "n_comps": 9}), "card #1")
     assert "vary too much" in spread
-    band = json.dumps({"band": {"low": 1, "median": 2, "high": 3}})
-    assert Agent._no_band_brief(band, "card #1") == band
+    band = json.dumps({"band": {"low": 1, "median": 2, "high": 3}, "n_comps": 19})
+    assert "Do not call the comparison thin" in Agent._no_band_brief(band, "card #1")
+    few = json.dumps({"band": {"low": 1, "median": 2, "high": 3}, "n_comps": 3})
+    assert "may say the comparison rests on few" in Agent._no_band_brief(few, "card #1")
+
+
+def test_thin_hedge_dropped_only_when_comparables_are_ample():
+    from agent import guards
+    ans = ("The asking price lies within the range, based on 19 comparable homes. Given the modest number of "
+           "comparables, the comparison is relatively thin. Condition and floor could explain it.")
+    out, n = guards.drop_thin_hedge(ans, '{"band": {"low": 1}, "n_comps": 19}')
+    assert n == 1 and "relatively thin" not in out and "19 comparable homes" in out and "Condition" in out
+    assert guards.drop_thin_hedge(ans, '{"band": {"low": 1}, "n_comps": 3}') == (ans, 0)
+    de = "Da nur wenige Vergleichsobjekte vorliegen, ist die Aussage dünn. Der Preis liegt im Bereich."
+    assert guards.drop_thin_hedge(de, '{"n_comps": 12}')[0] == "Der Preis liegt im Bereich."
+
+
+def test_source_filler_dropped_real_gaps_kept():
+    from agent import guards
+    ans = ("Porto has CLIP [S2]. No source indicated a lack of school information for either city.\n\n"
+           "Valencia has a metro [S10]. Neither source set reported missing details on public transport. "
+           "No source covered healthcare in Porto.")
+    out, rep = guards.apply(ans, "", "en", {"research_area"})
+    assert "lack" not in out and "missing" not in out and "No source covered healthcare in Porto." in out
+    assert rep["source_filler_dropped"] == 2
+    pt = "O Porto tem metro [S1]. Nenhuma fonte indicou falta de informação sobre escolas."
+    assert guards.apply(pt, "", "pt", {"research_area"})[0] == "O Porto tem metro [S1]."
 
 
 def test_for_sale_button_switches_to_sale_without_the_extractor(tmp_path):
