@@ -220,7 +220,36 @@ class Agent:
             header = (f"[no exact matches; searched again without the features {dropped} — say so to the "
                       f"user, these homes are not confirmed to have them] "
                       f"[filter_listings {json.dumps(args, ensure_ascii=False)}]\n")
+        if not res["is_error"] and not listings.parse(res["text"]):
+            header += self._why_none(args)
         return res, header
+
+    def _any(self, args: dict) -> bool:
+        res = self.mcp.call_tool("filter_listings", {**args, "limit": 1})
+        return not res["is_error"] and bool(listings.parse(res["text"]))
+
+    def _why_none(self, args: dict) -> str:
+        """Why a search found nothing, measured with up to two one-row probes. "Lyon
+        flats to rent under €1,200" found none and the model advised a bigger budget
+        or nearby towns — Cubi had no Lyon rentals at any price (live 2026-10-22)."""
+        where = ", ".join(args.get("location") or []) or "this area"
+        priced = {k: v for k, v in args.items() if k not in ("min_price", "max_price")}
+        if priced != args:
+            self.stats["zero_probes"] = self.stats.get("zero_probes", 0) + 1
+            if self._any(priced):
+                return ("[why none: the same search without the price limit does find homes, so the "
+                        "budget is what rules them out — say so]\n")
+        if args.get("transaction_type") == "rent":
+            sale = {k: v for k, v in priced.items() if k not in ("transaction_type", "price_period")}
+            self.stats["zero_probes"] = self.stats.get("zero_probes", 0) + 1
+            if self._any(sale):
+                return (f"[why none: Cubi lists no homes like this to rent in {where} at any price, though it "
+                        f"has some for sale there. Say that Cubi's rental listings don't cover {where} yet; "
+                        f"do not suggest a higher budget, and offer homes for sale there instead]\n")
+        if priced != args:
+            return (f"[why none: Cubi has no homes like this in {where} at any price. Say so; do not "
+                    f"suggest a higher budget]\n")
+        return ""
 
     def _filter_per_place(self, args: dict, places: list[str]) -> Generator[dict, None, tuple[dict, str]]:
         """One filter_listings call per place, cards grouped by place and renumbered."""
@@ -236,7 +265,7 @@ class Agent:
                 continue
             cards = listings.parse(res["text"])
             notes.append(f"{place}: {len(cards)} shown" + ("" if cards else " (no matches)")
-                         + (" — " + header.strip() if "no exact matches" in header else ""))
+                         + (" — " + header.strip() if "no exact matches" in header or "[why none" in header else ""))
             merged.extend(cards)
         if failed and len(failed) == len(places):
             return res, ""
@@ -410,7 +439,37 @@ class Agent:
         if name == similarmod.TOOL:
             yield from self._similar_result(res["text"], how)
             return
+        if name == "compare_asking_prices":
+            yield self._no_band_brief(res["text"], how)
+            return
         yield res["text"]
+
+    @staticmethod
+    def _no_band_brief(text: str, how: str) -> str:
+        """No range: one ready sentence with the measured reason. Left to itself the
+        model turned "no band" into a verdict ("Der Preis von #1 liegt nicht im
+        Vergleichsrahmen", live 2026-10-22) or a paragraph of method."""
+        try:
+            body = json.loads(text)
+        except json.JSONDecodeError:
+            return text
+        if not isinstance(body, dict) or body.get("band"):
+            return text
+        n_card = ordinals.ordinal(how, 99) if how.startswith("card") else None
+        label = f"#{n_card}" if n_card else "this home"
+        n, city = body.get("n_comps"), body.get("city") or "the same city"
+        if body.get("reason") == "comparables_disagree" and n:
+            why = (f"the {n} comparable homes Cubi has in {city} vary too much in asking price "
+                   f"to give a fair range")
+        elif n:
+            why = f"Cubi has only {n} comparable {'home' if n == 1 else 'homes'} in {city}, too few for a range"
+        else:
+            why = f"Cubi has no comparable homes in {city} with an asking price"
+        return (text + f"\n\n[no range for {label}] Say this, in the user's language, and nothing more about "
+                f"the price: \"There is no range of asking prices to compare {label} with: {why}. That says "
+                f"nothing about whether its price is high or low.\" Then one short line that this compares "
+                f"asking prices, not a valuation. Never say the price is outside, below, above or in line "
+                f"with anything.")
 
     def _home_news(self) -> Iterator[dict | str]:
         """The home's observed price changes (Cubi) and recent news about its city
