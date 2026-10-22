@@ -160,6 +160,9 @@ def drop_price_verdicts(answer: str, lang: str) -> tuple[str, int]:
     out, n = _drop_sentences(answer, _VERDICT, keep_questions=True)
     if not n:
         return answer, 0
+    low = out.lower()
+    if any(w in low for w in _VALUATION_WORDS.get(lang, ()) + _VALUATION_WORDS["en"]):
+        return out, n   # already points to a valuation: the note would say it twice (rehearsal 2026-10-22)
     return out + "\n\n" + _VERDICT_NOTE.get(lang, _VERDICT_NOTE["en"]), n
 
 

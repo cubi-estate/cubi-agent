@@ -105,3 +105,11 @@ def test_for_sale_button_switches_to_sale_without_the_extractor(tmp_path):
     list(agent._search_homes("Logements à vendre à Lyon"))
     assert calls[0]["transaction_type"] == "sale" and "max_price" not in calls[0]
     assert "price_period" not in calls[0] and agent.sale_only == []
+
+
+def test_verdict_note_not_added_twice():
+    from agent import guards
+    ans = ("It falls within the range, based on 19 comparable homes. It is not overpriced. "
+           "Always consider an independent valuation before buying.")
+    out, n = guards.drop_price_verdicts(ans, "en")
+    assert n == 1 and out.lower().count("valuation") == 1
