@@ -434,8 +434,11 @@ class Agent:
             elif hist.get("total_change_pct") is not None:
                 lines.append(f"Total since first observed (€{hist['first_observed_price']:,.0f}): "
                              f"{hist['total_change_pct']:+.1f}%.")
+        # The place the user sees on the card (and that the suggestion named) wins
+        # over the listing's stored city: live 2026-10-22 a card shown in "Lisboa"
+        # was stored as Cascais, and the news search went to the wrong town.
         card = next((c for c in self.shown if c.get("id") == ref), {})
-        city = (hist or {}).get("city") or next(iter(listings.places(card.get("location") or "")), "")
+        city = next(iter(listings.places(card.get("location") or "")), "") or (hist or {}).get("city") or ""
         country = (hist or {}).get("country") or ""
         if city:
             place = f"{city}, {country}" if country else city

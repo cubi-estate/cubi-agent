@@ -126,3 +126,9 @@ def test_country_news_is_labelled_when_the_city_has_too_little(monkeypatch):
     monkeypatch.setattr(tavily_tool, "_search", lambda q, http, topic="general", days=None: rows)
     text, st = tavily_tool.latest_news("Porto, Portugal", http=object())
     assert "(about Portugal as a whole, not Porto specifically)" in text and len(st["sources"]) == 1
+
+
+def test_news_goes_to_the_place_on_the_card_not_the_stored_city(tmp_path, monkeypatch):
+    agent, _, seen = _agent(tmp_path, monkeypatch, {**HIST, "city": "Cascais"}, "ok")
+    list(agent.turn("Has #2's price dropped, and what's new in Lisboa?"))
+    assert seen == ["Lisboa, Portugal"]

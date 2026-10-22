@@ -13,6 +13,8 @@ import sys
 import time
 import urllib.request
 
+PAUSE_S = 8
+
 TURNS = [
     "Wir ziehen um: Wohnung zum Kauf in Porto oder Valencia, bis 400.000 €, mindestens 2 Schlafzimmer",
     "Is #2 overpriced?",
@@ -73,6 +75,8 @@ def main() -> int:
                 print(f"\n[{i}] ! no suggestion matching {TURNS[i - 1]!r} — skipped")
                 ok = False
                 continue
+        if i > 1:
+            time.sleep(PAUSE_S)  # the demo allows 8 turns a minute per address (IP_TURNS_PER_MIN)
         session, out = turn(base, msg, session)
         last = out["answer"] or {}
         ans = out["answer"] or {}
