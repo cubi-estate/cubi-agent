@@ -37,6 +37,8 @@ MODELS = {
 }
 
 TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
+# Optional: recent posts on X in the home-news turn (agent/x_tool.py). Unset = a link to X.
+X_BEARER_TOKEN = os.environ.get("X_BEARER_TOKEN", "")
 
 CUBI_MCP_URL = os.environ.get("CUBI_MCP_URL", "https://mcp.cubi.estate/mcp")
 CUBI_MCP_TOKEN = os.environ.get("CUBI_MCP_TOKEN", "")

@@ -135,6 +135,13 @@ main { flex: 1; width: 100%; max-width: 860px; margin: 0 auto; padding: 16px 16p
 .pricehist .up { color: var(--warn); font-weight: 600; }
 .pricehist small, .pricehist .phnote, .pricehist .phnone { color: var(--muted); font-size: 12.5px; }
 .pricehist .phnone, .pricehist .phnote { margin: 8px 0 0; }
+.pricehist .xposts { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+.pricehist .xpost { padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px; }
+.pricehist .xpost:last-of-type { border-bottom: 0; }
+.pricehist .xwho span { color: var(--muted); }
+.pricehist .xwho .xsid { float: right; font-size: 12px; }
+.pricehist .xpost p { margin: 4px 0; white-space: pre-line; overflow-wrap: anywhere; }
+.pricehist .xpost a { font-size: 12.5px; }
 .pricehist .xlink { display: inline-block; margin-top: 10px; font-size: 14px; text-decoration: none; border: 1px solid var(--line);
                     border-radius: 999px; padding: 6px 12px; color: var(--ink); }
 .filter { margin: 12px 0 0; font-size: 13.5px; color: var(--muted); }

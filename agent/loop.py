@@ -23,8 +23,10 @@ import os
 import time
 from typing import Generator, Iterator
 
+import httpx
+
 from . import extract as extractmod
-from . import guards, inventory, lang as langmod, listings, llm, ordinals, similar as similarmod, skills as skillsmod, suggest, tavily_tool
+from . import guards, inventory, lang as langmod, listings, llm, ordinals, similar as similarmod, skills as skillsmod, suggest, tavily_tool, x_tool
 from .fixtures import connect, listing_ref
 from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
@@ -164,6 +166,7 @@ class Agent:
         self.done: set[str] = set()  # what this conversation asked and did, so suggestions don't repeat it
         self.price_history: dict | None = None  # this turn's price timeline, for the page
         self.x_url: str | None = None  # this turn's link to X's live search for the home's city
+        self.x_posts: list[dict] = []  # this turn's posts from X, when X_BEARER_TOKEN is set
 
     # ---- tools -------------------------------------------------------------
     def _timed(self, stage: str, t0: float) -> None:
@@ -560,8 +563,23 @@ class Agent:
                 yield {"type": "action", "text": f"News search unavailable: {e}"}
                 lines.append("[news] Unavailable right now: say so; do not answer from memory.")
             self.x_url = tavily_tool.x_search_url(city)
-            lines.append("The app also shows a link to the latest posts about the city on X; you have not read "
-                         "them, so don't describe them.")
+            x_text = None
+            if x_tool.enabled():
+                yield {"type": "action", "text": f"Reading recent posts about housing in {city} on X (last 7 days)"}
+                try:
+                    first = 1 + sum(1 for k in self.sources if k.startswith("X"))
+                    x_text, st = x_tool.recent_posts(city, first_id=first)
+                    self.sources.update(st["sources"])
+                    self.x_posts = st["posts"]
+                    self.stats["x_posts_read"] = self.stats.get("x_posts_read", 0) + st["returned"]
+                    self.timings.append(("x recent search", st["seconds"]))
+                except (x_tool.XError, httpx.HTTPError) as e:
+                    yield {"type": "action", "text": f"Posts on X unavailable: {e}"}
+            if x_text:
+                lines.append("\n" + x_text)
+            else:
+                lines.append("The app also shows a link to the latest posts about the city on X; you have not "
+                             "read them, so don't describe them.")
         yield "\n".join(lines)
 
     def _two_cards(self, text: str) -> list[dict]:
@@ -620,6 +638,7 @@ class Agent:
         self.similar = None
         self.price_history = None
         self.x_url = None
+        self.x_posts = []
         calls0 = len(self.mcp.calls)
         self.lang = langmod.detect(text, default=self.lang)
         skill = self.skills[skillsmod.select(text, self.has_results, self.last_skill)]
@@ -753,7 +772,7 @@ class Agent:
                "guards": report, "latency_s": round(time.monotonic() - t0, 2), "stats": dict(self.stats),
                "timings": list(self.timings), "listings": list(self.cards), "inventory": self.bars,
                "similar": self.similar, "suggestions": suggestions,
-               "price_history": self.price_history, "x_url": self.x_url}
+               "price_history": self.price_history, "x_url": self.x_url, "x_posts": self.x_posts}
 
     def _suggestions(self, skill: str, text: str) -> list[str]:
         """Up to three next questions for buttons under the answer (agent/suggest.py)."""

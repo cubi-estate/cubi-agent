@@ -8,7 +8,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from agent import fixtures, guards, skills, suggest, tavily_tool  # noqa: E402
+from agent import fixtures, guards, skills, suggest, tavily_tool, x_tool  # noqa: E402
 from agent.loop import Agent  # noqa: E402
 
 HIST = {"listing_id": "remax:2", "city": "Lisboa", "country": "Portugal", "currency": "EUR",
@@ -51,6 +51,7 @@ def _agent(tmp_path, monkeypatch, hist, answer, news_sources=1):
         return "## Latest news about Lisboa\n" + "\n".join(f"[{k}] {v['title']}" for k, v in src.items()), \
             {"searches": 2, "seconds": 0.1, "sources": src}
     monkeypatch.setattr(tavily_tool, "latest_news", news)
+    monkeypatch.setattr(x_tool, "enabled", lambda: False)   # X is opt-in; its own test turns it on
     return agent, calls, seen
 
 
@@ -165,3 +166,31 @@ def test_after_news_on_a_card_its_news_question_is_not_suggested(tmp_path, monke
     first = list(agent.turn("Has #2's price dropped, and what's new in Lisboa?"))[-1]
     assert not any("dropped" in q for q in first["suggestions"])
     assert suggest.key("news", "remax:2") in agent.done
+
+
+def test_posts_on_x_read_cited_and_sent_to_the_page(tmp_path, monkeypatch):
+    agent, _, _ = _agent(tmp_path, monkeypatch, HIST, "A march was held [S1]; posts on X mention rising rents [X1].")
+    monkeypatch.setattr(x_tool, "enabled", lambda: True)
+    post = {"id": "9", "text": "Rents up again", "date": "2026-10-21", "name": "Ana", "handle": "ana_l",
+            "url": "https://x.com/ana_l/status/9", "sid": "X1"}
+    monkeypatch.setattr(x_tool, "recent_posts", lambda place, first_id=1: (
+        "## Recent posts on X\n[X1] 2026-10-21: Rents up again",
+        {"posts": [post], "returned": 10, "seconds": 0.2,
+         "sources": {"X1": {"url": post["url"], "title": "Ana (@ana_l) on X", "date": post["date"]}}}))
+    final = list(agent.turn("Has #2's price dropped, and what's new in Lisboa?"))[-1]
+    assert final["x_posts"] == [post] and final["stats"]["x_posts_read"] == 10
+    assert "[X1](https://x.com/ana_l/status/9)" in final["text"]
+    tool_msg = [m for m in agent.cli.calls[0]["messages"] if m["role"] == "tool"][0]["content"]
+    assert "[X1] 2026-10-21: Rents up again" in tool_msg and "you have not read them" not in tool_msg
+
+
+def test_x_failure_falls_back_to_the_link(tmp_path, monkeypatch):
+    agent, _, _ = _agent(tmp_path, monkeypatch, HIST, "No change.")
+    monkeypatch.setattr(x_tool, "enabled", lambda: True)
+
+    def boom(place, first_id=1):
+        raise x_tool.XError("today's X post budget is used up")
+    monkeypatch.setattr(x_tool, "recent_posts", boom)
+    events = list(agent.turn("Has #2's price dropped, and what's new in Lisboa?"))
+    assert any("Posts on X unavailable" in (e.get("text") or "") for e in events if e["type"] == "action")
+    assert events[-1]["x_posts"] == [] and events[-1]["x_url"]

@@ -166,8 +166,9 @@ def _domain(url: str) -> str:
 _JUNK_CITATION = re.compile(r"【[^】]*】")
 
 
-CITATION = re.compile(r"\[((?:S\d+\s*,\s*)*S\d+)\](?!\()")
-_WIDE_CITATION = re.compile(r"【\s*((?:S\d+\s*[,，]\s*)*S\d+)\s*】")
+# [S2] web sources, [X1] posts on X (agent/x_tool.py).
+CITATION = re.compile(r"\[((?:[SX]\d+\s*,\s*)*[SX]\d+)\](?!\()")
+_WIDE_CITATION = re.compile(r"【\s*((?:[SX]\d+\s*[,，]\s*)*[SX]\d+)\s*】")
 
 
 def normalise_citations(answer: str) -> str:
@@ -190,7 +191,7 @@ def link_citations(answer: str, sources: dict[str, dict], lang: str = "en") -> t
         return " ".join(links)
 
     answer = CITATION.sub(repl, answer)
-    answer = re.sub(r"(?<=[^\s(\[])\[(S\d+)\]\(", r" [\1](", answer)  # "schools[S1]" → "schools [S1]"
+    answer = re.sub(r"(?<=[^\s(\[])\[([SX]\d+)\]\(", r" [\1](", answer)  # "schools[S1]" → "schools [S1]"
     answer = re.sub(r"[ \t]+([.,;:])", r"\1", answer)
     return answer.rstrip() + "\n\n" + _footer(answer, sources, n, lang), n
 

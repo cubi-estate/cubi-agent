@@ -260,26 +260,26 @@ function similarTable(el, s, lang) {
 const PH = {
   en: { title: n => `Asking price on Cubi${n ? ` · #${n}` : ""}`, now: "Now", since: d => `On Cubi since ${d}`,
         none: d => `No change observed since ${d}, when Cubi began tracking prices.`, total: "Since first seen",
-        x: "Latest posts on X", note: "Asking prices, not sale prices. Cubi records changes it sees in its daily syncs." },
+        xhead: "Posts on X · last 7 days", xnote: "People’s posts, shown as published on X; not checked by Cubi.", xview: "View on X", x: "Latest posts on X", note: "Asking prices, not sale prices. Cubi records changes it sees in its daily syncs." },
   pt: { title: n => `Preço pedido na Cubi${n ? ` · #${n}` : ""}`, now: "Agora", since: d => `Na Cubi desde ${d}`,
         none: d => `Nenhuma alteração observada desde ${d}, quando a Cubi começou a acompanhar preços.`, total: "Desde o primeiro registo",
-        x: "Publicações recentes no X", note: "Preços pedidos, não preços de venda. A Cubi regista as alterações que vê nas sincronizações diárias." },
+        xhead: "Publicações no X · últimos 7 dias", xnote: "Publicações de pessoas, tal como no X; a Cubi não as verificou.", xview: "Ver no X", x: "Publicações recentes no X", note: "Preços pedidos, não preços de venda. A Cubi regista as alterações que vê nas sincronizações diárias." },
   es: { title: n => `Precio de oferta en Cubi${n ? ` · #${n}` : ""}`, now: "Ahora", since: d => `En Cubi desde ${d}`,
         none: d => `Sin cambios observados desde ${d}, cuando Cubi empezó a seguir los precios.`, total: "Desde el primer registro",
-        x: "Publicaciones recientes en X", note: "Precios de oferta, no de venta. Cubi registra los cambios que ve en sus sincronizaciones diarias." },
+        xhead: "Publicaciones en X · últimos 7 días", xnote: "Publicaciones de personas, tal como en X; Cubi no las ha verificado.", xview: "Ver en X", x: "Publicaciones recientes en X", note: "Precios de oferta, no de venta. Cubi registra los cambios que ve en sus sincronizaciones diarias." },
   fr: { title: n => `Prix demandé sur Cubi${n ? ` · n°${n}` : ""}`, now: "Aujourd'hui", since: d => `Sur Cubi depuis le ${d}`,
         none: d => `Aucun changement observé depuis le ${d}, début du suivi des prix par Cubi.`, total: "Depuis la première observation",
-        x: "Derniers posts sur X", note: "Prix demandés, pas des prix de vente. Cubi enregistre les changements vus lors de ses synchronisations quotidiennes." },
+        xhead: "Posts sur X · 7 derniers jours", xnote: "Posts de particuliers, tels que publiés sur X ; non vérifiés par Cubi.", xview: "Voir sur X", x: "Derniers posts sur X", note: "Prix demandés, pas des prix de vente. Cubi enregistre les changements vus lors de ses synchronisations quotidiennes." },
   de: { title: n => `Angebotspreis auf Cubi${n ? ` · #${n}` : ""}`, now: "Jetzt", since: d => `Auf Cubi seit ${d}`,
         none: d => `Keine Änderung beobachtet seit ${d}, als Cubi mit der Preisverfolgung begann.`, total: "Seit der ersten Erfassung",
-        x: "Neueste Beiträge auf X", note: "Angebotspreise, keine Verkaufspreise. Cubi erfasst Änderungen bei der täglichen Synchronisierung." },
+        xhead: "Beiträge auf X · letzte 7 Tage", xnote: "Beiträge von Personen, wie auf X veröffentlicht; nicht von Cubi geprüft.", xview: "Auf X ansehen", x: "Neueste Beiträge auf X", note: "Angebotspreise, keine Verkaufspreise. Cubi erfasst Änderungen bei der täglichen Synchronisierung." },
   nl: { title: n => `Vraagprijs op Cubi${n ? ` · #${n}` : ""}`, now: "Nu", since: d => `Op Cubi sinds ${d}`,
         none: d => `Geen wijziging gezien sinds ${d}, toen Cubi prijzen begon te volgen.`, total: "Sinds eerste waarneming",
-        x: "Laatste berichten op X", note: "Vraagprijzen, geen verkoopprijzen. Cubi legt wijzigingen vast die het bij de dagelijkse synchronisatie ziet." },
+        xhead: "Berichten op X · laatste 7 dagen", xnote: "Berichten van mensen, zoals op X geplaatst; niet gecontroleerd door Cubi.", xview: "Bekijk op X", x: "Laatste berichten op X", note: "Vraagprijzen, geen verkoopprijzen. Cubi legt wijzigingen vast die het bij de dagelijkse synchronisatie ziet." },
 };
 
 // The home's observed price changes, and a link to X's live search for its city.
-function priceHistory(el, h, xUrl, lang) {
+function priceHistory(el, h, xUrl, lang, posts) {
   const L = PH[lang] || PH.en;
   const eur = v => euro(v, lang);
   let body = "";
@@ -291,6 +291,15 @@ function priceHistory(el, h, xUrl, lang) {
       <td>${h.total_change_pct != null ? `<span class="${h.total_change_pct < 0 ? "down" : "up"}">${h.total_change_pct > 0 ? "+" : ""}${esc(h.total_change_pct)}%</span> <small>${esc(L.total)}</small>` : ""}</td></tr></table>
       ${(h.changes || []).length ? "" : `<p class="phnone">${esc(L.none(h.tracked_since))}</p>`}
       <p class="phnote">${esc(L.since(h.on_cubi_since || "?"))} · ${esc(L.note)}</p>`;
+  }
+  // Posts as X's display terms ask: name, @handle, date, the text unchanged, a link to the post.
+  const shown = (posts || []).filter(p => safeUrl(p.url));
+  if (shown.length) {
+    body += `<div class="xposts"><div class="phhead">${esc(L.xhead)}</div>` + shown.map(p => `
+      <div class="xpost"><div class="xwho"><b>${esc(p.name)}</b> <span>@${esc(p.handle)} · ${esc(p.date)}</span>
+        <span class="xsid">${esc(p.sid)}</span></div>
+        <p>${esc(p.text)}</p><a href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener nofollow">${esc(L.xview)} ↗</a></div>`).join("")
+      + `<p class="phnote">${esc(L.xnote)}</p></div>`;
   }
   const x = safeUrl(xUrl);
   if (x) body += `<a class="xlink" href="${esc(x)}" target="_blank" rel="noopener nofollow">${esc(L.x)} ↗</a>`;
@@ -362,7 +371,7 @@ async function ask(text) {
             filter.innerHTML = `${esc(t.searched)}: <b>${esc(ev.filter)}</b>`;
           }
           if (ev.similar) similarTable(turn.querySelector(".similar"), ev.similar, ev.lang);
-          if (ev.price_history || ev.x_url) priceHistory(turn.querySelector(".pricehist"), ev.price_history, ev.x_url, ev.lang);
+          if (ev.price_history || ev.x_url) priceHistory(turn.querySelector(".pricehist"), ev.price_history, ev.x_url, ev.lang, ev.x_posts);
           if (ev.inventory) budget(turn.querySelector(".budget"), ev.inventory, t, ev.lang);
           (ev.listings || []).forEach(c => cards.appendChild(card(c, t)));
           suggestions(fups, ev.suggestions || []);

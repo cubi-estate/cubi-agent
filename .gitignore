@@ -10,3 +10,4 @@ reports/*.json
 
 # Tavily replies carry third-party page excerpts: local only.
 fixtures/tavily/
+fixtures/x/

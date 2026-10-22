@@ -149,6 +149,7 @@ What leaves your browser, and where it goes:
 | **Nebius Token Factory** | your messages and the listing data the agent works with | Nemotron 3 Super is served from **us-central1 (US)** | model inference |
 | **Cubi Estate connector** (`mcp.cubi.estate`, EU) | the search filter or search text, listing ids | EU | listing search. Cubi logs each tool call to run and secure the service: free-text queries and network addresses are removed after 7 days, the record after 14. See the [Cubi Estate privacy policy](https://www.cubi.estate/privacy-policy). Its free-text search uses OpenAI on Cubi's side. |
 | **Tavily** | for area questions only: place names and topics, e.g. "Porto, Portugal: schools for residents" | US | web search. No listing data and none of your other words. |
+| **X** (optional, when `X_BEARER_TOKEN` is set) | for "what's new" questions only: the city's name and housing keywords, e.g. "(Lisboa OR Lisbon) (housing OR rent …)" | US | recent public posts (last 7 days), shown with author, handle, date and a link, as X's terms ask. Nothing is stored or logged, so a post deleted on X is not shown again. A daily cap on posts read (`X_DAILY_POST_CAP`, default 300) bounds the cost. Without the key the app links to X's own search instead. |
 
 This means the demo is **not EU-only**: model inference runs in the US. Don't enter
 personal details. To contact an agent, the demo gives you a link to Cubi's own chat

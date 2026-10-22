@@ -30,7 +30,9 @@ music you have the rights to. Upload to YouTube as **Public** and put the link i
 3. **Don't open "Open listing" on camera.** It leads to the portal's page, with its
    logo and photos (plan §4: no portal marks or listing photos). The cards
    themselves show no photos. Don't open the X link on camera either: it shows
-   other people's posts.
+   other people's posts. With the demo's X key set, turn 6 shows up to three posts
+   in the page itself, with their authors' names: blur that box in the edit, or
+   record before the key is added.
 4. **Typing:** paste each message, or click the suggestion button where the shot
    says so. Keep the step log open during turn 1 (it opens by default) and let it
    collapse on its own.

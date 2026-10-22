@@ -19,7 +19,8 @@ package public, or pass `--registry-secret`.
 ## Secrets
 
 The container reads `NEBIUS_API_KEY` (required), `TAVILY_API_KEY` (area
-comparison) and `CUBI_MCP_TOKEN` (the demo's deployment token on Cubi's
+comparison), `X_BEARER_TOKEN` (optional: posts on X in "what's new" answers;
+`X_DAILY_POST_CAP`, default 300, bounds the cost) and `CUBI_MCP_TOKEN` (the demo's deployment token on Cubi's
 connector, `cubi-agent-demo`). Keep them in MysteryBox rather than as plain
 `--env` values: plain values are readable by anyone with read access to the
 endpoint spec.
