@@ -74,10 +74,10 @@ def test_price_history_then_news_for_the_homes_city(tmp_path, monkeypatch):
 
 def test_no_change_observed_is_said_with_the_tracking_date(tmp_path, monkeypatch):
     agent, _, _ = _agent(tmp_path, monkeypatch, {**HIST, "changes": [], "drops": 0, "total_change_pct": None},
-                         "No change observed since 2026-05-02.")
+                         "No change observed since 2026-06-03.")
     list(agent.turn("Has #2's price dropped?"))
     tool_msg = [m for m in agent.cli.calls[0]["messages"] if m["role"] == "tool"][0]["content"]
-    assert "No change observed since 2026-05-02." in tool_msg
+    assert "No change observed since 2026-06-03." in tool_msg   # first seen 06-03, after the log began
 
 
 def test_price_history_failure_still_searches_news(tmp_path, monkeypatch):
@@ -132,3 +132,12 @@ def test_news_goes_to_the_place_on_the_card_not_the_stored_city(tmp_path, monkey
     agent, _, seen = _agent(tmp_path, monkeypatch, {**HIST, "city": "Cascais"}, "ok")
     list(agent.turn("Has #2's price dropped, and what's new in Lisboa?"))
     assert seen == ["Lisboa, Portugal"]
+
+
+def test_tracking_starts_when_cubi_first_saw_the_listing(tmp_path, monkeypatch):
+    agent, _, _ = _agent(tmp_path, monkeypatch, {**HIST, "changes": [], "on_cubi_since": "2026-10-21"}, "ok")
+    final = list(agent.turn("Has #2's price dropped?"))[-1]
+    assert final["price_history"]["tracked_since"] == "2026-10-21"
+    tool_msg = [m for m in agent.cli.calls[0]["messages"] if m["role"] == "tool"][0]["content"]
+    assert "watched this listing's price since 2026-10-21" in tool_msg
+    assert "No change observed since 2026-10-21." in tool_msg

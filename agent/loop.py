@@ -421,12 +421,18 @@ class Agent:
             yield {"type": "action", "text": "Price history: not available right now"}
             lines.append("[price history] Not available right now: say so; do not guess any price change.")
         else:
+            # Changes are observable from the later of the log's start and the day Cubi
+            # first saw the listing: "tracked since May 2" for a listing seen yesterday
+            # was false (live 2026-10-22).
+            watched = max(d for d in (hist.get("tracked_since"), hist.get("on_cubi_since")) if d) \
+                if (hist.get("tracked_since") or hist.get("on_cubi_since")) else None
+            hist = {**hist, "tracked_since": watched}
             self.price_history = {**{k: hist.get(k) for k in ("current_price", "currency", "on_cubi_since",
                                                                "tracked_since", "changes", "total_change_pct",
                                                                "first_observed_price", "city")}, "card": n}
             lines.append(f"[price history for {label}] Current asking price €{hist.get('current_price') or 0:,.0f}; "
-                         f"on Cubi since {hist.get('on_cubi_since')}; Cubi tracks price changes since "
-                         f"{hist.get('tracked_since')}.")
+                         f"Cubi has watched this listing's price since {watched} (first seen "
+                         f"{hist.get('on_cubi_since')}).")
             for c in hist.get("changes") or []:
                 lines.append(f"- {c['date']}: €{c['old_price']:,.0f} → €{c['new_price']:,.0f} ({c['pct']:+.1f}%)")
             if not hist.get("changes"):
