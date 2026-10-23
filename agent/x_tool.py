@@ -12,6 +12,12 @@ terms ask; nothing is stored or logged (no text, no handles), so a post deleted
 on X is never shown again from here. Posts are people's views, not reporting:
 the model is told so.
 
+Two rules from the legitimate-interests assessment (cleverdragon
+docs/privacy/lia_x_posts.md): an author who objects is blocked by handle
+(X_BLOCKED_HANDLES, comma-separated, applied before anything is shown or sent
+to the model), and a post that @mentions another account is dropped, so no one
+appears here who did not post.
+
 Offline (CUBI_OFFLINE=1) replies come from fixtures/x/, git-ignored: post text
 is third-party content.
 """
@@ -48,6 +54,8 @@ _SELLER = re.compile(r"realt|propert|imobili|inmobili|immobili|immo|real.?estate
 _AD = re.compile(r"\b(for sale|for rent|à venda|para venda|en venta|se vende|à vendre|à louer|zu verkaufen|"
                  r"zu vermieten|te koop|te huur|in vendita|dm (me|for)|link in bio|\d+\s?(bed|bd|br|quartos|"
                  r"habitaciones|chambres|zimmer)\b|T[0-9]\b)", re.I)
+# An @handle, not an email address or a URL path.
+_MENTION = re.compile(r"(?<![\w@/])@(\w{1,15})\b")
 
 
 class XError(RuntimeError):
@@ -79,6 +87,15 @@ def cap() -> int:
         return max(0, int(os.environ.get("X_DAILY_POST_CAP", "300")))
     except ValueError:
         return 300
+
+
+def blocked() -> set[str]:
+    raw = os.environ.get("X_BLOCKED_HANDLES", "")
+    return {h.strip().lstrip("@").lower() for h in raw.split(",") if h.strip().lstrip("@")}
+
+
+def mentions_others(text: str, handle: str) -> bool:
+    return any(m.lower() != handle.lower() for m in _MENTION.findall(text))
 
 
 def enabled() -> bool:
@@ -125,11 +142,13 @@ def _fetch(query: str, http: httpx.Client) -> dict:
 
 def _posts(body: dict) -> list[dict]:
     users = {u["id"]: u for u in (body.get("includes") or {}).get("users", [])}
-    out = []
+    block, out = blocked(), []
     for t in body.get("data") or []:
         u = users.get(t.get("author_id")) or {}
         handle, name, text = u.get("username") or "", u.get("name") or "", t.get("text") or ""
-        if not handle or _SELLER.search(handle + " " + name) or _AD.search(text):
+        if not handle or handle.lower() in block or mentions_others(text, handle):
+            continue
+        if _SELLER.search(handle + " " + name) or _AD.search(text):
             continue
         out.append({"id": t["id"], "text": text, "date": (t.get("created_at") or "")[:10], "name": name,
                     "handle": handle, "url": f"https://x.com/{handle}/status/{t['id']}"})

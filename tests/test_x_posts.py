@@ -77,3 +77,30 @@ def test_x_citations_are_linked():
                "X1": {"url": "https://x.com/ana_l/status/1", "title": "Ana (@ana_l) on X", "date": "2026-10-21"}}
     out, n = tavily_tool.link_citations("A march was held [S1]; posts on X mention rising rents [X1].", sources)
     assert n == 2 and "[X1](https://x.com/ana_l/status/1)" in out and "Ana (@ana_l) on X" in out
+
+
+def _body(*posts):
+    return {"data": [{"id": str(i), "author_id": h, "text": t, "created_at": "2026-10-21T09:00:00Z"}
+                     for i, (h, t) in enumerate(posts, 1)],
+            "includes": {"users": [{"id": h, "username": h, "name": h.title()} for h, _ in posts]}}
+
+
+def test_blocked_handles_are_never_shown_or_sent(monkeypatch):
+    monkeypatch.setenv("X_BLOCKED_HANDLES", " @Ana_L , other")
+    text, st = x_tool.recent_posts("Lisboa", http=_Http())
+    assert [p["id"] for p in st["posts"]] == ["3"]
+    assert "landlord wants 20%" not in text
+
+
+def test_posts_mentioning_other_accounts_are_dropped():
+    body = _body(("ana", "Lisbon rents up, ask @CamaraLisboa why"),
+                 ("rui", "Housing in Lisbon: my thread, follow @rui for more"),
+                 ("eva", "Lisbon rent strike, write to eva@example.org or see x.com/@nobody"),
+                 ("bea", "Lisbon housing.@someone"))
+    _, st = x_tool.recent_posts("Lisboa", http=_Http(body=body))
+    assert [p["handle"] for p in st["posts"]] == ["rui", "eva"]
+
+
+def test_mention_check():
+    assert x_tool.mentions_others("hi @bob", "ana") and not x_tool.mentions_others("hi @ANA", "ana")
+    assert not x_tool.mentions_others("mail ana@site.pt", "x")
