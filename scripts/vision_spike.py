@@ -12,7 +12,12 @@ Gates (oracle council, 2026-10-23):
      a no-photo baseline with the same filters (the photo must change the result
      in the expected direction, not just change it).
 
-Photos: put rights-cleared exterior photos (team-shot or with a recorded licence;
+Generated images: `python scripts/make_photos.py` writes AI-generated images
+plus an answer key (fixtures/photos/expected.json); the spike then also scores
+precision and recall against it, and checks the contrast pairs (same house, one
+feature different: the model must see it in one and not the other).
+
+Photos: or put rights-cleared exterior photos (team-shot or with a recorded licence;
 no people, number plates or addresses) in fixtures/photos/ (git-ignored), and
 list each in fixtures/photos/licences.csv as `file,source,licence`. A photo
 without a licence row is still tested but flagged in the report. Images are
@@ -185,6 +190,37 @@ def _hits(cards: list[dict], feats: list[str]) -> float | None:
     return round(n / (len(top) * len(feats)), 2)
 
 
+def score(rows: list[dict], expected: dict) -> dict:
+    """Precision/recall of observed features against the answer key, building-type
+    agreement, and contrast pairs (the one differing feature seen in the right image only)."""
+    per, pairs = [], {}
+    for r in rows:
+        exp = expected.get(r["photo"])
+        if not exp or r.get("result") is None:
+            continue
+        got, want = set(r["observed"]), set(exp["features"])
+        r["expected"] = sorted(want)
+        r["precision"] = round(len(got & want) / len(got), 2) if got else None
+        r["recall"] = round(len(got & want) / len(want), 2) if want else None
+        r["building_ok"] = (r["result"] or {}).get("building") == exp["building"]
+        per.append(r)
+        if exp.get("pair"):
+            pairs.setdefault(exp["pair"], []).append((want, got))
+    pair_ok = []
+    for name, two in pairs.items():
+        if len(two) != 2:
+            continue
+        (w1, g1), (w2, g2) = two
+        diff = (w1 ^ w2)
+        ok = all((f in g1) == (f in w1) and (f in g2) == (f in w2) for f in diff)
+        pair_ok.append({"pair": name, "differs_in": sorted(diff), "ok": ok})
+    ps = [r["precision"] for r in per if r["precision"] is not None]
+    rs = [r["recall"] for r in per if r["recall"] is not None]
+    return {"scored": len(per), "precision_mean": round(statistics.mean(ps), 2) if ps else None,
+            "recall_mean": round(statistics.mean(rs), 2) if rs else None,
+            "building_ok": sum(r["building_ok"] for r in per), "pairs": pair_ok}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--model", default=DEFAULT_MODEL)
@@ -214,6 +250,9 @@ def main() -> int:
     if lic_file.exists():
         with lic_file.open() as f:
             licensed = {row[0].strip() for row in csv.reader(f) if row and row[0].strip() != "file"}
+
+    exp_file = a.photos / "expected.json"
+    expected = json.loads(exp_file.read_text()) if exp_file.exists() else {}
 
     mcp = None
     base = {}
@@ -268,6 +307,12 @@ def main() -> int:
     if with_search:
         gates["4a at least 3 homes for most photos"] = summary["found_3_or_more"] * 2 > len(with_search)
         gates["4b photo beats no-photo baseline for most photos"] = len(better) * 2 > len(with_search)
+    if expected:
+        sc = score(rows, expected)
+        summary["answer_key"] = sc
+        if sc["pairs"]:
+            gates["5 contrast pairs: the differing feature seen in the right image only"] = all(
+                p["ok"] for p in sc["pairs"])
     summary["gates"] = gates
 
     REPORTS.mkdir(exist_ok=True)
@@ -279,11 +324,19 @@ def main() -> int:
           f"{summary['seconds_p50']} s, max {summary['seconds_max']} s.", ""]
     if summary["unlicensed"]:
         md += [f"**No licence row:** {', '.join(summary['unlicensed'])}", ""]
+    if expected and summary.get("answer_key"):
+        sc = summary["answer_key"]
+        md += [f"Answer key: {sc['scored']} images scored; precision {sc['precision_mean']}, recall "
+               f"{sc['recall_mean']}; building type right {sc['building_ok']}/{sc['scored']}. Pairs: "
+               + (", ".join(f"{p['pair']} ({'/'.join(p['differs_in'])}) {'ok' if p['ok'] else 'WRONG'}"
+                            for p in sc["pairs"]) or "none"), ""]
     md += ["| Gate | Pass |", "|---|---|"] + [f"| {k} | {'yes' if v else '**no**'} |" for k, v in gates.items()]
-    md += ["", "| Photo | s | Observed | Homes | Features used | Hits photo / baseline | Errors |", "|---|---|---|---|---|---|---|"]
+    md += ["", "| Photo | s | Observed | Expected | P / R | Homes | Features used | Hits photo / baseline | Errors |",
+           "|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         s = r.get("search") or {}
         md.append(f"| {r['photo']} | {r.get('seconds', '—')} | {', '.join(r['observed']) or '—'} | "
+                  f"{', '.join(r.get('expected') or []) or '—'} | {r.get('precision', '—')} / {r.get('recall', '—')} | "
                   f"{s.get('results', '—')} | {', '.join(s.get('features_used') or []) or '—'} | "
                   f"{s.get('hit_photo', '—')} / {s.get('hit_baseline', '—')} | "
                   f"{'; '.join(r.get('errors') or []) or r.get('error_json_object') or '—'} |")

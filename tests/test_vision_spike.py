@@ -90,3 +90,17 @@ def test_read_photo_falls_back_to_json_object_and_sends_no_file_name(tmp_path, m
     assert r["mode"] == "json_object" and r["errors"] == [] and vs.observed(r) == ["Pool"]
     assert "json_schema" in r["error_json_schema"] and "villa.jpg" not in str(sent)
     assert sent[-1]["messages"][0]["content"][1]["image_url"]["url"].startswith("data:image/jpeg;base64,")
+
+
+def test_answer_key_scores_and_contrast_pairs():
+    from scripts import make_photos as mp
+    assert all(set(sc[3]) <= set(vs.FEATURES) and sc[1] in vs.TYPES for sc in mp.SCENES.values())
+    expected = {"a.png": {"building": "villa", "storeys": "2", "features": ["Pool", "Sea View"], "pair": "p"},
+                "b.png": {"building": "villa", "storeys": "2", "features": ["Sea View"], "pair": "p"}}
+    rows = [{"photo": "a.png", "result": {"building": "villa"}, "observed": ["Pool", "Sea View", "Garden"]},
+            {"photo": "b.png", "result": {"building": "house"}, "observed": ["Sea View"]}]
+    sc = vs.score(rows, expected)
+    assert sc["precision_mean"] == 0.83 and sc["recall_mean"] == 1.0 and sc["building_ok"] == 1
+    assert sc["pairs"] == [{"pair": "p", "differs_in": ["Pool"], "ok": True}]
+    rows[1]["observed"] = ["Sea View", "Pool"]           # sees a pool that isn't there
+    assert vs.score(rows, expected)["pairs"][0]["ok"] is False
