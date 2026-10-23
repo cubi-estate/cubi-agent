@@ -147,3 +147,21 @@ def test_rate_limited_call_waits_and_retries_once(monkeypatch):
             return replies.pop(0)
 
     assert vs.call(M(), "filter_listings", {})["text"] == "ok" and 61 in slept
+
+
+def test_verify_puts_homes_that_state_the_features_first_and_stops_at_three():
+    vs._LISTING_CACHE.clear()
+    texts = {"a:1": "garage", "a:2": "piscina e jardim", "a:3": "pool, garden", "a:4": "pool only",
+             "a:5": "jardim, piscina", "a:6": "piscina, jardim"}
+
+    class M:
+        n = 0
+
+        def call_tool(self, name, args):
+            M.n += 1
+            return {"is_error": False, "text": texts[args["listing_id"]]}
+
+    cards = [{"id": f"a:{i}"} for i in range(1, 7)]
+    out, ok, checked = vs.verify(M(), cards, ["Pool", "Garden"])
+    assert [c["id"] for c in out[:3]] == ["a:2", "a:3", "a:5"] and ok == 3 and checked == 5 and M.n == 5
+    assert vs.verify(M(), cards, []) == (cards, 0, 0)

@@ -95,6 +95,9 @@ _LISTING_CACHE: dict[str, str] = {}
 # (MCP_DEPLOY_RATE_PER_MIN) and the live demo shares it: stay at a third.
 CALLS_PER_MIN = 40
 _last_call = [0.0]
+DURATIONS: dict[str, list[float]] = {}   # connector time per tool, without pacing waits
+VERIFY_MAX = 10   # homes the agent checks at most per photo
+WANT = 3          # verified homes to show
 
 
 def call(mcp, name: str, args: dict) -> dict:
@@ -105,6 +108,7 @@ def call(mcp, name: str, args: dict) -> dict:
             time.sleep(wait)
         _last_call[0] = time.monotonic()
         res = mcp.call_tool(name, args)
+        DURATIONS.setdefault(name, []).append(time.monotonic() - _last_call[0])
         if not (res["is_error"] and "Too many tool calls" in res["text"]) or attempt:
             return res
         print("  connector rate limit: waiting a minute")
@@ -247,6 +251,24 @@ def _search(mcp, base: dict, features: list[str]) -> tuple[list[dict], list[str]
         feats = feats[:-1]
 
 
+def verify(mcp, cards: list[dict], feats: list[str]) -> tuple[list[dict], int, int]:
+    """Option 1 (2026-10-23): the connector does not let house features narrow a
+    search, so the agent reads each home's full listing and puts the ones that
+    state every feature first. Stops once WANT are verified. Returns (reranked
+    homes, verified count, homes checked)."""
+    if not feats:
+        return cards, 0, 0
+    good, rest, checked = [], [], 0
+    for c in cards[:VERIFY_MAX]:
+        if len(good) >= WANT:
+            rest.append(c)
+            continue
+        checked += 1
+        ok = c.get("id") and all(has_features(listing_text(mcp, c["id"]), feats).values())
+        (good if ok else rest).append(c)
+    return good + rest + cards[VERIFY_MAX:], len(good), checked
+
+
 def _hits(mcp, cards: list[dict], feats: list[str]) -> float | None:
     """Share of (top-3 home, photo feature) pairs where the full listing (get_listing)
     states the feature. Card tags show only 8 items, so they are not enough."""
@@ -344,9 +366,11 @@ def main() -> int:
         if mcp and r.get("result") is not None:
             btype = TYPES.get((r["result"] or {}).get("building", ""), None)
             pbase = {**base, **({"type": [btype]} if btype else {})}
-            cards, used, secs = _search(mcp, pbase, r["observed"])
+            found, used, secs = _search(mcp, {**pbase, "limit": VERIFY_MAX}, r["observed"])
+            cards, n_ok, n_checked = verify(mcp, found, used)
             bcards, _, _ = _search(mcp, pbase, [])
             r["search"] = {"features_used": used, "results": len(cards), "seconds": secs,
+                           "verified": n_ok, "checked": n_checked,
                            "top3": [c.get("id") for c in cards[:3]],
                            "hit_photo": _hits(mcp, cards, used), "hit_baseline": _hits(mcp, bcards, used),
                            "baseline_top3": [c.get("id") for c in bcards[:3]]}
@@ -355,7 +379,8 @@ def main() -> int:
         s = r.get("search") or {}
         print(f"{p.name}: {r.get('seconds', '—')} s · {r.get('mode', 'FAILED')} · errors={len(r.get('errors') or [])}"
               f" · observed={', '.join(r['observed']) or '—'}"
-              + (f" · {s['results']} homes with {s['features_used']} · hits {s['hit_photo']} vs baseline "
+              + (f" · {s['results']} homes with {s['features_used']}, {s['verified']} verified of {s['checked']}"
+                 f" checked · hits {s['hit_photo']} vs baseline "
                  f"{s['hit_baseline']}" if s else ""))
 
     answered = [r for r in rows if "seconds" in r]          # the call came back
@@ -372,6 +397,12 @@ def main() -> int:
         "modes": sorted({r.get("mode") for r in ok}),
     }
     if with_search:
+        gl = DURATIONS.get("get_listing") or [0.0]
+        fl = DURATIONS.get("filter_listings") or [0.0]
+        summary.update({"get_listing_s_mean": round(statistics.mean(gl), 2),
+                        "filter_listings_s_mean": round(statistics.mean(fl), 2),
+                        "verify_s_est_mean": round(statistics.mean(s["checked"] for s in with_search) * statistics.mean(gl), 2),
+                        "verified_3": sum(s["verified"] >= WANT for s in with_search)})
         summary.update({"search_filters": base, "found_3_or_more": sum(s["results"] >= 3 for s in with_search),
                         "same_homes_as_baseline": sum(s["same_as_baseline"] for s in with_search),
                         "photo_beats_baseline": len(better), "searched": len(with_search)})
@@ -383,6 +414,7 @@ def main() -> int:
     if with_search:
         gates["4a at least 3 homes for most photos"] = summary["found_3_or_more"] * 2 > len(with_search)
         gates["4b photo beats no-photo baseline for most photos"] = len(better) * 2 > len(with_search)
+        gates["4c at least 3 verified homes for most photos"] = summary["verified_3"] * 2 > len(with_search)
     if expected:
         sc = score(rows, expected)
         summary["answer_key"] = sc
@@ -406,6 +438,10 @@ def main() -> int:
                f"{sc['recall_mean']}; building type right {sc['building_ok']}/{sc['scored']}. Pairs: "
                + (", ".join(f"{p['pair']} ({'/'.join(p['differs_in'])}) {'ok' if p['ok'] else 'WRONG'}"
                             for p in sc["pairs"]) or "none"), ""]
+    if with_search:
+        md += [f"Search: connector filter_listings {summary['filter_listings_s_mean']} s, get_listing "
+               f"{summary['get_listing_s_mean']} s per call; verifying adds about {summary['verify_s_est_mean']} s "
+               f"per photo (without pacing). 3+ verified homes for {summary['verified_3']}/{len(with_search)}.", ""]
     md += ["| Gate | Pass |", "|---|---|"] + [f"| {k} | {'yes' if v else '**no**'} |" for k, v in gates.items()]
     md += ["", "| Photo | s | Observed | Expected | P / R | Homes | Features used | Hits photo / baseline | Errors |",
            "|---|---|---|---|---|---|---|---|---|"]
