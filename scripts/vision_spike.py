@@ -144,7 +144,10 @@ PROMPT = (
     "if it is clearly visible and 'uncertain' if it might be there; leave out anything you cannot "
     "see. Never guess the location, country, climate, season, price, or distances to anything. A "
     "pool counts only if you can see it; whether it is private is not something to judge. "
-    "'evidence' is a few words on what in the photo shows it. Allowed features: "
+    "'evidence' is a few words on what in the photo shows it. 'building' is the kind of building the "
+    "home is (a villa is a large detached house; a townhouse shares side walls with its neighbours; an "
+    "apartment is one unit in a larger building), and 'storeys' the number of floors you can see above "
+    "ground; use 'unknown' only if the photo really does not show it. Allowed features: "
     + ", ".join(FEATURES) + ". Reply with the JSON object only."
 )
 
@@ -185,19 +188,22 @@ def _validate(obj: dict) -> list[str]:
     return errs
 
 
-def read_photo(cli, model: str, path: Path) -> dict:
+def read_photo(cli, model: str, path: Path, think: bool = False) -> dict:
     data = base64.b64encode(_jpeg(path)).decode()
     messages = [{"role": "user", "content": [
         {"type": "text", "text": PROMPT},
         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{data}"}}]}]
     out: dict = {"photo": path.name}
+    # Thinking off, as for Nemotron 3 extraction (day-1 probe): with it on, the VL model
+    # spent all 900 tokens reasoning and returned empty content (2026-10-23).
+    extra = llm.NO_THINK if think is False else {}
     for mode in ("json_schema", "json_object"):
         fmt = ({"type": "json_schema", "json_schema": {"name": "photo", "schema": SCHEMA, "strict": True}}
                if mode == "json_schema" else {"type": "json_object"})
         t0 = time.monotonic()
         try:
-            r = cli.chat.completions.create(model=model, messages=messages, temperature=0, max_tokens=900,
-                                            response_format=fmt)
+            r = cli.chat.completions.create(model=model, messages=messages, temperature=0, max_tokens=2000,
+                                            response_format=fmt, extra_body=extra)
         except Exception as e:  # noqa: BLE001 - the spike records any failure
             out[f"error_{mode}"] = f"{type(e).__name__}: {str(e)[:200]}"
             continue
@@ -248,6 +254,12 @@ def _hits(mcp, cards: list[dict], feats: list[str]) -> float | None:
     return round(n / (len(top) * len(feats)), 2)
 
 
+def _same_building(got: str | None, want: str) -> bool:
+    """A villa is a detached house: either name is right for the other."""
+    houses = {"villa", "detached house"}
+    return got == want or (got in houses and want in houses)
+
+
 def score(rows: list[dict], expected: dict) -> dict:
     """Precision/recall of observed features against the answer key, building-type
     agreement, and contrast pairs (the one differing feature seen in the right image only)."""
@@ -260,7 +272,7 @@ def score(rows: list[dict], expected: dict) -> dict:
         r["expected"] = sorted(want)
         r["precision"] = round(len(got & want) / len(got), 2) if got else None
         r["recall"] = round(len(got & want) / len(want), 2) if want else None
-        r["building_ok"] = (r["result"] or {}).get("building") == exp["building"]
+        r["building_ok"] = _same_building((r["result"] or {}).get("building"), exp["building"])
         per.append(r)
         if exp.get("pair"):
             pairs.setdefault(exp["pair"], []).append((want, got))
@@ -342,14 +354,15 @@ def main() -> int:
               + (f" · {s['results']} homes with {s['features_used']} · hits {s['hit_photo']} vs baseline "
                  f"{s['hit_baseline']}" if s else ""))
 
-    ok = [r for r in rows if r.get("result") is not None]
+    answered = [r for r in rows if "seconds" in r]          # the call came back
+    ok = [r for r in rows if r.get("result") is not None]   # ... with JSON
     valid = [r for r in ok if not r.get("errors")]
-    secs = [r["seconds"] for r in ok if "seconds" in r]
+    secs = [r["seconds"] for r in answered]
     with_search = [r["search"] for r in rows if r.get("search")]
     better = [s for s in with_search if s["hit_photo"] is not None and s["hit_baseline"] is not None
               and s["hit_photo"] > s["hit_baseline"]]
     summary = {
-        "model": a.model, "vision_models": vms, "photos": len(rows), "answered": len(ok),
+        "model": a.model, "vision_models": vms, "photos": len(rows), "answered": len(answered), "json": len(ok),
         "schema_valid": len(valid), "unlicensed": [r["photo"] for r in rows if not r["licensed"]],
         "seconds_p50": statistics.median(secs) if secs else None, "seconds_max": max(secs) if secs else None,
         "modes": sorted({r.get("mode") for r in ok}),
@@ -358,8 +371,8 @@ def main() -> int:
         summary.update({"search_filters": base, "found_3_or_more": sum(s["results"] >= 3 for s in with_search),
                         "photo_beats_baseline": len(better), "searched": len(with_search)})
     gates = {
-        "1 vision call works": bool(ok),
-        "2 schema-valid on every answered photo": bool(ok) and len(valid) == len(ok),
+        "1 vision call works": bool(answered),
+        "2 schema-valid on every answered photo": bool(answered) and len(valid) == len(answered),
         "3 latency measured": bool(secs),
     }
     if with_search:
@@ -378,7 +391,7 @@ def main() -> int:
     (REPORTS / f"vision_{stamp}.json").write_text(json.dumps({"summary": summary, "photos": rows}, indent=1,
                                                              ensure_ascii=False))
     md = [f"# Vision spike {stamp}", "", f"Model `{a.model}`. Vision models served: {', '.join(vms) or 'none'}.", "",
-          f"{len(ok)}/{len(rows)} photos answered, {len(valid)} schema-valid; latency p50 "
+          f"{len(answered)}/{len(rows)} photos answered, {len(ok)} with JSON, {len(valid)} schema-valid; latency p50 "
           f"{summary['seconds_p50']} s, max {summary['seconds_max']} s.", ""]
     if summary["unlicensed"]:
         md += [f"**No licence row:** {', '.join(summary['unlicensed'])}", ""]
