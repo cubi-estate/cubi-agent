@@ -11,3 +11,6 @@ reports/*.json
 # Tavily replies carry third-party page excerpts: local only.
 fixtures/tavily/
 fixtures/x/
+
+# Inspiration photos for the vision spike: third-party or team images, local only.
+fixtures/photos/
