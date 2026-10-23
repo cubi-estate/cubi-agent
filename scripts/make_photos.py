@@ -30,7 +30,11 @@ homes for sale or photos found online.
   python scripts/make_photos.py                  # covered scenes, Faro, <= 800k, 3+ bedrooms
   python scripts/make_photos.py --region Porto --max-price 500000 --min-bedrooms 2 --count 6
   python scripts/make_photos.py --model <id> --only villa_pool_sea,villa_sea
+  python scripts/make_photos.py --backend openai                    # OpenAI Images API
   python scripts/make_photos.py --manual --tool "ChatGPT (OpenAI)"   # no image model on Token Factory
+
+--backend openai reads OPENAI_API_KEY from the environment or ~/.openai/api_key
+(default model gpt-image-1; OpenAI's terms assign the output to the user).
 
 --manual writes expected.json, licences.csv and prompts.md for the selected
 scenes without generating anything: generate each image from its prompt in a
@@ -58,7 +62,9 @@ OUT = ROOT / "fixtures" / "photos"
 DEFAULT_MODEL = "black-forest-labs/flux-schnell"
 COVER_LIMIT = 10
 VERIFY = 6   # homes checked with get_listing per scene
-LICENCES = {"flux-schnell": "Apache-2.0 (FLUX.1 [schnell])", "sana": "NVIDIA open model licence (check)",
+OPENAI_MODEL = "gpt-image-1"
+LICENCES = {"gpt-image": "output owned by the user under OpenAI's terms", "dall-e": "output owned by the user under OpenAI's terms",
+            "flux-schnell": "Apache-2.0 (FLUX.1 [schnell])", "sana": "NVIDIA open model licence (check)",
             "sdxl": "CreativeML Open RAIL++-M"}
 
 STYLE = ("Photorealistic real-estate exterior photograph, natural daylight, eye level, wide angle. "
@@ -115,7 +121,31 @@ SCENES = {
 
 def image_models(cli) -> list[str]:
     ids = [m.id for m in cli.models.list().data]
-    return sorted(i for i in ids if re.search(r"flux|sdxl|stable-diffusion|sana|imagen|dall", i, re.I))
+    return sorted(i for i in ids if re.search(r"flux|sdxl|stable-diffusion|sana|imagen|dall|gpt-image", i, re.I))
+
+
+def image_client(backend: str):
+    if backend == "tokenfactory":
+        return llm.client(timeout=180.0)
+    import os
+    from openai import OpenAI
+    key = os.environ.get("OPENAI_API_KEY", "").strip()
+    f = Path.home() / ".openai" / "api_key"
+    if not key and f.exists():
+        key = f.read_text().strip()
+    if not key:
+        raise SystemExit("OPENAI_API_KEY is not set (environment or ~/.openai/api_key)")
+    return OpenAI(api_key=key, timeout=180.0, max_retries=1)
+
+
+def generate(cli, backend: str, model: str, prompt: str) -> bytes:
+    if backend == "openai":
+        r = cli.images.generate(model=model, prompt=prompt, size="1536x1024", quality="medium", n=1)
+    else:
+        r = cli.images.generate(model=model, prompt=prompt, response_format="b64_json",
+                                extra_body={"response_extension": "png", "width": 1024, "height": 768,
+                                            "num_inference_steps": 4})
+    return base64.b64decode(r.data[0].b64_json)
 
 
 def _licence(model: str) -> str:
@@ -196,7 +226,8 @@ def write_manual(a, names: list[str], cov: dict, filters: dict) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--model", default=DEFAULT_MODEL)
+    ap.add_argument("--backend", choices=["tokenfactory", "openai"], default="tokenfactory")
+    ap.add_argument("--model", default=None, help=f"default {DEFAULT_MODEL} (tokenfactory) or {OPENAI_MODEL} (openai)")
     ap.add_argument("--list-models", action="store_true")
     ap.add_argument("--only", default="", help="comma-separated scene names")
     ap.add_argument("--out", type=Path, default=OUT)
@@ -211,9 +242,10 @@ def main() -> int:
     ap.add_argument("--manual", action="store_true", help="write prompts + answer key; generate the images yourself")
     ap.add_argument("--tool", default="an image generator", help="with --manual: the tool you will use")
     a = ap.parse_args()
+    a.model = a.model or (OPENAI_MODEL if a.backend == "openai" else DEFAULT_MODEL)
 
     if a.list_models:
-        models = image_models(llm.client(timeout=60.0))
+        models = image_models(image_client(a.backend))
         print("image models served to this account:", ", ".join(models) or "none")
         return 0 if models else 1
 
@@ -251,7 +283,7 @@ def main() -> int:
     if a.manual:
         return write_manual(a, names, cov, filters)
 
-    cli = llm.client(timeout=180.0)
+    cli = image_client(a.backend)
     models = image_models(cli)
     print("image models served to this account:", ", ".join(models) or "none")
     if a.model not in models:
@@ -268,14 +300,12 @@ def main() -> int:
     for n in names:
         prompt, building, storeys, feats, pair = SCENES[n]
         try:
-            r = cli.images.generate(model=a.model, prompt=STYLE + prompt, response_format="b64_json",
-                                    extra_body={"response_extension": "png", "width": 1024, "height": 768,
-                                                "num_inference_steps": 4})
+            png = generate(cli, a.backend, a.model, STYLE + prompt)
         except Exception as e:  # noqa: BLE001
             print(f"{n}: FAILED {type(e).__name__}: {str(e)[:200]}")
             continue
         file = f"{n}.png"
-        (a.out / file).write_bytes(base64.b64decode(r.data[0].b64_json))
+        (a.out / file).write_bytes(png)
         expected[file] = {"building": building, "storeys": storeys, "features": feats, "pair": pair,
                           "coverage": cov.get(n), "filters": filters}
         licences[file] = [file, f"generated with {a.model} from a prompt in scripts/make_photos.py", _licence(a.model)]
