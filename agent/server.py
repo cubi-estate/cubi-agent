@@ -113,6 +113,9 @@ class Limits:
             self._demo[day] += 1
             for k in [k for k in self._day if k[1] != day]:
                 del self._day[k]
+            # Addresses are kept for the limits only: drop one a minute after its last turn.
+            for k in [k for k, v in self._minute.items() if not v or now - v[-1] > 60]:
+                del self._minute[k]
             return None
 
 

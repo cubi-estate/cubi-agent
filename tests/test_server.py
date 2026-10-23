@@ -76,3 +76,13 @@ def test_no_message_text_in_logs(client, caplog):
 def test_page_and_health(client):
     assert "Cubi Agent" in client.get("/").text
     assert client.get("/api/health").json()["ok"] is True
+
+
+def test_limits_forget_an_address_a_minute_after_its_last_turn(monkeypatch):
+    lim = server.Limits()
+    t = [1000.0]
+    monkeypatch.setattr(server.time, "time", lambda: t[0])
+    assert lim.check("203.0.113.7") is None
+    t[0] += 61
+    assert lim.check("198.51.100.2") is None
+    assert "203.0.113.7" not in lim._minute and "198.51.100.2" in lim._minute
