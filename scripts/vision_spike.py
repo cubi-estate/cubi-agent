@@ -251,22 +251,40 @@ def _search(mcp, base: dict, features: list[str]) -> tuple[list[dict], list[str]
         feats = feats[:-1]
 
 
-def verify(mcp, cards: list[dict], feats: list[str]) -> tuple[list[dict], int, int]:
+def verify(mcp, cards: list[dict], feats: list[str]) -> tuple[list[dict], int, int, int]:
     """Option 1 (2026-10-23): the connector does not let house features narrow a
     search, so the agent reads each home's full listing and puts the ones that
-    state every feature first. Stops once WANT are verified. Returns (reranked
-    homes, verified count, homes checked)."""
+    state every feature first. If fewer than WANT do, homes that state the most
+    important feature (feats[0]) fill the gap, each labelled with what its listing
+    does not mention ("has a pool; a garden is not mentioned"). Stops once WANT
+    are fully verified. Returns (reranked homes, full, partial shown, checked);
+    each checked home gets c["match"] = "full" | "partial" | "none" and c["missing"]."""
     if not feats:
-        return cards, 0, 0
-    good, rest, checked = [], [], 0
+        return cards, 0, 0, 0
+    full, part, rest, checked = [], [], [], 0
     for c in cards[:VERIFY_MAX]:
-        if len(good) >= WANT:
+        if len(full) >= WANT:
             rest.append(c)
             continue
         checked += 1
-        ok = c.get("id") and all(has_features(listing_text(mcp, c["id"]), feats).values())
-        (good if ok else rest).append(c)
-    return good + rest + cards[VERIFY_MAX:], len(good), checked
+        has = has_features(listing_text(mcp, c["id"]), feats) if c.get("id") else {f: False for f in feats}
+        c = {**c, "missing": [f for f in feats if not has[f]]}
+        if all(has.values()):
+            full.append({**c, "match": "full"})
+        elif has[feats[0]]:
+            part.append({**c, "match": "partial"})
+        else:
+            rest.append({**c, "match": "none"})
+    shown = part[:max(0, WANT - len(full))]
+    others = part[len(shown):] + rest
+    return full + shown + others + cards[VERIFY_MAX:], len(full), len(shown), checked
+
+
+def label(c: dict) -> str:
+    """What the page would say under a partial match."""
+    if c.get("match") != "partial":
+        return ""
+    return "; ".join(f"{m.lower()} not mentioned" for m in c["missing"])
 
 
 def _hits(mcp, cards: list[dict], feats: list[str]) -> float | None:
@@ -367,10 +385,12 @@ def main() -> int:
             btype = TYPES.get((r["result"] or {}).get("building", ""), None)
             pbase = {**base, **({"type": [btype]} if btype else {})}
             found, used, secs = _search(mcp, {**pbase, "limit": VERIFY_MAX}, r["observed"])
-            cards, n_ok, n_checked = verify(mcp, found, used)
+            cards, n_ok, n_part, n_checked = verify(mcp, found, used)
             bcards, _, _ = _search(mcp, pbase, [])
             r["search"] = {"features_used": used, "results": len(cards), "seconds": secs,
-                           "verified": n_ok, "checked": n_checked,
+                           "verified": n_ok, "partial": n_part, "checked": n_checked,
+                           "shown": [{"id": c.get("id"), "match": c.get("match", "unchecked"), "label": label(c)}
+                                     for c in cards[:WANT]],
                            "top3": [c.get("id") for c in cards[:3]],
                            "hit_photo": _hits(mcp, cards, used), "hit_baseline": _hits(mcp, bcards, used),
                            "baseline_top3": [c.get("id") for c in bcards[:3]]}
@@ -379,8 +399,8 @@ def main() -> int:
         s = r.get("search") or {}
         print(f"{p.name}: {r.get('seconds', '—')} s · {r.get('mode', 'FAILED')} · errors={len(r.get('errors') or [])}"
               f" · observed={', '.join(r['observed']) or '—'}"
-              + (f" · {s['results']} homes with {s['features_used']}, {s['verified']} verified of {s['checked']}"
-                 f" checked · hits {s['hit_photo']} vs baseline "
+              + (f" · {s['results']} homes with {s['features_used']}: {s['verified']} full + {s['partial']} partial"
+                 f" of {s['checked']} checked · hits {s['hit_photo']} vs baseline "
                  f"{s['hit_baseline']}" if s else ""))
 
     answered = [r for r in rows if "seconds" in r]          # the call came back
@@ -402,7 +422,8 @@ def main() -> int:
         summary.update({"get_listing_s_mean": round(statistics.mean(gl), 2),
                         "filter_listings_s_mean": round(statistics.mean(fl), 2),
                         "verify_s_est_mean": round(statistics.mean(s["checked"] for s in with_search) * statistics.mean(gl), 2),
-                        "verified_3": sum(s["verified"] >= WANT for s in with_search)})
+                        "verified_3": sum(s["verified"] >= WANT for s in with_search),
+                        "shown_3": sum(s["verified"] + s["partial"] >= WANT for s in with_search)})
         summary.update({"search_filters": base, "found_3_or_more": sum(s["results"] >= 3 for s in with_search),
                         "same_homes_as_baseline": sum(s["same_as_baseline"] for s in with_search),
                         "photo_beats_baseline": len(better), "searched": len(with_search)})
@@ -414,7 +435,8 @@ def main() -> int:
     if with_search:
         gates["4a at least 3 homes for most photos"] = summary["found_3_or_more"] * 2 > len(with_search)
         gates["4b photo beats no-photo baseline for most photos"] = len(better) * 2 > len(with_search)
-        gates["4c at least 3 verified homes for most photos"] = summary["verified_3"] * 2 > len(with_search)
+        gates["4c 3 homes shown, each fully verified or labelled partial, for most photos"] = (
+            summary["shown_3"] * 2 > len(with_search))
     if expected:
         sc = score(rows, expected)
         summary["answer_key"] = sc
@@ -441,7 +463,8 @@ def main() -> int:
     if with_search:
         md += [f"Search: connector filter_listings {summary['filter_listings_s_mean']} s, get_listing "
                f"{summary['get_listing_s_mean']} s per call; verifying adds about {summary['verify_s_est_mean']} s "
-               f"per photo (without pacing). 3+ verified homes for {summary['verified_3']}/{len(with_search)}.", ""]
+               f"per photo (without pacing). 3 fully verified homes for {summary['verified_3']}/{len(with_search)}; "
+               f"3 shown with partial matches labelled for {summary['shown_3']}/{len(with_search)}.", ""]
     md += ["| Gate | Pass |", "|---|---|"] + [f"| {k} | {'yes' if v else '**no**'} |" for k, v in gates.items()]
     md += ["", "| Photo | s | Observed | Expected | P / R | Homes | Features used | Hits photo / baseline | Errors |",
            "|---|---|---|---|---|---|---|---|---|"]

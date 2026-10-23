@@ -162,6 +162,20 @@ def test_verify_puts_homes_that_state_the_features_first_and_stops_at_three():
             return {"is_error": False, "text": texts[args["listing_id"]]}
 
     cards = [{"id": f"a:{i}"} for i in range(1, 7)]
-    out, ok, checked = vs.verify(M(), cards, ["Pool", "Garden"])
-    assert [c["id"] for c in out[:3]] == ["a:2", "a:3", "a:5"] and ok == 3 and checked == 5 and M.n == 5
-    assert vs.verify(M(), cards, []) == (cards, 0, 0)
+    out, ok, part, checked = vs.verify(M(), cards, ["Pool", "Garden"])
+    assert [c["id"] for c in out[:3]] == ["a:2", "a:3", "a:5"] and (ok, part, checked) == (3, 0, 5) and M.n == 5
+    assert vs.verify(M(), cards, []) == (cards, 0, 0, 0)
+
+
+def test_partial_matches_fill_the_gap_and_say_what_is_missing():
+    vs._LISTING_CACHE.clear()
+    texts = {"b:1": "garage", "b:2": "piscina", "b:3": "pool and garden", "b:4": "pool", "b:5": "jardim"}
+
+    class M:
+        def call_tool(self, name, args):
+            return {"is_error": False, "text": texts[args["listing_id"]]}
+
+    out, ok, part, checked = vs.verify(M(), [{"id": f"b:{i}"} for i in range(1, 6)], ["Pool", "Garden"])
+    assert [c["id"] for c in out[:3]] == ["b:3", "b:2", "b:4"] and (ok, part, checked) == (1, 2, 5)
+    assert [vs.label(c) for c in out[:3]] == ["", "garden not mentioned", "garden not mentioned"]
+    assert out[3]["match"] == "none"    # garden only: never shown as a match for a pool photo
