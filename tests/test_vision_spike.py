@@ -179,3 +179,12 @@ def test_partial_matches_fill_the_gap_and_say_what_is_missing():
     assert [c["id"] for c in out[:3]] == ["b:3", "b:2", "b:4"] and (ok, part, checked) == (1, 2, 5)
     assert [vs.label(c) for c in out[:3]] == ["", "garden not mentioned", "garden not mentioned"]
     assert out[3]["match"] == "none"    # garden only: never shown as a match for a pool photo
+
+
+def test_unspecified_water_counts_as_sea_view_and_says_so():
+    t = "## Views\n- Sea or lake view (unspecified water)\n- private pool"
+    assert vs.has_features(t, ["Sea View", "Pool"]) == {"Sea View": True, "Pool": True}
+    assert vs.water_note(t, ["Sea View"]) == vs.WATER_NOTE
+    assert vs.water_note(t + "\nVista mar", ["Sea View"]) == ""         # it does say sea elsewhere
+    assert not vs.has_features("terrace overlooking the Douro River", ["Sea View"])["Sea View"]
+    assert vs.label({"match": "full", "missing": [], "note": vs.WATER_NOTE}) == vs.WATER_NOTE

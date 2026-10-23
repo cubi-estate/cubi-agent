@@ -70,7 +70,10 @@ FEATURES = ["Pool", "Sea View", "Garden", "Terrace", "Roof Terrace", "Balcony", 
 # in the demo's languages. Used to verify homes, not to search.
 SYNONYMS = {
     "Pool": r"pool|piscina|piscine|schwimmbad|zwembad",
-    "Sea View": r"sea view|ocean view|vista (?:de )?mar|vistas al mar|vue (?:sur la )?mer|meerblick|zeezicht",
+    # "Sea or lake view (unspecified water)" is the atlas label when a listing does not say
+    # which water; it counts, and the page says so (WATER_NOTE). A river view does not.
+    "Sea View": r"sea view|sea or lake view|ocean view|vista (?:de |para o )?mar|vistas (?:al |de )?mar|frente mar|"
+                r"vue (?:sur la )?mer|meerblick|zeezicht",
     "Garden": r"garden|jardim|jard[ií]n|jardin|garten|tuin",
     "Terrace": r"terrace|terra[çc]o|terraza|terrasse|terras",
     "Roof Terrace": r"roof ?terrace|rooftop|terra[çc]o (?:na )?cobertura|[aá]tico con terraza|toit-terrasse|dachterrasse",
@@ -98,6 +101,7 @@ _last_call = [0.0]
 DURATIONS: dict[str, list[float]] = {}   # connector time per tool, without pacing waits
 VERIFY_MAX = 10   # homes the agent checks at most per photo
 WANT = 3          # verified homes to show
+SEARCH_ERRORS: list[str] = []
 
 
 def call(mcp, name: str, args: dict) -> dict:
@@ -114,6 +118,18 @@ def call(mcp, name: str, args: dict) -> dict:
         print("  connector rate limit: waiting a minute")
         time.sleep(61)
     return res
+
+
+WATER_NOTE = "the listing says sea or lake view"
+_UNSPECIFIED_WATER = re.compile(r"sea or lake view", re.I)
+
+
+def water_note(text: str, feats: list[str]) -> str:
+    """The note for a sea view stated only as 'sea or lake view'."""
+    if "Sea View" not in feats or not _UNSPECIFIED_WATER.search(text):
+        return ""
+    other = re.sub(r"sea or lake view", "", text, flags=re.I)
+    return "" if re.search(SYNONYMS["Sea View"], other, re.I) else WATER_NOTE
 
 
 def listing_text(mcp, listing_id: str) -> str:
@@ -245,6 +261,9 @@ def _search(mcp, base: dict, features: list[str]) -> tuple[list[dict], list[str]
     while True:
         args = {**base, **({"features": feats} if feats else {})}
         res = call(mcp, "filter_listings", args)
+        if res["is_error"]:
+            print(f"  filter_listings failed: {res['text'][:160]}")
+            SEARCH_ERRORS.append(res["text"][:160])
         cards = [] if res["is_error"] else listings.parse(res["text"])
         if cards or not feats or res["is_error"]:
             return cards, feats, round(time.monotonic() - t0, 2)
@@ -267,8 +286,9 @@ def verify(mcp, cards: list[dict], feats: list[str]) -> tuple[list[dict], int, i
             rest.append(c)
             continue
         checked += 1
-        has = has_features(listing_text(mcp, c["id"]), feats) if c.get("id") else {f: False for f in feats}
-        c = {**c, "missing": [f for f in feats if not has[f]]}
+        text = listing_text(mcp, c["id"]) if c.get("id") else ""
+        has = has_features(text, feats) if text else {f: False for f in feats}
+        c = {**c, "missing": [f for f in feats if not has[f]], "note": water_note(text, feats)}
         if all(has.values()):
             full.append({**c, "match": "full"})
         elif has[feats[0]]:
@@ -282,9 +302,10 @@ def verify(mcp, cards: list[dict], feats: list[str]) -> tuple[list[dict], int, i
 
 def label(c: dict) -> str:
     """What the page would say under a partial match."""
-    if c.get("match") != "partial":
-        return ""
-    return "; ".join(f"{m.lower()} not mentioned" for m in c["missing"])
+    parts = [c["note"]] if c.get("note") else []
+    if c.get("match") == "partial":
+        parts += [f"{m.lower()} not mentioned" for m in c["missing"]]
+    return "; ".join(parts)
 
 
 def _hits(mcp, cards: list[dict], feats: list[str]) -> float | None:
@@ -424,6 +445,7 @@ def main() -> int:
                         "verify_s_est_mean": round(statistics.mean(s["checked"] for s in with_search) * statistics.mean(gl), 2),
                         "verified_3": sum(s["verified"] >= WANT for s in with_search),
                         "shown_3": sum(s["verified"] + s["partial"] >= WANT for s in with_search)})
+        summary["search_errors"] = len(SEARCH_ERRORS)
         summary.update({"search_filters": base, "found_3_or_more": sum(s["results"] >= 3 for s in with_search),
                         "same_homes_as_baseline": sum(s["same_as_baseline"] for s in with_search),
                         "photo_beats_baseline": len(better), "searched": len(with_search)})
