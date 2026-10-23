@@ -1,21 +1,34 @@
 """Generate the vision spike's inspiration images on Token Factory, with an answer key.
 
 No licensed photos needed: each image is generated from a prompt that names the
-features it should show, so the spike can score the vision model against what
+atlas features it should show, so the spike can score the vision model against what
 was asked for (precision, recall), and the contrast pairs differ in exactly one
 feature (same house with and without a pool, ...). The images show no real
 house, person, car, text or address.
 
+Coverage first: before generating, every candidate scene is searched on the
+Cubi connector with the demo's hard filters (region, budget, bedrooms) and its
+own building type and features, exactly as the vision spike will search. Only
+scenes with at least --min-homes *verified* homes are generated, so picking any
+image leads to listings. Verified = the full listing (get_listing) states each of
+the scene's core features, the first three in search priority: the connector
+relaxes features it cannot match, so "homes returned" alone overstates it (a
+Faro "mountain view, stone house" search returned 10 houses with neither,
+2026-10-23). Contrast pairs are kept or dropped together. The connector does
+not count matches, so coverage is out of the first 10 homes.
+
 Writes into fixtures/photos/ (git-ignored):
   <name>.png       the image
   licences.csv     file,source,licence  (model id; "AI-generated" + the model's licence)
-  expected.json    {file: {"building", "storeys", "features", "pair"}}
+  expected.json    {file: {"building", "storeys", "features", "pair", "coverage", "filters"}}
 
 In the video, call these "AI-generated inspiration images", never photos of
 homes for sale or photos found online.
 
+  python scripts/make_photos.py --coverage-only  # which scenes have homes (no image calls)
   python scripts/make_photos.py --list-models
-  python scripts/make_photos.py                 # default model, all scenes
+  python scripts/make_photos.py                  # covered scenes, Faro, <= 800k, 3+ bedrooms
+  python scripts/make_photos.py --region Porto --max-price 500000 --min-bedrooms 2 --count 6
   python scripts/make_photos.py --model <id> --only villa_pool_sea,villa_sea
 """
 from __future__ import annotations
@@ -30,11 +43,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from agent import llm  # noqa: E402
+from agent import listings, llm  # noqa: E402
+from scripts.vision_spike import CALLS_PER_MIN, FEATURES, TYPES, call, has_features, listing_text  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "fixtures" / "photos"
 DEFAULT_MODEL = "black-forest-labs/flux-schnell"
+COVER_LIMIT = 10
+VERIFY = 6   # homes checked with get_listing per scene
 LICENCES = {"flux-schnell": "Apache-2.0 (FLUX.1 [schnell])", "sana": "NVIDIA open model licence (check)",
             "sdxl": "CreativeML Open RAIL++-M"}
 
@@ -72,6 +88,18 @@ SCENES = {
     "mountain_house": ("A two-storey stone and wood house in the mountains, snowy peaks behind, a garden in front "
                        "and an attached garage with its door closed.",
                        "detached house", "2", ["Mountain View", "Garden", "Garage", "Stone House"], None),
+    "apartment_sea_balcony": ("A modern apartment block near the coast, seen from outside: generous balconies with "
+                              "glass railings, the sea visible beyond.",
+                              "apartment", "3+", ["Balcony", "Sea View", "Modern Architecture"], None),
+    "apartment_pool": ("A low-rise apartment complex with white facades, balconies, and a shared swimming pool "
+                       "with sun loungers in a landscaped garden.",
+                       "apartment", "3+", ["Pool", "Balcony", "Garden"], None),
+    "townhouse_terrace": ("A two-storey townhouse in a quiet row of similar houses, a tiled front terrace with "
+                          "potted plants and a small table.",
+                          "townhouse", "2", ["Terrace"], None),
+    "villa_garden_garage": ("A detached two-storey villa with a pitched tiled roof, a lawn garden with shrubs and "
+                            "an attached garage with its door closed.",
+                            "villa", "2", ["Garden", "Garage"], None),
     "vineyard_house": ("A two-storey country house surrounded by vineyard rows on rolling hills, a stone patio "
                        "with a table in front.",
                        "detached house", "2", ["Vineyard", "Countryside Views", "Patio"], None),
@@ -90,13 +118,93 @@ def _licence(model: str) -> str:
     return "AI-generated; check the model licence"
 
 
+def core(feats: list[str]) -> list[str]:
+    """The features the vision spike searches with first: top three by priority."""
+    return [f for f in FEATURES if f in feats][:3]
+
+
+def coverage(mcp, filters: dict, names: list[str]) -> dict[str, dict]:
+    """Per scene: homes returned (first COVER_LIMIT) for its building type + core
+    features under the demo's hard filters, and how many of them verifiably have
+    every core feature."""
+    out = {}
+    for n in names:
+        _, building, _, feats, _ = SCENES[n]
+        want = core(feats)
+        args = {**filters, "limit": COVER_LIMIT, "features": want}
+        if TYPES.get(building):
+            args["type"] = [TYPES[building]]
+        res = call(mcp, "filter_listings", args)
+        if res["is_error"]:
+            out[n] = {"returned": None, "verified": None, "core": want, "error": res["text"][:120]}
+            continue
+        cards = [c for c in listings.parse(res["text"]) if c.get("id")]
+        verified = sum(all(has_features(listing_text(mcp, c["id"]), want).values()) for c in cards[:VERIFY])
+        out[n] = {"returned": len(cards), "verified": verified, "core": want}
+    return out
+
+
+def select(cov: dict[str, int], min_homes: int, count: int) -> list[str]:
+    """cov: verified homes per scene."""
+    """Covered scenes, best-covered first; a contrast pair goes in whole or not at all."""
+    units: dict[str, list[str]] = {}
+    for n in cov:
+        pair = SCENES[n][4]
+        units.setdefault(pair or n, []).append(n)
+    ok = [u for u in units.values() if all(cov[n] >= min_homes for n in u)]
+    ok.sort(key=lambda u: (-len(u), -min(cov[n] for n in u)))   # pairs first: they carry gate 5
+    out: list[str] = []
+    for u in ok:
+        if len(out) + len(u) <= count:
+            out += u
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--list-models", action="store_true")
     ap.add_argument("--only", default="", help="comma-separated scene names")
     ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--region", default="Faro")
+    ap.add_argument("--max-price", type=float, default=800000)
+    ap.add_argument("--min-bedrooms", type=int, default=3)
+    ap.add_argument("--lang", default="en")
+    ap.add_argument("--min-homes", type=int, default=3, help="homes a scene must find to be generated")
+    ap.add_argument("--count", type=int, default=8, help="images to generate at most")
+    ap.add_argument("--coverage-only", action="store_true")
+    ap.add_argument("--no-coverage", action="store_true", help="skip the connector check (offline)")
     a = ap.parse_args()
+
+    asked = [n.strip() for n in a.only.split(",") if n.strip()]
+    unknown = [n for n in asked if n not in SCENES]
+    if unknown:
+        print("unknown scenes:", ", ".join(unknown), "— known:", ", ".join(SCENES))
+        return 2
+    filters = {"lang": a.lang, "transaction_type": "sale", "location": [a.region], "max_price": a.max_price,
+               "min_bedrooms": a.min_bedrooms}
+    cov: dict[str, dict] = {}
+    if a.no_coverage:
+        names = asked or list(SCENES)[:a.count]
+    else:
+        from agent.mcp_client import CubiMCP
+        mcp = CubiMCP()
+        mcp.initialize()
+        cov = coverage(mcp, filters, asked or list(SCENES))
+        names = asked or select({n: c["verified"] or 0 for n, c in cov.items()}, a.min_homes, a.count)
+        print(f"coverage in {a.region}, <= {a.max_price:,.0f} EUR, {a.min_bedrooms}+ bedrooms "
+              f"(verified among the first {VERIFY} / returned, of {COVER_LIMIT} asked; "
+              f"paced at {CALLS_PER_MIN} calls a minute):")
+        for n, c in sorted(cov.items(), key=lambda kv: (-(kv[1]["verified"] or -1), -(kv[1]["returned"] or 0))):
+            v = "?" if c["verified"] is None else c["verified"]
+            r = "?" if c["returned"] is None else c["returned"]
+            print(f"  {v:>2} / {r:>2} {'✓' if n in names else ' '} {n}: {SCENES[n][1]}, core {', '.join(c['core'])}"
+                  + (f"  [call failed: {c['error']}]" if c.get("error") else ""))
+        if a.coverage_only:
+            return 0 if names else 1
+        if not names:
+            print(f"no scene finds {a.min_homes}+ homes here: widen the budget or pick another region")
+            return 1
 
     cli = llm.client(timeout=180.0)
     models = image_models(cli)
@@ -106,7 +214,6 @@ def main() -> int:
     if a.model not in models:
         print(f"note: {a.model} is not in that list; trying it anyway")
 
-    names = [n.strip() for n in a.only.split(",") if n.strip()] or list(SCENES)
     a.out.mkdir(parents=True, exist_ok=True)
     exp_path, lic_path = a.out / "expected.json", a.out / "licences.csv"
     expected = json.loads(exp_path.read_text()) if exp_path.exists() else {}
@@ -127,7 +234,8 @@ def main() -> int:
             continue
         file = f"{n}.png"
         (a.out / file).write_bytes(base64.b64decode(r.data[0].b64_json))
-        expected[file] = {"building": building, "storeys": storeys, "features": feats, "pair": pair}
+        expected[file] = {"building": building, "storeys": storeys, "features": feats, "pair": pair,
+                          "coverage": cov.get(n), "filters": filters}
         licences[file] = [file, f"generated with {a.model} from a prompt in scripts/make_photos.py", _licence(a.model)]
         made += 1
         print(f"{n}: ok")

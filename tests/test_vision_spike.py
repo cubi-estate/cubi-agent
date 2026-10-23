@@ -7,9 +7,11 @@ sys.path.insert(0, str(ROOT))
 
 from scripts import vision_spike as vs  # noqa: E402
 
+vs.CALLS_PER_MIN = 10 ** 6   # no pacing in tests
 
-def _card(n, tags):
-    return f"**{n}. Villa in Faro**\n   Villa | 3 bd | 2 ba | 200 m2 living | 700 000 EUR\n   ID: x:{n}\n   Tags: {tags}\n"
+
+def _card(n, tags, src="x"):
+    return f"**{n}. Villa in Faro**\n   Villa | 3 bd | 2 ba | 200 m2 living | 700 000 EUR\n   ID: {src}:{n}\n   Tags: {tags}\n"
 
 
 class _MCP:
@@ -17,13 +19,15 @@ class _MCP:
         self.calls = []
 
     def call_tool(self, name, args):
+        if name == "get_listing":                     # featured homes list their features
+            return {"is_error": False, "text": "- pool\n- garden" if args["listing_id"].startswith("f:") else "- garage"}
         self.calls.append(args)
         feats = args.get("features") or []
         if "Vineyard" in feats:                       # nothing has all three
             return {"is_error": False, "text": "No listings found."}
         if feats:
-            return {"is_error": False, "text": "".join(_card(i, ", ".join(feats)) for i in range(1, 4))}
-        return {"is_error": False, "text": "".join(_card(i, "Garage") for i in range(1, 4))}
+            return {"is_error": False, "text": "".join(_card(i, ", ".join(feats), "f") for i in range(1, 4))}
+        return {"is_error": False, "text": "".join(_card(i, "Garage", "b") for i in range(1, 4))}
 
 
 def test_schema_rejects_inferred_or_unknown_attributes():
@@ -47,12 +51,14 @@ def test_only_observed_features_in_priority_order():
 
 
 def test_search_relaxes_lowest_priority_feature_and_beats_baseline():
+    vs._LISTING_CACHE.clear()
     mcp = _MCP()
     cards, used, _ = vs._search(mcp, {"location": ["Faro"]}, ["Pool", "Garden", "Vineyard", "Patio"])
     assert used == ["Pool", "Garden"] and len(cards) == 3
     assert [c.get("features") for c in mcp.calls] == [["Pool", "Garden", "Vineyard"], ["Pool", "Garden"]]
+    assert vs._hits(mcp, cards, used) == 1.0
     base, _, _ = vs._search(mcp, {"location": ["Faro"]}, [])
-    assert vs._hits(cards, used) == 1.0 and vs._hits(base, used) == 0.0
+    assert vs._hits(mcp, base, used) == 0.0
 
 
 def test_vision_model_ids_are_recognised():
@@ -104,3 +110,40 @@ def test_answer_key_scores_and_contrast_pairs():
     assert sc["pairs"] == [{"pair": "p", "differs_in": ["Pool"], "ok": True}]
     rows[1]["observed"] = ["Sea View", "Pool"]           # sees a pool that isn't there
     assert vs.score(rows, expected)["pairs"][0]["ok"] is False
+
+
+def test_synonyms_cover_every_feature_and_stay_strict():
+    assert set(vs.SYNONYMS) == set(vs.FEATURES)
+    assert vs.has_features("Moradia em pedra com piscina e vista mar", ["Stone House", "Pool", "Sea View"]) == {
+        "Stone House": True, "Pool": True, "Sea View": True}
+    assert not vs.has_features("stone floors in the kitchen", ["Stone House"])["Stone House"]
+
+
+def test_coverage_counts_only_verified_homes_and_keeps_pairs_whole():
+    from scripts import make_photos as mp
+
+    class M:
+        def call_tool(self, name, args):
+            if name == "get_listing":
+                return {"is_error": False, "text": "piscina" if args["listing_id"] == "x:1" else "garagem"}
+            return {"is_error": False, "text": "".join(_card(i, "") for i in range(1, 4))}
+
+    vs._LISTING_CACHE.clear()
+    cov = mp.coverage(M(), {"location": ["Faro"]}, ["villa_pool_sea"])
+    assert cov["villa_pool_sea"]["returned"] == 3 and cov["villa_pool_sea"]["verified"] == 0  # no sea view
+    assert mp.core(["Terrace", "Sea View", "Pool", "Garden"]) == ["Pool", "Sea View", "Garden"]
+    pick = mp.select({"villa_pool_sea": 5, "villa_sea": 1, "townhouse_terrace": 4}, 3, 8)
+    assert pick == ["townhouse_terrace"]
+
+
+def test_rate_limited_call_waits_and_retries_once(monkeypatch):
+    slept = []
+    monkeypatch.setattr(vs.time, "sleep", lambda s: slept.append(s))
+    replies = [{"is_error": True, "text": "Too many tool calls from this deployment in the last minute."},
+               {"is_error": False, "text": "ok"}]
+
+    class M:
+        def call_tool(self, name, args):
+            return replies.pop(0)
+
+    assert vs.call(M(), "filter_listings", {})["text"] == "ok" and 61 in slept

@@ -63,6 +63,63 @@ MAX_ATTRS = 15
 FEATURES = ["Pool", "Sea View", "Garden", "Terrace", "Roof Terrace", "Balcony", "Mountain View",
             "Lake View", "Countryside Views", "Patio", "Courtyard", "Pergola", "Solar Panels",
             "Olive Trees", "Vineyard", "Garage", "Stone House", "Modern Architecture"]
+# How a listing says it has the feature (get_listing's feature list and description),
+# in the demo's languages. Used to verify homes, not to search.
+SYNONYMS = {
+    "Pool": r"pool|piscina|piscine|schwimmbad|zwembad",
+    "Sea View": r"sea view|ocean view|vista (?:de )?mar|vistas al mar|vue (?:sur la )?mer|meerblick|zeezicht",
+    "Garden": r"garden|jardim|jard[ií]n|jardin|garten|tuin",
+    "Terrace": r"terrace|terra[çc]o|terraza|terrasse|terras",
+    "Roof Terrace": r"roof ?terrace|rooftop|terra[çc]o (?:na )?cobertura|[aá]tico con terraza|toit-terrasse|dachterrasse",
+    "Balcony": r"balcon|balcony|varanda|balc[oó]n|balkon",
+    "Mountain View": r"mountain view|vista (?:para a )?serra|vistas? (?:a la )?monta[ñn]a|vue montagne|bergblick",
+    "Lake View": r"lake view|vista (?:para o )?lago|vue (?:sur le )?lac|seeblick",
+    "Countryside Views": r"countryside|rural|campo|campagne|l[äa]ndlich",
+    "Patio": r"patio|p[aá]tio|innenhof",
+    "Courtyard": r"courtyard|p[aá]tio interior|cour int|innenhof",
+    "Pergola": r"pergola|p[ée]rgola",
+    "Solar Panels": r"solar panel|pain[ée]is solares|placas solares|panneaux solaires|solaranlage|photovolta",
+    "Olive Trees": r"olive|oliveira|olivo|olivier|oliven",
+    "Vineyard": r"vineyard|vinha|vi[ñn]edo|vignoble|weinberg|weingut",
+    "Garage": r"garage|garagem|garaje",
+    "Stone House": r"stone house|stone[- ]built|built (?:of|in|from) stone|(?:casa|moradia) (?:de|em) pedra|"
+                   r"casa de piedra|maison en pierre|steinhaus|natursteinhaus",
+    "Modern Architecture": r"modern|contempor",
+}
+_LISTING_CACHE: dict[str, str] = {}
+
+# The demo's deployment token allows 120 connector calls a minute
+# (MCP_DEPLOY_RATE_PER_MIN) and the live demo shares it: stay at a third.
+CALLS_PER_MIN = 40
+_last_call = [0.0]
+
+
+def call(mcp, name: str, args: dict) -> dict:
+    """A paced connector call; waits a minute and retries once on the rate limit."""
+    for attempt in range(2):
+        wait = _last_call[0] + 60 / CALLS_PER_MIN - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
+        _last_call[0] = time.monotonic()
+        res = mcp.call_tool(name, args)
+        if not (res["is_error"] and "Too many tool calls" in res["text"]) or attempt:
+            return res
+        print("  connector rate limit: waiting a minute")
+        time.sleep(61)
+    return res
+
+
+def listing_text(mcp, listing_id: str) -> str:
+    if listing_id not in _LISTING_CACHE:
+        res = call(mcp, "get_listing", {"listing_id": listing_id})
+        _LISTING_CACHE[listing_id] = "" if res["is_error"] else res["text"]
+    return _LISTING_CACHE[listing_id]
+
+
+def has_features(text: str, feats: list[str]) -> dict[str, bool]:
+    return {f: bool(re.search(SYNONYMS[f], text, re.I)) for f in feats}
+
+
 TYPES = {"detached house": "house", "villa": "villa", "townhouse": "townhouse", "apartment": "apartment"}
 STOREYS = ["1", "2", "3+"]
 
@@ -174,19 +231,20 @@ def _search(mcp, base: dict, features: list[str]) -> tuple[list[dict], list[str]
     t0 = time.monotonic()
     while True:
         args = {**base, **({"features": feats} if feats else {})}
-        res = mcp.call_tool("filter_listings", args)
+        res = call(mcp, "filter_listings", args)
         cards = [] if res["is_error"] else listings.parse(res["text"])
-        if cards or not feats:
+        if cards or not feats or res["is_error"]:
             return cards, feats, round(time.monotonic() - t0, 2)
         feats = feats[:-1]
 
 
-def _hits(cards: list[dict], feats: list[str]) -> float | None:
-    """Share of (top-3 card, photo feature) pairs where the card's tags name the feature."""
-    if not feats or not cards:
+def _hits(mcp, cards: list[dict], feats: list[str]) -> float | None:
+    """Share of (top-3 home, photo feature) pairs where the full listing (get_listing)
+    states the feature. Card tags show only 8 items, so they are not enough."""
+    top = [c for c in cards[:3] if c.get("id")]
+    if not feats or not top:
         return None
-    top = cards[:3]
-    n = sum(any(f.lower() in t.lower() for t in c.get("tags", [])) for c in top for f in feats)
+    n = sum(sum(has_features(listing_text(mcp, c["id"]), feats).values()) for c in top)
     return round(n / (len(top) * len(feats)), 2)
 
 
@@ -275,7 +333,7 @@ def main() -> int:
             bcards, _, _ = _search(mcp, pbase, [])
             r["search"] = {"features_used": used, "results": len(cards), "seconds": secs,
                            "top3": [c.get("id") for c in cards[:3]],
-                           "hit_photo": _hits(cards, used), "hit_baseline": _hits(bcards, used),
+                           "hit_photo": _hits(mcp, cards, used), "hit_baseline": _hits(mcp, bcards, used),
                            "baseline_top3": [c.get("id") for c in bcards[:3]]}
         rows.append(r)
         s = r.get("search") or {}
