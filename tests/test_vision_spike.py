@@ -53,9 +53,9 @@ def test_only_observed_features_in_priority_order():
 def test_search_relaxes_lowest_priority_feature_and_beats_baseline():
     vs._LISTING_CACHE.clear()
     mcp = _MCP()
-    cards, used, _ = vs._search(mcp, {"location": ["Faro"]}, ["Pool", "Garden", "Vineyard", "Patio"])
-    assert used == ["Pool", "Garden"] and len(cards) == 3
-    assert [c.get("features") for c in mcp.calls] == [["Pool", "Garden", "Vineyard"], ["Pool", "Garden"]]
+    cards, used, _ = vs._search(mcp, {"location": ["Faro"]}, ["Pool", "Vineyard", "Garden"])
+    assert used == ["Pool"] and len(cards) == 3
+    assert [c.get("features") for c in mcp.calls] == [["Pool", "Vineyard"], ["Pool"]]
     assert vs._hits(mcp, cards, used) == 1.0
     base, _, _ = vs._search(mcp, {"location": ["Faro"]}, [])
     assert vs._hits(mcp, base, used) == 0.0
@@ -131,7 +131,7 @@ def test_coverage_counts_only_verified_homes_and_keeps_pairs_whole():
     vs._LISTING_CACHE.clear()
     cov = mp.coverage(M(), {"location": ["Faro"]}, ["villa_pool_sea"])
     assert cov["villa_pool_sea"]["returned"] == 3 and cov["villa_pool_sea"]["verified"] == 0  # no sea view
-    assert mp.core(["Terrace", "Sea View", "Pool", "Garden"]) == ["Pool", "Sea View", "Garden"]
+    assert mp.core(["Terrace", "Sea View", "Pool", "Garden"]) == ["Pool", "Sea View"]
     pick = mp.select({"villa_pool_sea": 5, "villa_sea": 1, "townhouse_terrace": 4}, 3, 8)
     assert pick == ["townhouse_terrace"]
 

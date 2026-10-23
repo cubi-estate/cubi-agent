@@ -57,6 +57,9 @@ REPORTS = ROOT / "reports"
 PHOTOS = ROOT / "fixtures" / "photos"
 DEFAULT_MODEL = "nvidia/Nemotron-3.5-Super-VL"
 MAX_ATTRS = 15
+# Features a search uses, highest priority first. Two, not three: with three the
+# connector loosened them on 9 of 14 images (2026-10-23).
+TOP_FEATURES = 2
 
 # Connector feature names that resolve to atlas concepts (concept_alias, checked
 # 2026-10-23) and that a photo can actually show. Order = search priority.
@@ -231,9 +234,9 @@ def observed(res: dict) -> list[str]:
 
 
 def _search(mcp, base: dict, features: list[str]) -> tuple[list[dict], list[str], float]:
-    """filter_listings with up to 3 features, dropping the lowest-priority one until
-    something matches (features are hard filters on the connector)."""
-    feats = features[:3]
+    """filter_listings with up to TOP_FEATURES features, dropping the lowest-priority
+    one until something matches."""
+    feats = features[:TOP_FEATURES]
     t0 = time.monotonic()
     while True:
         args = {**base, **({"features": feats} if feats else {})}
@@ -347,6 +350,7 @@ def main() -> int:
                            "top3": [c.get("id") for c in cards[:3]],
                            "hit_photo": _hits(mcp, cards, used), "hit_baseline": _hits(mcp, bcards, used),
                            "baseline_top3": [c.get("id") for c in bcards[:3]]}
+            r["search"]["same_as_baseline"] = r["search"]["top3"] == r["search"]["baseline_top3"]
         rows.append(r)
         s = r.get("search") or {}
         print(f"{p.name}: {r.get('seconds', '—')} s · {r.get('mode', 'FAILED')} · errors={len(r.get('errors') or [])}"
@@ -369,6 +373,7 @@ def main() -> int:
     }
     if with_search:
         summary.update({"search_filters": base, "found_3_or_more": sum(s["results"] >= 3 for s in with_search),
+                        "same_homes_as_baseline": sum(s["same_as_baseline"] for s in with_search),
                         "photo_beats_baseline": len(better), "searched": len(with_search)})
     gates = {
         "1 vision call works": bool(answered),

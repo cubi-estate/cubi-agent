@@ -11,7 +11,7 @@ Cubi connector with the demo's hard filters (region, budget, bedrooms) and its
 own building type and features, exactly as the vision spike will search. Only
 scenes with at least --min-homes *verified* homes are generated, so picking any
 image leads to listings. Verified = the full listing (get_listing) states each of
-the scene's core features, the first three in search priority: the connector
+the scene's core features, the first two in search priority: the connector
 relaxes features it cannot match, so "homes returned" alone overstates it (a
 Faro "mountain view, stone house" search returned 10 houses with neither,
 2026-10-23). Contrast pairs are kept or dropped together. The connector does
@@ -55,7 +55,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agent import listings, llm  # noqa: E402
-from scripts.vision_spike import CALLS_PER_MIN, FEATURES, TYPES, call, has_features, listing_text  # noqa: E402
+from scripts.vision_spike import CALLS_PER_MIN, FEATURES, TOP_FEATURES, TYPES, call, has_features, listing_text  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "fixtures" / "photos"
@@ -156,8 +156,8 @@ def _licence(model: str) -> str:
 
 
 def core(feats: list[str]) -> list[str]:
-    """The features the vision spike searches with first: top three by priority."""
-    return [f for f in FEATURES if f in feats][:3]
+    """The features the vision spike searches with: its top TOP_FEATURES by priority."""
+    return [f for f in FEATURES if f in feats][:TOP_FEATURES]
 
 
 def coverage(mcp, filters: dict, names: list[str]) -> dict[str, dict]:
