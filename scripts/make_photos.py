@@ -30,6 +30,13 @@ homes for sale or photos found online.
   python scripts/make_photos.py                  # covered scenes, Faro, <= 800k, 3+ bedrooms
   python scripts/make_photos.py --region Porto --max-price 500000 --min-bedrooms 2 --count 6
   python scripts/make_photos.py --model <id> --only villa_pool_sea,villa_sea
+  python scripts/make_photos.py --manual --tool "ChatGPT (OpenAI)"   # no image model on Token Factory
+
+--manual writes expected.json, licences.csv and prompts.md for the selected
+scenes without generating anything: generate each image from its prompt in a
+tool whose terms let you use the output, save it as <scene>.png in the same
+folder, then run the vision spike. (Token Factory served no image model to the
+demo account on 2026-10-23.)
 """
 from __future__ import annotations
 
@@ -160,6 +167,33 @@ def select(cov: dict[str, int], min_homes: int, count: int) -> list[str]:
     return out
 
 
+def write_manual(a, names: list[str], cov: dict, filters: dict) -> int:
+    exp_path, lic_path = a.out / "expected.json", a.out / "licences.csv"
+    expected = json.loads(exp_path.read_text()) if exp_path.exists() else {}
+    md = ["# Inspiration images to generate", "",
+          f"Generate each in {a.tool}, landscape (about 4:3), and save it in this folder under the file name "
+          "shown. Look at each result: regenerate any with people, cars, text or signs, or a feature it "
+          "should not have (the 'no pool' images must have no pool).", ""]
+    rows = []
+    for n in names:
+        prompt, building, storeys, feats, pair = SCENES[n]
+        file = f"{n}.png"
+        expected[file] = {"building": building, "storeys": storeys, "features": feats, "pair": pair,
+                          "coverage": cov.get(n), "filters": filters}
+        rows.append([file, f"generated with {a.tool} from a prompt in scripts/make_photos.py",
+                     "AI-generated; check the tool's terms for the output"])
+        md += [f"## {file}", "", STYLE + prompt, ""]
+    exp_path.write_text(json.dumps(expected, indent=1))
+    with lic_path.open("w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["file", "source", "licence"])
+        w.writerows(rows)
+    (a.out / "prompts.md").write_text("\n".join(md))
+    print(f"{len(names)} prompts in {a.out / 'prompts.md'}; answer key and licences written. "
+          "Save each image under its file name, then run scripts/vision_spike.py.")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--model", default=DEFAULT_MODEL)
@@ -174,7 +208,14 @@ def main() -> int:
     ap.add_argument("--count", type=int, default=8, help="images to generate at most")
     ap.add_argument("--coverage-only", action="store_true")
     ap.add_argument("--no-coverage", action="store_true", help="skip the connector check (offline)")
+    ap.add_argument("--manual", action="store_true", help="write prompts + answer key; generate the images yourself")
+    ap.add_argument("--tool", default="an image generator", help="with --manual: the tool you will use")
     a = ap.parse_args()
+
+    if a.list_models:
+        models = image_models(llm.client(timeout=60.0))
+        print("image models served to this account:", ", ".join(models) or "none")
+        return 0 if models else 1
 
     asked = [n.strip() for n in a.only.split(",") if n.strip()]
     unknown = [n for n in asked if n not in SCENES]
@@ -206,15 +247,16 @@ def main() -> int:
             print(f"no scene finds {a.min_homes}+ homes here: widen the budget or pick another region")
             return 1
 
+    a.out.mkdir(parents=True, exist_ok=True)
+    if a.manual:
+        return write_manual(a, names, cov, filters)
+
     cli = llm.client(timeout=180.0)
     models = image_models(cli)
     print("image models served to this account:", ", ".join(models) or "none")
-    if a.list_models:
-        return 0 if models else 1
     if a.model not in models:
         print(f"note: {a.model} is not in that list; trying it anyway")
 
-    a.out.mkdir(parents=True, exist_ok=True)
     exp_path, lic_path = a.out / "expected.json", a.out / "licences.csv"
     expected = json.loads(exp_path.read_text()) if exp_path.exists() else {}
     licences = {}
