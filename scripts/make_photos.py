@@ -34,7 +34,7 @@ homes for sale or photos found online.
   python scripts/make_photos.py --manual --tool "ChatGPT (OpenAI)"   # no image model on Token Factory
 
 --backend openai reads OPENAI_API_KEY from the environment or ~/.openai/api_key
-(default model gpt-image-1; OpenAI's terms assign the output to the user).
+(default model gpt-image-2; gpt-image-1 is listed but retired, 2026-10-23; OpenAI's terms assign the output to the user).
 
 --manual writes expected.json, licences.csv and prompts.md for the selected
 scenes without generating anything: generate each image from its prompt in a
@@ -62,7 +62,7 @@ OUT = ROOT / "fixtures" / "photos"
 DEFAULT_MODEL = "black-forest-labs/flux-schnell"
 COVER_LIMIT = 10
 VERIFY = 6   # homes checked with get_listing per scene
-OPENAI_MODEL = "gpt-image-1"
+OPENAI_MODEL = "gpt-image-2"
 LICENCES = {"gpt-image": "output owned by the user under OpenAI's terms", "dall-e": "output owned by the user under OpenAI's terms",
             "flux-schnell": "Apache-2.0 (FLUX.1 [schnell])", "sana": "NVIDIA open model licence (check)",
             "sdxl": "CreativeML Open RAIL++-M"}
