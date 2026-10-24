@@ -289,6 +289,22 @@ def drop_thin_hedge(answer: str, tool_text: str) -> tuple[str, int]:
 _STRAY_HASH = re.compile(r"(^|[\s(])#(?=[A-ZÀ-Ý][a-zà-ÿ])")
 
 
+# "All include a private pool": a wish ranks the results, it doesn't filter them, so a
+# claim about every home is unchecked (live 2026-10-24, three of twelve wizard searches).
+_ALL = (r"\b(all|every|each of|both|todos|todas|tous|toutes|alle|allemaal|ambos|ambas|cada)\b")
+_WISH = (r"(pool|piscina|piscine|schwimmbad|zwembad|sea[- ]view|views?|vista|vue|blick|uitzicht|terrace|terra[çc]|"
+         r"terrasse|terras|balcon|balc[oó]n|balkon|lift|elevator|elevador|ascensor|ascenseur|aufzug|garden|jardim|"
+         r"jard[ií]n|garten|tuin|garage|garagem|parking|parque|stellplatz|parkeer|air[- ]condition|\bac\b|"
+         r"ar condicionado|aire acondicionado|climati|klima|airco|sauna|fireplace|lareira|chimenea|chemin[ée]e|"
+         r"kamin|open haard|renovat|reformad|r[ée]nov|saniert|furnished|mobilad|amueblad|meubl|m[öo]bliert|gemeubileerd)")
+_ALL_WISH = re.compile(_ALL + r"[^.!?]{0,80}" + _WISH + r"|" + _WISH + r"[^.!?]{0,40}\b(in all|for all|em todos|en todos|"
+                       r"dans tous|bei allen|bij alle)\b", re.I)
+
+
+def drop_all_have_claims(answer: str) -> tuple[str, int]:
+    return _drop_sentences(answer, _ALL_WISH)
+
+
 def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple[str, dict]:
     answer = _STRAY_HASH.sub(r"\1", answer)
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
@@ -301,6 +317,9 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
         answer = ensure_not_a_valuation(answer, lang)
     if "get_contact_options" in used_tools:
         answer, sent = drop_sent_claims(answer, lang)
+    wishes = 0
+    if "search_homes" in used_tools:
+        answer, wishes = drop_all_have_claims(answer)
     absence = 0
     if "find_similar_elsewhere" in used_tools:
         answer, v1 = drop_price_verdicts(answer, lang)
@@ -318,4 +337,5 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
         answer, pct = drop_unbacked_percentages(answer, tool_text)
     return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
-                    "absence_wording_fixed": absence, "source_filler_dropped": filler}
+                    "absence_wording_fixed": absence, "source_filler_dropped": filler,
+                    "all_have_claims_dropped": wishes}
