@@ -23,7 +23,9 @@
   <main id="log" aria-live="polite">
     <section id="empty" class="empty">
       <h2>What are you looking for?</h2>
-      <p>Ask for homes in your own language, then ask about one: its price against similar homes, or how to contact the agent. Or compare two places to live.</p>
+      <p>Pick a few pictures, or ask in your own language. Then ask about a home: its price against similar homes, or how to contact the agent. Or compare two places to live.</p>
+      <div class="wizard" id="wizard" hidden></div>
+      <p class="or">Or ask directly:</p>
       <div class="examples" id="examples">
         <button type="button">2-bed apartment in Lisbon under 450k</button>
         <button type="button">Wohnung mit Balkon in München bis 600.000 Euro</button>
@@ -76,5 +78,6 @@
   </template>
 
   <script src="/static/app.js"></script>
+  <script src="/static/wizard.js"></script>
 </body>
 </html>

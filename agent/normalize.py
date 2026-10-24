@@ -152,6 +152,10 @@ COUNTRIES = {
     "poland", "polonia", "pologne", "polen",
     "netherlands", "paises baixos", "paises bajos", "pays-bas", "niederlande", "nederland", "holland",
     "bulgaria", "bulgarie", "bulgarien", "bulgarije",
+    # Also on Cubi (the home wizard offers every country with listings).
+    "united kingdom", "uk", "reino unido", "royaume-uni", "vereinigtes konigreich", "verenigd koninkrijk",
+    "estonia", "estonie", "estland",
+    "slovenia", "eslovenia", "eslovenia", "slovenie", "slowenien", "slovenie",
 }
 
 

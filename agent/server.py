@@ -30,9 +30,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-from starlette.concurrency import iterate_in_threadpool
+from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
-from . import config, llm, steps
+from . import config, llm, steps, wizard
 from .loop import Agent, _describe
 
 log = logging.getLogger("cubi_agent")
@@ -139,6 +139,8 @@ def _prewarm_steps() -> None:
     """Translate the step log for common languages beyond the six (agent/steps.py), in the background."""
     if config.NEBIUS_API_KEY and os.environ.get("STEPS_PREWARM", "x").strip():
         steps.prewarm(llm.client())
+    # The wizard's first visitor would otherwise wait ~5 s for the listing counts.
+    threading.Thread(target=wizard.stats, daemon=True).start()
 
 
 class ChatIn(BaseModel):
@@ -236,6 +238,13 @@ async def reset(body: dict):
     if isinstance(body.get("session_id"), str):
         sessions.drop(body["session_id"])
     return {"ok": True}
+
+
+@app.get("/api/wizard")
+async def wizard_stats():
+    """Listing counts for the home wizard's tiles; aggregate only, cached six hours."""
+    data = await run_in_threadpool(wizard.stats)
+    return JSONResponse(data or {"countries": {}}, headers={"Cache-Control": "public, max-age=600"})
 
 
 @app.get("/api/health")
