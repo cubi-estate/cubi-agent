@@ -50,6 +50,16 @@ def test_only_observed_features_in_priority_order():
     assert vs.observed(res) == ["Pool", "Garden"]
 
 
+def test_stone_house_dropped_when_evidence_says_trim_or_cladding_panels():
+    def res(ev):
+        return {"result": {"attributes": [{"feature": "Stone House", "status": "observed", "evidence": ev}]}}
+    assert vs.observed(res("house walls made of stone")) == ["Stone House"]
+    assert vs.observed(res("stone cladding on the exterior walls")) == ["Stone House"]
+    for ev in ("white stucco walls with stone trim", "stone-like pillars", "stone panels beside the windows",
+               "smooth white walls, not clearly stone"):
+        assert vs.observed(res(ev)) == [], ev
+
+
 def test_search_relaxes_lowest_priority_feature_and_beats_baseline():
     vs._LISTING_CACHE.clear()
     mcp = _MCP()

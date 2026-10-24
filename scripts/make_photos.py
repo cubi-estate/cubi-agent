@@ -115,7 +115,7 @@ SCENES = {
                             "villa", "2", ["Garden", "Garage"], None),
     "vineyard_house": ("A two-storey country house surrounded by vineyard rows on rolling hills, a stone patio "
                        "with a table in front.",
-                       "detached house", "2", ["Vineyard", "Countryside Views", "Patio"], None),
+                       "detached house", "2", ["Vineyard", "Countryside Views", "Patio", "Stone House"], None),
 }
 
 

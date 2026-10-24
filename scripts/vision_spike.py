@@ -170,7 +170,9 @@ PROMPT = (
     "'evidence' is a few words on what in the photo shows it. 'building' is the kind of building the "
     "home is (a villa is a large detached house; a townhouse shares side walls with its neighbours; an "
     "apartment is one unit in a larger building), and 'storeys' the number of floors you can see above "
-    "ground; use 'unknown' only if the photo really does not show it. Allowed features: "
+    "ground; use 'unknown' only if the photo really does not show it. 'Stone House' means most of the "
+    "outer walls are bare stone masonry; stone cladding panels, trim, pillars, a stone base or patio, "
+    "or rendered or stucco walls do not count. Allowed features: "
     + ", ".join(FEATURES) + ". Reply with the JSON object only."
 )
 
@@ -247,9 +249,15 @@ def read_photo(cli, model: str, path: Path, think: bool = False) -> dict:
     return out
 
 
+# Evidence that contradicts 'Stone House' (the model called stucco "with stone trim" a stone
+# house, 2026-10-24); a backstop for the prompt rule, not a replacement for it.
+_NOT_STONE = re.compile(r"\btrim\b|accent|pillar|stucco|render|plaster|patio|panel|veneer|-like|\bnot\b", re.I)
+
+
 def observed(res: dict) -> list[str]:
     attrs = (res.get("result") or {}).get("attributes") or []
-    seen = {a["feature"] for a in attrs if isinstance(a, dict) and a.get("status") == "observed"}
+    seen = {a["feature"] for a in attrs if isinstance(a, dict) and a.get("status") == "observed"
+            and not (a["feature"] == "Stone House" and _NOT_STONE.search(a.get("evidence") or ""))}
     return [f for f in FEATURES if f in seen]
 
 
