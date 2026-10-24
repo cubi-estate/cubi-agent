@@ -135,6 +135,8 @@ def image_client(backend: str):
         key = f.read_text().strip()
     if not key:
         raise SystemExit("OPENAI_API_KEY is not set (environment or ~/.openai/api_key)")
+    if not key.isascii() or len(key) < 20:
+        raise SystemExit("OPENAI_API_KEY doesn't look like a key (a placeholder such as '…' was pasted?)")
     return OpenAI(api_key=key, timeout=180.0, max_retries=1)
 
 
