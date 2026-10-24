@@ -201,7 +201,7 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   .bubble.user { max-width: 92%; }
 }
 
-/* Home wizard (wizard.js): five quick picks that build a search message. */
+/* Home wizard (wizard.js): six quick picks that build a search message. */
 .wizard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin: 0 0 18px; }
 .wz-head { display: flex; align-items: center; gap: 12px; min-height: 30px; }
 .wz-back { background: none; border: 0; color: var(--accent); font: inherit; font-size: 14px; padding: 4px 0; cursor: pointer; }
@@ -231,7 +231,8 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   background: var(--panel); border: 2px solid var(--line); font-size: 14px; color: var(--accent); font-weight: 700;
 }
 .wz-tile.on .wz-check { border-color: var(--accent); }
-.wz-budget { display: grid; gap: 12px; }
+.wz-budget { display: grid; gap: 10px; }
+.wz-label { margin: 4px 0 -2px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .wz-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; width: fit-content; }
 .wz-seg button, .wz-chips button {
   font: inherit; font-size: 14px; border: 0; background: none; color: var(--ink); padding: 7px 16px; border-radius: 999px; cursor: pointer;

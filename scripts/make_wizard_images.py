@@ -37,6 +37,7 @@ def items(opt: dict) -> list[tuple[str, str]]:
     out = [(r["id"], r["prompt"]) for r in opt["regions"]]
     out += [(c["id"], c["prompt"]) for c in opt["countries"].values()]
     out += [(t["id"], t["prompt"]) for t in opt["types"]]
+    out += [(x["id"], x["prompt"]) for x in opt["settings"]]
     out += [(f["id"], f["prompt"]) for f in opt["features"]]
     return out
 
