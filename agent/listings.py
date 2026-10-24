@@ -44,6 +44,10 @@ def _facts_line(line: str, out: dict) -> None:
             out["bedrooms"] = _number(p)
         elif low.endswith(" ba"):
             out["bathrooms"] = _number(p)
+        elif "m2" in low and "plot" in low:
+            # "112 m2 living | 1420 m2 plot": the plot came last and overwrote the
+            # living area (1420 m2 village houses on the cards, live 2026-10-24).
+            out["plot_area"] = _number(p)
         elif "m2" in low:
             out["living_area"] = _number(p)
         elif re.search(r"\b(eur|usd|gbp|chf)\b", low) or "price on request" in low:

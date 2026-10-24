@@ -7,6 +7,7 @@
   const root = document.getElementById("wizard");
   if (!root) return;
   const STEPS = ["Region", "Country", "Type", "Setting", "Size and budget", "Must-haves"];
+  const THE = new Set(["Netherlands", "United Kingdom", "Czech Republic"]);  // "in the Netherlands"
   const MAX_FEATURES = 8;  // amenities shown; condition tiles (renovated, to renovate) come on top
   const NEW_MIN = 100;  // "new this week" shown from this many; fewer says more about scraping than the market
   let opt = null, stats = { countries: {} };
@@ -68,7 +69,9 @@
   const settings = () => {
     const list = opt.settings.filter(fits);
     // An apartment search starts in a city, a house or villa search out of one.
-    if (pick.type && pick.type !== "apartment") list.sort((a, b) => (a.id === "city") - (b.id === "city"));
+    const city = x => x.id === "city";
+    if (pick.type === "apartment") list.sort((a, b) => city(b) - city(a));
+    else if (pick.type) list.sort((a, b) => city(a) - city(b));
     return list;
   };
   // Must-haves that make sense for this country, type, setting and deal, the most
@@ -98,7 +101,7 @@
     if (pre.length) noun = pre.join(" ") + " " + noun.charAt(0).toLowerCase() + noun.slice(1);
     noun = noun.charAt(0).toUpperCase() + noun.slice(1);
     const setting = opt.settings.find(x => x.id === pick.setting && fits(x));
-    let q = `${noun} ${pick.deal === "rent" ? "to rent" : "for sale"}${setting ? " " + setting.phrase : ""} in ${pick.country}`;
+    let q = `${noun} ${pick.deal === "rent" ? "to rent" : "for sale"}${setting ? " " + setting.phrase : ""} in ${THE.has(pick.country) ? "the " : ""}${pick.country}`;
     const feats = chosen.filter(f => f.phrase).map(f => f.phrase);
     if (pick.beds >= 4) feats.unshift("4 or more bedrooms");
     if (feats.length) q += " with " + feats.join(", ").replace(/, ([^,]*)$/, " and $1");

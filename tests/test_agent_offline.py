@@ -193,6 +193,12 @@ def test_listing_cards_parse_and_sanitise():
     assert listings.parse(clean)[1]["price"] == 1250000.0
 
 
+def test_plot_area_does_not_overwrite_living_area():
+    out = {}
+    listings._facts_line("Village House | 3 bd | 1 ba | 112 m2 living | 1420 m2 plot | 194 000 EUR", out)
+    assert out["living_area"] == 112.0 and out["plot_area"] == 1420.0 and out["price"] == 194000.0
+
+
 def test_fixture_key_ignores_case_order_and_limit():
     a = fixtures.key("filter_listings", {"location": ["Porto"], "type": ["apartment"], "limit": 6})
     b = fixtures.key("filter_listings", {"type": ["Apartment"], "location": ["porto"], "limit": 3})

@@ -74,7 +74,10 @@ BASE_RULES = (
     "rules). Write two or three sentences: what was searched, how many homes came back, and anything "
     "the user should know — a filter that was relaxed, homes that are older or pricier than the rest, "
     "or the best match by card number (\"#2\"). Limits are bounds: 'at least 1 bedroom' includes "
-    "2-bedroom homes, so never call those mismatches. If nothing came back, say so and suggest one "
+    "2-bedroom homes, so never call those mismatches. Wishes such as a pool, a sea view, a lift or "
+    "'by the sea' rank the results rather than filter them: say a home has one only if the tool "
+    "result lists it for that home, and never say that all the homes have it. Take any price range "
+    "from every returned home, not the first few. If nothing came back, say so and suggest one "
     "change to the search."
 )
 
