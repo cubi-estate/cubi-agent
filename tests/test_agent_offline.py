@@ -435,3 +435,25 @@ def test_a_place_search_asks_for_the_city_not_its_district():
 def test_fixture_keys_ignore_city_only():
     a = {"location": ["Porto"], "limit": 6}
     assert fixtures.key("filter_listings", a) == fixtures.key("filter_listings", {**a, "city_only": True})
+
+
+def test_per_minute_limit_is_waited_out_and_retried(monkeypatch):
+    from agent import mcp_client
+    cli = mcp_client.CubiMCP(url="http://x", token="")
+    replies = iter([{"content": [{"type": "text", "text": "Too many tool calls from this deployment in the last minute. Wait"}]},
+                    {"content": [{"type": "text", "text": "Your search: Porto"}]}])
+    monkeypatch.setattr(cli, "_rpc", lambda *a, **k: next(replies))
+    slept = []
+    monkeypatch.setattr(mcp_client.time, "sleep", slept.append)
+    out = cli.call_tool("search_properties", {"query": "q"})
+    assert out["text"] == "Your search: Porto" and not out["is_error"] and slept == [2.0]
+
+
+def test_daily_quota_reply_is_not_retried(monkeypatch):
+    from agent import mcp_client
+    cli = mcp_client.CubiMCP(url="http://x", token="")
+    calls = []
+    monkeypatch.setattr(cli, "_rpc", lambda *a, **k: calls.append(1) or
+                        {"content": [{"type": "text", "text": "Daily free-tier quota reached for this client."}]})
+    monkeypatch.setattr(mcp_client.time, "sleep", lambda s: None)
+    assert cli.call_tool("search_properties", {"query": "q"})["is_error"] and len(calls) == 1

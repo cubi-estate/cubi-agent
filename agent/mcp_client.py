@@ -88,8 +88,22 @@ class CubiMCP:
     def call_tool(self, name: str, arguments: dict) -> dict:
         """Returns {"text": str, "is_error": bool, "structured": dict|None}."""
         t0 = time.monotonic()
-        res = self._rpc("tools/call", {"name": name, "arguments": arguments})
-        text = "\n".join(c.get("text", "") for c in res.get("content", []) if c.get("type") == "text")
+        # The hosted demo serves every visitor through one deployment budget, so a
+        # burst (a room of judges at once) can trip the per-minute limit. That reply
+        # is free ("nothing was charged") and says to wait, so wait and retry a few
+        # times before showing it; a daily-quota reply is not retried.
+        for wait in (*RETRY_WAITS_S, None):
+            try:
+                res = self._rpc("tools/call", {"name": name, "arguments": arguments})
+            except MCPError as e:
+                if wait is None or "rate limit" not in str(e):
+                    raise
+                time.sleep(wait)
+                continue
+            text = "\n".join(c.get("text", "") for c in res.get("content", []) if c.get("type") == "text")
+            if wait is None or not text.lstrip().lower().startswith(_PER_MINUTE):
+                break
+            time.sleep(wait)
         out = {
             "text": text,
             "is_error": bool(res.get("isError")) or _in_band_error(text),
@@ -108,6 +122,9 @@ class CubiMCP:
             out.append(to_openai_tool(t))
         return out
 
+
+RETRY_WAITS_S = (2.0, 5.0, 10.0)
+_PER_MINUTE = "too many tool calls"
 
 _RATE_LIMIT_TEXT = ("too many tool calls", "daily budget", "quota")
 
