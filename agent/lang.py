@@ -72,7 +72,8 @@ _OTHER_WORDS = {
     "it": "il lo gli della delle degli dello del nel nella nei con per una un a e di da in al alla sono vorrei "
           "cerco cerchiamo affitto affittare vendita comprare camere camera letto appartamento appartamenti villetta "
           "casa case giardino terrazzo terrazza piscina mare vicino zona al mese fino massimo bilocale trilocale "
-          "mostrami secondo seconda primo prima quanto costa solo",
+          "mostrami secondo seconda primo prima quanto costa solo come posso contattare contatto agente annuncio "
+          "prezzo simili novita sceso",
     "pl": "mieszkanie mieszkania dom domy pokoje pokoj sprzedaz wynajem w z do na i za tys szukam chce blisko "
           "morza ogrod balkon basen miesiac kupic wynajac pokaz drugie pierwsze",
     "sv": "lagenhet hus till salu hyra rum med och i nara havet soker jag bostad villa tomt per manad visa",

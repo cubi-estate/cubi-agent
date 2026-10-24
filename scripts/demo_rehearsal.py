@@ -22,7 +22,7 @@ TURNS = [  # 1-7 are the video's filmed turns, in order (docs/video/SCRIPT.md); 
     "And up to 500k?",
     "<feature by feature>",  # clicks the leaders suggestion the last answer offered
     "Has #1's price dropped, and what's new in Lisbon?",
-    "How do I contact the agent for #1?",
+    "Come posso contattare l'agente per il #1?",  # any language: through English and back
     "Is #2 overpriced?",
     "Show me homes like #1 in Porto",
 ]

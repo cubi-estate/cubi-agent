@@ -1,6 +1,6 @@
 # Demo video: script and shot list
 
-Target **2:50** (the limit is 3:00). One screen recording of the live demo, four
+Target **2:52** (the limit is 3:00). One screen recording of the live demo, four
 title cards from `slides.html`, and a voice-over in English. No music, or only
 music you have the rights to. Upload to YouTube as **Public** and put the link in Devpost.
 
@@ -16,6 +16,8 @@ music you have the rights to. Upload to YouTube as **Public** and put the link i
    - turns 3 and 4 with a `▮` line per city, and "(was …%)" on turn 4;
    - turn 5 with two `▤` lines, both with most of the 8 environment readings;
    - turn 6 with a `€ price history` line and an `𝕏` link;
+   - turn 7 asked in Italian and answered in Italian, with the Cubi sign-in link and
+     Italian buttons (the step log shows "identify language" and "translate back");
    - turn 8 naming its number of comparables, with one "independent valuation" line
      and no "thin" when there are ten or more.
 
@@ -52,12 +54,13 @@ music you have the rights to. Upload to YouTube as **Public** and put the link i
 | 5 | 1:17–1:37 | Paste turn 3: bars grow. Click "And up to €500,000?": bars move, markers stay at the old shares | And from Cubi's own data: what does four hundred thousand buy in Lisbon versus Porto? *(read the two shares on screen)* Raise it to five hundred, and the bars move from the old shares. Cubi counted these; the model only wrote the sentence around them. |
 | 6 | 1:37–2:00 | Click "Compare #… and #… feature by feature"; scroll the table slowly | Now the top home in each city, feature by feature. Same rows for both: the asking price, what each listing states, and Cubi's area data — noise, air quality, flood and wildfire screening from European open data. Where a listing doesn't say, the table says "not stated", never "no". |
 | 7 | 2:00–2:18 | Paste turn 6 (or click it if offered); show the price box, then the cited news | Has this Lisbon flat's price dropped, and what's new there? Cubi's price log answers the first *(read it, e.g. "no change since September")*, and recent housing news answers the second, each point with its source. Posts on X are one click away. |
-| 8 | 2:18–2:26 | Paste turn 7, then highlight the sign-in link | And contacting the agent goes only through Cubi's consented flow; the demo sends nothing on your behalf. |
-| 9 | 2:26–2:42 | Card 3 (results) | Measured on thirty-six requests in six languages the rules never saw, Super got every field right. Against Cubi's own search, the agent is about four times faster and uses a tenth of the quota, at similar precision. |
-| 10 | 2:42–2:50 | Card 4 (try it) | Try it at cubi.estate/agent, no account needed. The agent, the evals and our feedback for Nebius and NVIDIA are open source. |
+| 8 | 2:18–2:30 | Paste turn 7 (in Italian), hold on the Italian answer, then highlight the sign-in link | Ask in Italian, or any language: Nemotron translates in and out. And contacting the agent goes only through Cubi's consented flow; the demo sends nothing for you. |
+| 9 | 2:30–2:44 | Card 3 (results) | Measured on thirty-six requests in six languages the rules never saw, Super got every field right. Against Cubi's own search, the agent is four times faster on a tenth of the quota, at similar precision. |
+| 10 | 2:44–2:52 | Card 4 (try it) | Try it at cubi.estate/agent, no account needed. The agent, the evals and our feedback for Nebius and NVIDIA are open source. |
 
-That's about 380 words, or 2:30 of speech in a 2:50 cut (the clicks and scrolls need room); the limit is 3:00. If the takes run
-long, cut scene 8. Read the figures the screen shows on the day — shares, card
+That's about 390 words, or 2:35 of speech in a 2:52 cut (the clicks and scrolls need room); the limit is 3:00. If the takes run
+long, trim the table scroll in scene 6 first, then cut scene 8 (it is the only
+any-language shot, so the six-language claim on card 3 then stands alone). Read the figures the screen shows on the day — shares, card
 numbers, the price line — they change as listings change. On 2026-10-22: Lisbon
 6.3% → 12.2% and Porto 21.0% → 37.4% for 2+ bedroom flats.
 
@@ -89,15 +92,20 @@ What does 400k buy in Lisbon vs Porto? 2-bed flats
                            ← click "And up to €500,000?"
                            ← click "Compare #… and #… feature by feature"
 Has #1's price dropped, and what's new in Lisbon?
-How do I contact the agent for #1?
+Come posso contattare l'agente per il #1?
 ```
+
+Six languages (en, pt, es, fr, de, nl) run natively. Any other is named and translated
+to English by Nemotron, run, and translated back (`agent/pivot.py`): about 1.5–4 s
+more per turn. Italian is the filmed example because the demo has Italian listings
+too; the card numbers and the sign-in link survive the translation.
 
 ## YouTube
 
 - **Title:** Cubi Agent: cross-border home search on NVIDIA Nemotron and Nebius
 - **Description:**
 
-  > Ask in your own language for homes anywhere in Europe, then dig into them:
+  > Ask in any language for homes anywhere in Europe, then dig into them:
   > compare the top home in each city feature by feature, with environmental data;
   > see what your budget buys city by city; check a home's price history and the
   > latest local news; compare schools and transport with cited sources; contact the
