@@ -86,3 +86,17 @@ def test_limits_forget_an_address_a_minute_after_its_last_turn(monkeypatch):
     t[0] += 61
     assert lim.check("198.51.100.2") is None
     assert "203.0.113.7" not in lim._minute and "198.51.100.2" in lim._minute
+
+
+def test_page_versions_its_assets_and_static_files_revalidate():
+    from fastapi.testclient import TestClient
+    from agent import config, server
+    c = TestClient(server.app)
+    page = c.get("/")
+    assert page.headers["cache-control"] == "no-cache"
+    for asset in ("style.css", "app.js", "wizard.js"):
+        assert f'/static/{asset}?v={config.BUILD}"' in page.text
+    css = c.get(f"/static/style.css?v={config.BUILD}")
+    assert css.status_code == 200 and css.headers["cache-control"] == "no-cache" and "wz-tile" in css.text
+    again = c.get("/static/style.css", headers={"If-None-Match": css.headers["etag"]})
+    assert again.status_code == 304

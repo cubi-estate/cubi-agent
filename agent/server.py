@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Iterator
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
@@ -256,9 +256,27 @@ async def health(request: Request):
                          "trust_proxy": TRUST_PROXY, "build": config.BUILD})
 
 
+def _page() -> str:
+    """index.html with the build on its stylesheet and script URLs: a browser that cached
+    an older style.css (no Cache-Control then) showed the new wizard unstyled, 2026-10-24."""
+    html = (WEB / "index.html").read_text()
+    for asset in ("style.css", "app.js", "wizard.js"):
+        html = html.replace(f'"/static/{asset}"', f'"/static/{asset}?v={config.BUILD}"')
+    return html
+
+
 @app.get("/")
 async def index():
-    return FileResponse(WEB / "index.html", headers={"Cache-Control": "no-cache"})
+    return HTMLResponse(_page(), headers={"Cache-Control": "no-cache"})
 
 
-app.mount("/static", StaticFiles(directory=WEB), name="static")
+class _Static(StaticFiles):
+    """Revalidate every time (cheap: ETag → 304), so a new build is never hidden by a cache."""
+
+    async def get_response(self, path, scope):
+        res = await super().get_response(path, scope)
+        res.headers.setdefault("Cache-Control", "no-cache")
+        return res
+
+
+app.mount("/static", _Static(directory=WEB), name="static")
