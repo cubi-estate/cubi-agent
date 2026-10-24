@@ -34,15 +34,18 @@
     </section>
   </main>
 
-  <form id="form" class="composer" autocomplete="off">
-    <label for="input" class="sr">Message</label>
-    <textarea id="input" rows="1" maxlength="500" placeholder="Ask in any language…" required></textarea>
-    <button id="send" type="submit" aria-label="Send">
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 11.5 21 3l-8.5 18-2-7.5z" fill="currentColor"/></svg>
-    </button>
-  </form>
+  <div class="dock">
+    <form id="form" class="composer" autocomplete="off">
+      <label for="input" class="sr">Message</label>
+      <textarea id="input" rows="1" maxlength="500" placeholder="Ask in any language…" required></textarea>
+      <button id="send" type="submit" aria-label="Send">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 11.5 21 3l-8.5 18-2-7.5z" fill="currentColor"/></svg>
+      </button>
+    </form>
 
-  <footer class="notice">
+    <details class="notice" id="notice">
+      <summary>Messages go to Nebius (EU) and to Token Factory in the US. Please don't enter personal details.</summary>
+      <div class="more">
     Your messages go to this demo's server (EU) and to <b>Nebius Token Factory</b>, where NVIDIA Nemotron
     runs in the <b>US</b>; searches go to <a href="https://www.cubi.estate" target="_blank" rel="noopener">Cubi Estate</a>'s
     listing connector (EU). Area questions send only place names and topics to <b>Tavily</b> (US); when enabled, "what's new" questions also send the city's name to <b>X</b> (US) to show recent public posts, which are not stored; an author who does not want their posts shown can write to privacy@cubi.estate.
@@ -51,7 +54,9 @@
     <a href="https://github.com/cubi-estate/cubi-agent#data-and-privacy" target="_blank" rel="noopener">Data flow</a> ·
     <a href="https://www.cubi.estate/privacy-policy" target="_blank" rel="noopener">Privacy</a> ·
     <a href="https://github.com/cubi-estate/cubi-agent" target="_blank" rel="noopener">Source</a>
-  </footer>
+      </div>
+    </details>
+  </div>
 
   <template id="tpl-turn">
     <article class="turn">

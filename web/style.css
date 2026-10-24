@@ -166,10 +166,16 @@ main { flex: 1; width: 100%; max-width: 860px; margin: 0 auto; padding: 16px 16p
 
 .followups { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 
+/* The input and the notice share one bar docked to the bottom. The notice is one line
+   until the user types (or opens it), so it doesn't take a third of a phone screen. */
+.dock {
+  position: sticky; bottom: 0; z-index: 2; width: 100%;
+  background: linear-gradient(to top, var(--bg) 80%, transparent);
+  padding-bottom: env(safe-area-inset-bottom);
+}
 .composer {
-  position: sticky; bottom: 0; display: flex; gap: 8px; align-items: flex-end;
-  width: 100%; max-width: 860px; margin: 0 auto; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  display: flex; gap: 8px; align-items: flex-end;
+  width: 100%; max-width: 860px; margin: 0 auto; padding: 10px 16px 6px;
 }
 textarea {
   flex: 1; resize: none; font: inherit; color: var(--ink); background: var(--panel);
@@ -179,7 +185,15 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 #send { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
 #send:disabled { opacity: .5; cursor: default; }
 
-.notice { max-width: 860px; margin: 0 auto; padding: 4px 16px 16px; font-size: 12px; color: var(--muted); }
+.notice { max-width: 860px; margin: 0 auto; padding: 0 16px 10px; font-size: 12px; color: var(--muted); }
+.notice summary {
+  cursor: pointer; list-style: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.notice summary::-webkit-details-marker { display: none; }
+.notice summary::after { content: " ▾"; }
+.notice[open] summary { white-space: normal; }
+.notice[open] summary::after { content: " ▴"; }
+.notice .more { margin-top: 4px; max-height: 40vh; overflow-y: auto; }
 
 @media (max-width: 520px) {
   .sub { display: none; }

@@ -400,7 +400,21 @@ form.addEventListener("submit", e => {
 input.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
 });
-input.addEventListener("input", () => { input.style.height = ""; input.style.height = Math.min(input.scrollHeight, 160) + "px"; });
+// +2: scrollHeight leaves out the border (box-sizing: border-box), which showed a scrollbar.
+input.addEventListener("input", () => { input.style.height = ""; input.style.height = Math.min(input.scrollHeight + 2, 160) + "px"; });
+
+// The notice opens while the user is typing and folds back to one line when they send
+// or leave the field; tapping its summary opens or closes it at any time. Programmatic
+// focus after an answer doesn't open it (that would cover the answer each time).
+const notice = document.getElementById("notice");
+let noticePinned = false;  // opened by the user's own tap: leave it open
+notice.querySelector("summary").addEventListener("click", () => { noticePinned = !notice.open; });
+input.addEventListener("input", () => { if (input.value) notice.open = true; });
+input.addEventListener("pointerdown", () => { notice.open = true; });
+input.addEventListener("blur", e => {
+  if (!noticePinned && !notice.contains(e.relatedTarget)) notice.open = false;
+});
+form.addEventListener("submit", () => { if (!noticePinned) notice.open = false; });
 document.getElementById("examples")?.addEventListener("click", e => {
   if (e.target.closest("button")) ask(e.target.closest("button").textContent);
 });
