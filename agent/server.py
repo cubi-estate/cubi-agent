@@ -32,7 +32,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.concurrency import iterate_in_threadpool
 
-from . import config
+from . import config, llm, steps
 from .loop import Agent, _describe
 
 log = logging.getLogger("cubi_agent")
@@ -132,6 +132,13 @@ ERRORS = {
 
 app = FastAPI(title="cubi-agent", docs_url=None, redoc_url=None)
 sessions, limits = Sessions(), Limits()
+
+
+@app.on_event("startup")
+def _prewarm_steps() -> None:
+    """Translate the step log for common languages beyond the six (agent/steps.py), in the background."""
+    if config.NEBIUS_API_KEY and os.environ.get("STEPS_PREWARM", "x").strip():
+        steps.prewarm(llm.client())
 
 
 class ChatIn(BaseModel):

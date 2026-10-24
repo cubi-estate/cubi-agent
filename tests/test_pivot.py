@@ -8,7 +8,9 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from agent import fixtures, pivot, suggest  # noqa: E402
+import pytest  # noqa: E402
+
+from agent import fixtures, pivot, steps, suggest  # noqa: E402
 from agent.lang import LANGS, needs_check  # noqa: E402
 from agent.loop import Agent  # noqa: E402
 from agent.schema import SearchFilter  # noqa: E402
@@ -22,6 +24,12 @@ CARDS = """Showing 1 properties.
    ID: test_pt:1
 """
 URL = "https://cubi.estate/r/test_pt%3A1"
+
+
+@pytest.fixture(autouse=True)
+def _no_step_warming(monkeypatch):
+    """Step-log translation runs in a thread; these tests count model calls (see test_steps.py)."""
+    monkeypatch.setattr(steps, "warm", lambda *a, **k: None)
 
 
 def test_six_languages_never_trigger_a_check():

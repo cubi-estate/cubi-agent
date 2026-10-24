@@ -17,7 +17,9 @@ music you have the rights to. Upload to YouTube as **Public** and put the link i
    - turn 5 with two `▤` lines, both with most of the 8 environment readings;
    - turn 6 with a `€ price history` line and an `𝕏` link;
    - turn 7 asked in Italian and answered in Italian, with the Cubi sign-in link and
-     Italian buttons (the step log shows "identify language" and "translate back");
+     Italian buttons, and its step line in Italian too ("Ricerca delle opzioni di
+     contatto — annuncio #1 …"; the server translates step lines for common languages
+     at start-up, so restart it at least a minute before recording);
    - turn 8 naming its number of comparables, with one "independent valuation" line
      and no "thin" when there are ten or more.
 

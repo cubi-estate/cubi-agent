@@ -27,7 +27,7 @@ from typing import Generator, Iterator
 import httpx
 
 from . import extract as extractmod
-from . import guards, inventory, lang as langmod, listings, llm, ordinals, pivot, similar as similarmod, skills as skillsmod, suggest, tavily_tool, x_tool
+from . import guards, inventory, lang as langmod, listings, llm, ordinals, pivot, similar as similarmod, steps, skills as skillsmod, suggest, tavily_tool, x_tool
 from .fixtures import connect, listing_ref
 from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
@@ -314,7 +314,7 @@ class Agent:
         if ex.filter is not None and ex.route == "filter":
             self.filter = ex.filter
             self.stats["filter_searches"] += 1
-            yield {"type": "action", "text": f"Understood: {_describe(ex.filter)}", "model": ex.model,
+            yield {"type": "action", "text": f"Understood: {_describe(ex.filter, self.user_lang)}", "model": ex.model,
                    "latency_s": ex.latency_s}
             args = ex.filter.to_filter_args(limit=self.limit)
             args["lang"] = self.data_lang
@@ -379,7 +379,7 @@ class Agent:
                                  "min_price": None})
         self.filter = f
         args = inventory.args_for(f, places)
-        yield {"type": "action", "text": f"Understood: {_describe(f.model_copy(update={'has_parking': None}))}",
+        yield {"type": "action", "text": f"Understood: {_describe(f.model_copy(update={'has_parking': None}), self.user_lang)}",
                "model": ex.model, "latency_s": ex.latency_s}
         yield {"type": "action", "text": f"Counting listings within budget in {', '.join(args['places'])} "
                                          f"(Cubi compare_inventory)"}
@@ -660,6 +660,7 @@ class Agent:
             pre.append(("identify language", round(time.monotonic() - t0, 2)))
         if found and not pivot.native(found[0]):
             self.user_lang, self.user_lang_name, english = found
+            steps.warm(self.cli, self.user_lang, self.user_lang_name)  # no-op once warmed
             self.stats["pivot_turns"] = self.stats.get("pivot_turns", 0) + 1
             yield from self._pivoted(english, time.monotonic() - pre[0][1], pre)
             return
@@ -672,13 +673,19 @@ class Agent:
         for ev in self._turn(text, lang):
             if ev.get("type") == "answer" and pre:
                 ev["timings"] = pre + ev["timings"]
-            yield ev
+            yield self._local_step(ev)
+
+    def _local_step(self, ev: dict) -> dict:
+        """A step-log line in the user's language (agent/steps.py)."""
+        if ev.get("type") == "action" and self.user_lang != "en":
+            ev = {**ev, "text": steps.localize(ev.get("text", ""), self.user_lang)}
+        return ev
 
     def _pivoted(self, english: str, t0: float, pre: list[tuple[str, float]]) -> Iterator[dict]:
         self.data_lang = self.user_lang if self.user_lang in pivot.CUBI_I18N else "en"
         for ev in self._turn(english, "en"):
             if ev.get("type") != "answer":
-                yield ev
+                yield self._local_step(ev)
                 continue
             t1 = time.monotonic()
             out = pivot.back(self.cli, self.user_lang_name, ev["text"], ev["suggestions"], self.user_lang)
