@@ -20,13 +20,14 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from typing import Generator, Iterator
 
 import httpx
 
 from . import extract as extractmod
-from . import guards, inventory, lang as langmod, listings, llm, ordinals, similar as similarmod, skills as skillsmod, suggest, tavily_tool, x_tool
+from . import guards, inventory, lang as langmod, listings, llm, ordinals, pivot, similar as similarmod, skills as skillsmod, suggest, tavily_tool, x_tool
 from .fixtures import connect, listing_ref
 from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
@@ -99,6 +100,11 @@ _WORDS = {
     "nl": {"sale": "koop", "rent": "huur", "bed": "slpk", "parking": "parkeerplaats", "in": "in", "month": "/maand",
            "apartment": "appartement", "house": "huis", "land": "grond", "Pool": "zwembad", "Terrace": "terras",
            "Balcony": "balkon", "Garden": "tuin", "Elevator": "lift", "Sea View": "zeezicht"},
+    # Russian is pivoted through English (agent/pivot.py); only this line is written natively.
+    "ru": {"sale": "продажа", "rent": "аренда", "bed": "спальни", "parking": "парковка", "in": "в", "month": "/мес.",
+           "apartment": "квартира", "house": "дом", "villa": "вилла", "studio": "студия", "land": "участок",
+           "Pool": "бассейн", "Terrace": "терраса", "Balcony": "балкон", "Garden": "сад", "Elevator": "лифт",
+           "Sea View": "вид на море"},
 }
 
 
@@ -138,6 +144,11 @@ def _long_date(iso: str | None) -> str:
     return f"{d.day} {d.strftime('%B')} {d.year}"
 
 
+def _chip_key(text: str) -> str:
+    """Button text as compared to recognise a translated button (any script)."""
+    return re.sub(r"[\W_]+", " ", text.lower()).strip()
+
+
 class Agent:
     def __init__(self, mcp: CubiMCP | None = None, cli=None, limit: int = 6):
         self.mcp = mcp or connect()
@@ -147,7 +158,11 @@ class Agent:
         self.history: list[dict] = []
         self.filter: SearchFilter | None = None
         self.has_results = False
-        self.lang = "en"
+        self.lang = "en"  # the language this turn runs in: one of the six (English when pivoted)
+        self.user_lang = "en"  # the language the user writes in: any (agent/pivot.py)
+        self.user_lang_name = "English"
+        self.data_lang = "en"  # the language asked of Cubi's connector
+        self._chips: dict[str, str] = {}  # a translated button → its English original
         self.sale_only: list[str] = []
         self.stats = {"llm_in": 0, "llm_out": 0, "fallback_searches": 0, "filter_searches": 0}
         self.timings: list[tuple[str, float]] = []  # this turn's stages, seconds
@@ -302,6 +317,7 @@ class Agent:
             yield {"type": "action", "text": f"Understood: {_describe(ex.filter)}", "model": ex.model,
                    "latency_s": ex.latency_s}
             args = ex.filter.to_filter_args(limit=self.limit)
+            args["lang"] = self.data_lang
             places = list(args.get("location") or [])
             if len(places) > 1:
                 # One search per place: a single multi-place filter returns whichever
@@ -315,7 +331,7 @@ class Agent:
                 self.stats["fallback_searches"] += 1
                 yield {"type": "action", "text": "Structured search could not finish — retrying with Cubi's "
                                                  "free-text search (runs Cubi's own server-side language model)"}
-                res = self.mcp.call_tool("search_properties", {"query": request, "lang": self.lang, "limit": self.limit})
+                res = self.mcp.call_tool("search_properties", {"query": request, "lang": self.data_lang, "limit": self.limit})
                 header = "[filter_listings failed; searched with search_properties (free text)]\n"
         else:
             if ex.filter is not None:
@@ -324,7 +340,7 @@ class Agent:
             yield {"type": "action", "text": "Request needs free-text search (no place, a whole country, or "
                                              "something like 'near the beach') — using Cubi's free-text search "
                                              "(runs Cubi's own server-side language model)"}
-            res = self.mcp.call_tool("search_properties", {"query": request, "lang": self.lang, "limit": self.limit})
+            res = self.mcp.call_tool("search_properties", {"query": request, "lang": self.data_lang, "limit": self.limit})
             header = "[searched with search_properties (free text)]\n"
         if not res["is_error"]:
             self.has_results = True
@@ -442,7 +458,7 @@ class Agent:
         yield {"type": "action", "text": label}
         # The detected language of this turn, always: the model copies an earlier
         # turn's lang from history (an English question got a Dutch contact reply).
-        args["lang"] = self.lang
+        args["lang"] = self.data_lang
         res = self.mcp.call_tool(name, args)
         if res["is_error"]:
             # Said plainly, or the model explains the failure itself ("probably too few
@@ -629,6 +645,56 @@ class Agent:
 
     # ---- turn --------------------------------------------------------------
     def turn(self, text: str) -> Iterator[dict]:
+        """One user message in any language. The six run natively; any other is
+        translated to English, run, and the answer translated back (agent/pivot.py)."""
+        key = _chip_key(text)
+        if key in self._chips and not pivot.native(self.user_lang):
+            # A translated button: run its English original, no translation call.
+            yield from self._pivoted(self._chips[key], time.monotonic(), [])
+            return
+        pre: list[tuple[str, float]] = []
+        found = None
+        if langmod.needs_check(text):
+            t0 = time.monotonic()
+            found = pivot.identify(self.cli, text)
+            pre.append(("identify language", round(time.monotonic() - t0, 2)))
+        if found and not pivot.native(found[0]):
+            self.user_lang, self.user_lang_name, english = found
+            self.stats["pivot_turns"] = self.stats.get("pivot_turns", 0) + 1
+            yield from self._pivoted(english, time.monotonic() - pre[0][1], pre)
+            return
+        if not found and not pivot.native(self.user_lang) and not langmod.detect(text, default=""):
+            # "#2?", "Kraków": nothing says the language changed, so the conversation stays in it.
+            yield from self._pivoted(text, time.monotonic(), pre)
+            return
+        lang = found[0] if found else langmod.detect(text, default=self.lang)
+        self.user_lang, self.user_lang_name, self.data_lang = lang, LANG_NAMES[lang], lang
+        for ev in self._turn(text, lang):
+            if ev.get("type") == "answer" and pre:
+                ev["timings"] = pre + ev["timings"]
+            yield ev
+
+    def _pivoted(self, english: str, t0: float, pre: list[tuple[str, float]]) -> Iterator[dict]:
+        self.data_lang = self.user_lang if self.user_lang in pivot.CUBI_I18N else "en"
+        for ev in self._turn(english, "en"):
+            if ev.get("type") != "answer":
+                yield ev
+                continue
+            t1 = time.monotonic()
+            out = pivot.back(self.cli, self.user_lang_name, ev["text"], ev["suggestions"], self.user_lang)
+            timings = [*pre, *ev["timings"], ("translate back", round(time.monotonic() - t1, 2))]
+            if out:
+                ev["text"], chips = out
+                self._chips.update({_chip_key(c): s for c, s in zip(chips, ev["suggestions"])})
+                ev["suggestions"] = chips
+            else:
+                ev["text"] += "\n\n" + pivot.NOTE
+                self.stats["pivot_failures"] = self.stats.get("pivot_failures", 0) + 1
+            ev.update(lang=self.user_lang, via="en", timings=timings, latency_s=round(time.monotonic() - t0, 2),
+                      stats=dict(self.stats))
+            yield ev
+
+    def _turn(self, text: str, lang: str) -> Iterator[dict]:
         t0 = time.monotonic()
         self.timings = []
         self.cards = []
@@ -640,7 +706,7 @@ class Agent:
         self.x_url = None
         self.x_posts = []
         calls0 = len(self.mcp.calls)
-        self.lang = langmod.detect(text, default=self.lang)
+        self.lang = lang
         skill = self.skills[skillsmod.select(text, self.has_results, self.last_skill)]
         self.last_skill = skill.name
         tools = self._tools_for(skill)

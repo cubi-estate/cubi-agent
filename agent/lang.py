@@ -56,3 +56,57 @@ def detect(text: str, default: str = "en") -> str:
     leaders = [lang for lang in LANGS if scores[lang] == top]
     # A tie keeps the conversation's language (short follow-ups share words).
     return default if default in leaders else leaders[0]
+
+
+# ---- languages beyond the six ------------------------------------------------
+# Any other language is read through English (agent/pivot.py): the model names it
+# and translates, the turn runs in English, the answer is translated back. That
+# costs a model call, so it is asked only when the text gives a reason: a letter
+# none of the six languages uses (Cyrillic, Greek, ł, å, ő, ş …), or words from
+# another language scoring at least as high as the best of the six. Italian and
+# Polish share words with Spanish and Portuguese ("con", "piscina", "do"), so their
+# lists include the shared ones on purpose; another language must then score higher
+# than the best of the six (a tie on "a", "e" is the Portuguese button text).
+_SIX_LETTERS = set("abcdefghijklmnopqrstuvwxyzàáâãäçèéêëìíîïñòóôõöœùúûüýÿßĳ")
+_OTHER_WORDS = {
+    "it": "il lo gli della delle degli dello del nel nella nei con per una un a e di da in al alla sono vorrei "
+          "cerco cerchiamo affitto affittare vendita comprare camere camera letto appartamento appartamenti villetta "
+          "casa case giardino terrazzo terrazza piscina mare vicino zona al mese fino massimo bilocale trilocale "
+          "mostrami secondo seconda primo prima quanto costa solo",
+    "pl": "mieszkanie mieszkania dom domy pokoje pokoj sprzedaz wynajem w z do na i za tys szukam chce blisko "
+          "morza ogrod balkon basen miesiac kupic wynajac pokaz drugie pierwsze",
+    "sv": "lagenhet hus till salu hyra rum med och i nara havet soker jag bostad villa tomt per manad visa",
+    "da": "lejlighed hus til salg leje vaerelser med og i naer havet soger jeg bolig have pr maned vis",
+    "no": "leilighet hus til salgs leie soverom med og i naer sjoen soker jeg bolig hage per maned vis",
+    "cs": "byt dum prodej pronajem pokoje se s v u blizko hledam koupit mesic zahrada",
+    "ro": "apartament casa vanzare inchiriere camere cu si in langa caut cumpar gradina luna",
+    "hu": "lakas haz elado kiado szobas szoba es keresek kert honap",
+    "tr": "daire ev satilik kiralik oda ile ve yakin ariyorum bahce havuz ay",
+    "fi": "asunto talo myytavana vuokra huone ja lahella etsin piha kuukausi",
+}
+_OTHER_VOCAB = {lang: set(words.split()) for lang, words in _OTHER_WORDS.items()}
+
+
+def _word_hits(tokens: list[str], vocab: set[str]) -> int:
+    return sum(1 for t in tokens if t in vocab)
+
+
+def needs_check(text: str) -> bool:
+    """True when the text may be in a language outside the six (see above)."""
+    low = text.lower()
+    if any(c.isalpha() and c not in _SIX_LETTERS for c in low):
+        return True
+    tokens = re.findall(r"[a-zà-ÿĳ]+", low)
+    # Folded, so "lägenhet" meets "lagenhet"; but not a folded single letter, or
+    # French "à" would count as Italian "a".
+    plain = [f for t in tokens
+             if (f := unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode()) == t or len(f) > 1]
+    six = max(_word_hits(tokens, _VOCAB[lang]) for lang in LANGS)
+    other = max(_word_hits(plain, v) for v in _OTHER_VOCAB.values())
+    # Two words at least: one stray letter ("#2's" → "s", Czech "with") is not a language.
+    return other >= 2 and other > six
+
+
+def has_words(text: str) -> bool:
+    """Any word at all (not just numbers, #2, prices or a lone place name)."""
+    return len(re.findall(r"[^\W\d_]{2,}", text)) >= 2
