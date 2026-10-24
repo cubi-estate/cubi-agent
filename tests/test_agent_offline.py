@@ -457,3 +457,9 @@ def test_daily_quota_reply_is_not_retried(monkeypatch):
                         {"content": [{"type": "text", "text": "Daily free-tier quota reached for this client."}]})
     monkeypatch.setattr(mcp_client.time, "sleep", lambda s: None)
     assert cli.call_tool("search_properties", {"query": "q"})["is_error"] and len(calls) == 1
+
+
+def test_non_euro_prices_reach_the_card():
+    out = {}
+    listings._facts_line("Apartment | 1 ba | 31 m2 living | 1 999 PLN/mo", out)
+    assert out["price_text"] == "1 999 PLN/mo" and out["price"] == 1999.0 and out["living_area"] == 31.0

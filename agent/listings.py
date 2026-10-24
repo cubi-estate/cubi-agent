@@ -50,7 +50,9 @@ def _facts_line(line: str, out: dict) -> None:
             out["plot_area"] = _number(p)
         elif "m2" in low:
             out["living_area"] = _number(p)
-        elif re.search(r"\b(eur|usd|gbp|chf)\b", low) or "price on request" in low:
+        # Cubi prices in the listing's own currency: złoty, koruna, forint, leu,
+        # lev and Nordic krona too (Polish rents showed "—" on the cards).
+        elif re.search(r"\b(eur|usd|gbp|chf|pln|czk|huf|ron|bgn|sek|dkk|nok)\b", low) or "price on request" in low:
             out["price"] = _number(p)
             out["price_text"] = p
 
