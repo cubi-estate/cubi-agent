@@ -64,7 +64,7 @@ def test_options_tags_are_ones_the_page_knows():
         assert x.get("needs") in lands | {None}, x["id"]
         assert set(x.get("types", [])) <= types and set(x.get("climate", [])) <= climates, x["id"]
         assert set(x.get("top", [])) <= tops and x.get("deal") in {None, "sale", "rent"}, x["id"]
-        assert ("phrase" in x) or ("pre" in x), x["id"]
+        assert ("phrase" in x) or ("pre" in x) or (x.get("feature") in {f["id"] for f in opt["features"]}), x["id"]
 
 
 def test_every_option_has_its_image():

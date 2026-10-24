@@ -84,7 +84,7 @@
      "prompt": "A row of elegant three-storey townhouses sharing side walls on a quiet street."}
   ],
   "settings": [
-    {"id": "coast", "label": "By the sea", "phrase": "by the sea", "needs": "coast", "blurb": "Coast, beaches and harbour towns",
+    {"id": "coast", "label": "By the sea", "feature": "sea", "needs": "coast", "blurb": "Searched as homes with a sea view",
      "prompt": "A row of houses just behind a sandy beach with a calm sea, a coastal path in front."},
     {"id": "city", "label": "In a city", "phrase": "in a city", "blurb": "Shops, transport and cafés on foot",
      "prompt": "A lively but tidy European city street of apartment buildings with cafés on the ground floor and trees."},

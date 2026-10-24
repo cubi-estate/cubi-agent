@@ -93,15 +93,20 @@
 
   function query() {
     const t = opt.types.find(x => x.id === pick.type);
-    const chosen = features().filter(f => pick.features.includes(f.id));
+    const setting = opt.settings.find(x => x.id === pick.setting && fits(x));
+    // "By the sea" searches as a sea view: every coastal wording ("by the sea", "near the
+    // beach", "on the coast") cut Greek 1-bed flats from 648 to 0-1 on Cubi, a sea view
+    // to 89 (live 2026-10-24). Picked together, it counts once.
+    const viaFeature = setting && setting.feature ? opt.features.find(f => f.id === setting.feature) : null;
+    const chosen = features().filter(f => pick.features.includes(f.id) && f !== viaFeature);
+    if (viaFeature) chosen.unshift(viaFeature);
     const pre = chosen.filter(f => f.pre).map(f => f.pre);
     let noun = t ? t.plural : "Homes";
     if (pick.beds === 0) noun = "Studio apartments";
     else if (pick.beds && pick.beds < 4) noun = `${pick.beds}-bedroom ${noun.toLowerCase()}`;
     if (pre.length) noun = pre.join(" ") + " " + noun.charAt(0).toLowerCase() + noun.slice(1);
     noun = noun.charAt(0).toUpperCase() + noun.slice(1);
-    const setting = opt.settings.find(x => x.id === pick.setting && fits(x));
-    let q = `${noun} ${pick.deal === "rent" ? "to rent" : "for sale"}${setting ? " " + setting.phrase : ""} in ${THE.has(pick.country) ? "the " : ""}${pick.country}`;
+    let q = `${noun} ${pick.deal === "rent" ? "to rent" : "for sale"}${setting && setting.phrase ? " " + setting.phrase : ""} in ${THE.has(pick.country) ? "the " : ""}${pick.country}`;
     const feats = chosen.filter(f => f.phrase).map(f => f.phrase);
     if (pick.beds >= 4) feats.unshift("4 or more bedrooms");
     if (feats.length) q += " with " + feats.join(", ").replace(/, ([^,]*)$/, " and $1");
