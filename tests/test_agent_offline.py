@@ -549,3 +549,51 @@ def test_refining_a_country_wide_search_keeps_the_search(tmp_path):
                  "ideally with a sea view. Only ones with 3 bedrooms")
     # Naming the place again is a search of its own: sent as typed.
     assert agent_._free_query("Villas for sale in Spain", before, before) == "Villas for sale in Spain"
+
+
+def _card(n, typ, price):
+    p = "Price on request" if price is None else f"{price} EUR"
+    return f"**{n}. {typ} in Lisboa**\n   Location: Lisboa, Portugal\n   {typ} | 1 bd | {p}\n   ID: x:{n}\n"
+
+
+class _Listing:
+    def __init__(self, text):
+        self.text, self.calls = text, []
+
+    def call_tool(self, name, args):
+        self.calls.append((name, args))
+        return {"is_error": False, "text": self.text}
+
+
+def test_untyped_rentals_leave_out_rooms_and_unpriced_homes(tmp_path):
+    """Live 2026-10-25: every card of "rent in Lisbon under €600" was a room in a shared
+    flat, and the whole homes behind them were "€10 a month" placeholders."""
+    from agent import listings
+    text = "Showing 5 properties.\n\n" + "".join([_card(1, "Private room", 450), _card(2, "Room Rental", 500),
+                                                  _card(3, "Apartment", 10), _card(4, "Studio", 580),
+                                                  _card(5, "Apartment", None)])
+    base = dict(min_price=None, max_bedrooms=None, min_living_area=None, has_parking=None, lang="en",
+                needs_free_text_search=False, min_bedrooms=None, features=[])
+    agent_ = Agent(mcp=_Listing(text), cli=_ScriptedLLM([], "{}"))
+    agent_.filter = SearchFilter(location=["Lisbon"], type=[], transaction_type="rent", max_price=600, **base)
+    res = agent_._screened("filter_listings", {"limit": 6})
+    cards = listings.parse(res["text"])
+    assert [(c["n"], c["type"]) for c in cards] == [(1, "Studio")]
+    assert res["text"].startswith("Showing 1 property")
+    assert agent_.left_out == {"rooms": 2, "unpriced": 2}
+    assert agent_.mcp.calls[0][1]["limit"] == 30  # fetched extra to fill the page
+    assert "2 room(s) in shared homes" in agent_._left_out_note()
+    assert agent_._suggestions("find-homes", "")[:2] == ["Include rooms in shared homes",
+                                                         "Also show homes with no price"]
+    # Asked for rooms, or for a type: rooms stay; no budget: unpriced homes stay.
+    agent_.rooms, agent_.left_out = True, {}
+    agent_.filter = agent_.filter.model_copy(update={"max_price": None})
+    assert len(listings.parse(agent_._screened("filter_listings", {"limit": 6})["text"])) == 5
+
+
+def test_room_and_no_price_wishes():
+    from agent.loop import NO_PRICE_WISH, ROOM_WISH
+    assert ROOM_WISH.search("rent a room in Porto") and ROOM_WISH.search("quarto para alugar em Lisboa")
+    assert not ROOM_WISH.search("T2 com 2 quartos em Lisboa") and not ROOM_WISH.search("3 rooms apartment")
+    assert NO_PRICE_WISH.search("also show homes with no price")
+    assert skills.select("Afficher aussi les biens non chiffrés", True) == "find-homes"  # "afficher" ⊃ "cher"

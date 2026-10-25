@@ -53,6 +53,28 @@ NO_SUCH_CARD = {
     "nl": "Er is geen kaart #{n} — op het scherm staan {on}. Welke bedoelt u?",
 }
 
+# A rental search that names no type listed rooms in shared flats first: every card
+# of "rent in Lisbon under €600" was a room (live 2026-10-25). Whole homes unless the
+# user asks for rooms; a budget leaves out homes whose price can't be checked
+# against it ("Price on request", and the "€10 a month" placeholders behind them).
+ROOM_CARD = re.compile(r"\b(rooms?|bed|beds|quarto|habitaci[oó]n|chambre|zimmer|kamer|stanza)\b", re.I)
+ROOM_WISH = re.compile(r"(?<![\d.])(?<!\d )\brooms?\b|flat ?share|house ?share|shared (flat|apartment|house)|"
+                       r"\bquartos? (para (alugar|arrendar)|em (casas?|apartamentos?) partilhad)|habitaci[oó]n(es)? (en|para)|"
+                       r"colocation|\bWGs?\b|"
+                       r"\bkamers? (in|te)\b|\bstanza (in|singola|doppia)\b", re.I)
+NO_PRICE_WISH = re.compile(r"no (published )?price|price on request|without (a )?price|unpriced|sem pre[cç]o|"
+                           r"sin precio|sans prix|non chiffr|ohne preis|zonder prijs", re.I)
+MIN_PRICE = {"rent": 50, "sale": 1000}  # below this a listed price is a placeholder, not a price
+OVERFETCH = 30
+WIDER = {
+    "en": {"rooms": "Include rooms in shared homes", "unpriced": "Also show homes with no price"},
+    "pt": {"rooms": "Incluir quartos em casas partilhadas", "unpriced": "Mostrar também casas sem preço"},
+    "es": {"rooms": "Incluir habitaciones en pisos compartidos", "unpriced": "Mostrar también viviendas sin precio"},
+    "fr": {"rooms": "Inclure les chambres en colocation", "unpriced": "Afficher aussi les biens non chiffrés"},
+    "de": {"rooms": "Zimmer in WGs einbeziehen", "unpriced": "Auch Objekte ohne Preis zeigen"},
+    "nl": {"rooms": "Kamers in gedeelde woningen meenemen", "unpriced": "Toon ook woningen zonder prijs"},
+}
+
 # "Is #2 overpriced?" in a chat with no cards: a restart forgot the search (tester F19)
 # or the user never ran one. The model asked "which card number (like #2)?".
 NO_CARDS_YET = {
@@ -215,6 +237,9 @@ class Agent:
         self.data_lang = "en"  # the language asked of Cubi's connector
         self._chips: dict[str, str] = {}  # a translated button → its English original
         self.sale_only: list[str] = []
+        self.rooms = False  # the user asked for rooms in shared homes (ROOM_WISH)
+        self.unpriced = False  # the user asked to see homes with no price under a budget
+        self.left_out: dict[str, int] = {}  # this turn's search: cards screened out, by reason
         self.wish = ""  # the "ideally …" part of the last free-text search, kept for its refinements
         self.stats = {"llm_in": 0, "llm_out": 0, "fallback_searches": 0, "filter_searches": 0}
         self.timings: list[tuple[str, float]] = []  # this turn's stages, seconds
@@ -304,7 +329,7 @@ class Agent:
 
     def _filter_call(self, args: dict) -> Generator[dict, None, tuple[dict, str]]:
         """filter_listings, relaxed once without features when nothing matches."""
-        res = self.mcp.call_tool("filter_listings", args)
+        res = self._screened("filter_listings", args)
         header = f"[searched with filter_listings {json.dumps(args, ensure_ascii=False)}]\n"
         if not res["is_error"] and not listings.parse(res["text"]) and args.get("features"):
             # Features are hard filters on the connector, and tagging is uneven (a
@@ -313,13 +338,56 @@ class Agent:
             dropped = args.pop("features")
             self.stats["relaxed_searches"] = self.stats.get("relaxed_searches", 0) + 1
             yield {"type": "action", "text": "No exact matches — searching again without: " + ", ".join(dropped)}
-            res = self.mcp.call_tool("filter_listings", args)
+            res = self._screened("filter_listings", args)
             header = (f"[no exact matches; searched again without the features {dropped} — say so to the "
                       f"user, these homes are not confirmed to have them] "
                       f"[filter_listings {json.dumps(args, ensure_ascii=False)}]\n")
-        if not res["is_error"] and not listings.parse(res["text"]):
+        if not res["is_error"] and not listings.parse(res["text"]) and not res.get("screened"):
             header += self._why_none(args)
         return res, header
+
+    def _screening(self) -> dict[str, bool]:
+        f = self.filter
+        return {"rooms": bool(f and f.transaction_type == "rent" and not f.type and not self.rooms),
+                "unpriced": bool(f and f.max_price and not self.unpriced)}
+
+    def _screened(self, tool: str, args: dict) -> dict:
+        """The search, without rooms in shared homes when the user didn't ask for them
+        and without unpriced homes under a budget. Fetches extra so the page still fills;
+        what was left out is counted in self.left_out for the header and the buttons."""
+        on = self._screening()
+        if not any(on.values()):
+            return self.mcp.call_tool(tool, args)
+        want = args.get("limit") or self.limit
+        res = self.mcp.call_tool(tool, {**args, "limit": max(want, OVERFETCH if tool == "filter_listings" else 10)})
+        if res["is_error"]:
+            return res
+        floor = MIN_PRICE[self.filter.transaction_type]
+
+        def reason(c: dict) -> str | None:
+            if on["rooms"] and ROOM_CARD.search(c.get("type") or ""):
+                return "rooms"
+            if on["unpriced"] and not (c.get("price") or 0) >= floor:
+                return "unpriced"
+            return None
+
+        text, dropped = listings.keep(res["text"], lambda c: reason(c) is None, want)
+        for c in dropped:
+            self.left_out[reason(c)] = self.left_out.get(reason(c), 0) + 1
+        return {**res, "text": text, "screened": bool(dropped)}
+
+    def _left_out_note(self) -> str:
+        if not self.left_out:
+            return ""
+        bits = []
+        if self.left_out.get("rooms"):
+            bits.append(f"{self.left_out['rooms']} room(s) in shared homes (the user asked for homes, not rooms)")
+        if self.left_out.get("unpriced"):
+            bits.append(f"{self.left_out['unpriced']} home(s) with no published price, which can't be checked "
+                        f"against the budget")
+        return ("[left out of these results: " + "; ".join(bits) + ". Say so in one short sentence; the buttons "
+                "under the answer offer them. If no cards are left, say there are no whole homes with a price "
+                "in budget among the results]\n")
 
     def _any(self, args: dict) -> bool:
         res = self.mcp.call_tool("filter_listings", {**args, "limit": 1})
@@ -386,6 +454,15 @@ class Agent:
             ex = extractmod.Extraction(f, extractmod.route_for(f), "button", 0.0, 0, {})
         else:
             ex = extractmod.extract(request, current=self.filter, cli=self.cli)
+        self.left_out = {}
+        if ROOM_WISH.search(request):
+            self.rooms = True
+        elif ex.filter is None or ex.filter.transaction_type != "rent" or ex.filter.type:
+            self.rooms = False
+        if NO_PRICE_WISH.search(request):
+            self.unpriced = True
+        elif ex.filter is None or not ex.filter.max_price:
+            self.unpriced = False
         self.timings.append((f"extract ({ex.model.split('/')[-1]}, {ex.attempts} attempt(s))", ex.latency_s))
         self.stats["llm_in"] += ex.usage.get("in", 0)
         self.stats["llm_out"] += ex.usage.get("out", 0)
@@ -420,7 +497,7 @@ class Agent:
                                              "something like 'near the beach') — using Cubi's free-text search "
                                              "(runs Cubi's own server-side language model)"}
             query = self._free_query(request, ex.filter, before)
-            res = self.mcp.call_tool("search_properties", {"query": query, "lang": self.data_lang, "limit": self.limit})
+            res = self._screened("search_properties", {"query": query, "lang": self.data_lang, "limit": self.limit})
             header = "[searched with search_properties (free text)]\n"
         if not res["is_error"]:
             self.has_results = True
@@ -429,7 +506,7 @@ class Agent:
                 self.shown = self.cards
                 self.focus = None  # a new result set: "it" no longer means the old home
                 self.seen_refs |= {c["id"].lower() for c in self.cards if c.get("id")}
-        yield header + res["text"]
+        yield header + self._left_out_note() + res["text"]
 
     def _free_query(self, request: str, f: SearchFilter | None, before: SearchFilter | None) -> str:
         """What Cubi's free-text search gets. A refinement of a country-wide search
@@ -974,6 +1051,9 @@ class Agent:
         cap = ((self.inventory or {}).get("args") or {}).get("max_price") if skill == "compare-budget" else None
         if skill == "find-homes" and self.sale_only:
             return [suggest.for_sale(self.lang, p) for p in self.sale_only[:suggest.MAX]]
-        return suggest.next_questions(skill, self.lang, places=places,
-                                      max_price=self.filter.max_price if self.filter else None,
-                                      shown=self.shown, focus_n=focus, budget_cap=cap, done=self.done)
+        wider = [WIDER.get(self.lang, WIDER["en"])[k] for k in ("rooms", "unpriced")
+                 if skill == "find-homes" and self.left_out.get(k)]
+        return (wider + suggest.next_questions(skill, self.lang, places=places,
+                                               max_price=self.filter.max_price if self.filter else None,
+                                               shown=self.shown, focus_n=focus, budget_cap=cap,
+                                               done=self.done))[:suggest.MAX]

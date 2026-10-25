@@ -140,3 +140,27 @@ def render_cards(head: str, cards: list[dict]) -> str:
             parts.append("   Tags: " + ", ".join(c["tags"][:5]))
         parts.append("")
     return "\n".join(parts).rstrip() + "\n"
+
+
+def keep(text: str, wanted, limit: int) -> tuple[str, list[dict]]:
+    """The same reply with only the cards `wanted(card)` accepts, at most `limit`,
+    renumbered; also returns the cards left out. Titles and descriptions are kept."""
+    head, blocks = [], []
+    for raw in text.splitlines():
+        if _HEAD.match(raw.strip()):
+            blocks.append([raw])
+        elif blocks:
+            blocks[-1].append(raw)
+        else:
+            head.append(raw)
+    kept, dropped = [], []
+    for block in blocks:
+        card = parse("\n".join(block))[0]
+        (kept if wanted(card) and len(kept) < limit else dropped).append((block, card))
+    dropped = [c for _, c in dropped if not wanted(c)]
+    out = "\n".join(head)
+    out = re.sub(r"Showing \d+ propert(y|ies)", f"Showing {len(kept)} propert{'y' if len(kept) == 1 else 'ies'}", out)
+    for n, (block, _) in enumerate(kept, 1):
+        block = [_HEAD.sub(lambda m: f"**{n}. {m.group(2)}**", block[0].strip(), count=1)] + block[1:]
+        out += "\n" + "\n".join(block)
+    return out.rstrip() + "\n", dropped
