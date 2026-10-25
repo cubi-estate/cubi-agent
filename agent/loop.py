@@ -23,6 +23,7 @@ import os
 import re
 import time
 from typing import Generator, Iterator
+from urllib.parse import unquote
 
 import httpx
 
@@ -230,6 +231,21 @@ class Agent:
         on = "#1" if len(self.shown) == 1 else f"#1–#{len(self.shown)}"
         return NO_SUCH_CARD.get(self.lang, NO_SUCH_CARD["en"]).format(n=n, on=on)
 
+    def _named(self, ref: str) -> bool:
+        """Does the user's message point at this listing — its id or link, or a place
+        only that card on screen has? With several cards and none named, the model
+        picked one itself ("Is it overpriced?" priced the dearest of six)."""
+        if ref.lower() in unquote(self._message).lower():
+            return True
+        msg = f" {suggest.norm(self._message)} "
+        card = next((c for c in self.shown if c.get("id") == ref), None)
+        if card is None:
+            return False
+        others = {suggest.norm(p) for c in self.shown if c is not card
+                  for p in listings.places(c.get("location", ""))}
+        return any(f" {p} " in msg for p in map(suggest.norm, listings.places(card.get("location", "")))
+                   if len(p) >= 3 and p not in others)
+
     def _resolve_listing(self, given: str) -> tuple[str | None, str]:
         """The listing a price/contact/detail call is about: the card the user named wins,
         then an id already shown, then the only card on screen. Returns (id, how)."""
@@ -237,7 +253,7 @@ class Agent:
         if n and 1 <= n <= len(self.shown) and self.shown[n - 1].get("id"):
             return self.shown[n - 1]["id"], f"card #{n}"
         ref = listing_ref(given) if given else ""
-        if ref and ref.lower() in self.seen_refs:
+        if ref and ref.lower() in self.seen_refs and (len(self.shown) < 2 or self._named(ref)):
             return ref, "id from an earlier result"
         if self.focus:
             return self.focus, "the home discussed last"
@@ -465,8 +481,8 @@ class Agent:
             ref, how = self._resolve_listing(str(args.get("listing_id") or ""))
             if ref is None:
                 yield {"type": "action", "text": f"{label}: which home? (no card number or known id)"}
-                yield ("error: the listing id is not one shown in this conversation. Ask the user which card "
-                       "number they mean; do not guess an id.")
+                yield ("error: the user has not said which home they mean. Reply with one short question asking "
+                       "which card number; do not mention ids, tools or this message, and do not guess a home.")
                 return
             args["listing_id"] = ref
             self.focus = ref

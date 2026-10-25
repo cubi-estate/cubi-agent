@@ -334,8 +334,14 @@ def test_follow_up_resolves_card_number(tmp_path):
     agent_.seen_refs = {"test_pt:1", "test_pt:2"}
     agent_._message = "is the second one overpriced?"
     assert agent_._resolve_listing("test_pt:1") == ("test_pt:2", "card #2")  # the user's card wins
-    agent_._message = "is it overpriced?"
+    agent_._message = "is it overpriced?"  # two cards, none named: ask, don't let the model pick (F15)
+    assert agent_._resolve_listing("https://cubi.estate/r/test_pt%3A1") == (None, "unknown")
+    agent_._message = "is the Bonfim one overpriced?"
+    assert agent_._resolve_listing("test_pt:1")[0] == "test_pt:1"
+    agent_._message = "and https://cubi.estate/r/test_pt%3A1 ?"
     assert agent_._resolve_listing("https://cubi.estate/r/test_pt%3A1")[0] == "test_pt:1"
+    agent_._message = "is the Porto one overpriced?"  # both cards are in Porto
+    assert agent_._resolve_listing("test_pt:1") == (None, "unknown")
     assert agent_._resolve_listing("made_up:9") == (None, "unknown")
     agent_.focus = "test_pt:2"
     assert agent_._resolve_listing("made_up:9") == ("test_pt:2", "the home discussed last")
