@@ -145,7 +145,8 @@
   function brief() {
     const facts = [], prefs = [], open = [], skipped = [];
     if (pick.country) facts.push(pick.country); else open.push("country");
-    facts.push(deal() === "rent" ? "to rent" : "for sale");
+    if (pick.goal) facts.push(deal() === "rent" ? "to rent" : "for sale");
+    else open.push("buy or rent (for sale until you pick a goal)");  // the default is an assumption, not a filter
     const t = types().map(typeOf).filter(Boolean);
     const beds = hasLand() ? null : pick.beds;
     if (beds === 0) facts.push("studio apartments");  // a studio is an apartment: the type isn't open
