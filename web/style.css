@@ -201,7 +201,7 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   .bubble.user { max-width: 92%; }
 }
 
-/* Home wizard (wizard.js): six quick picks that build a search message. */
+/* Home wizard (wizard.js): five quick picks that build a search message and a brief. */
 .wizard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin: 0 0 18px; }
 .wz-head { display: flex; align-items: center; gap: 12px; min-height: 30px; }
 .wz-back { background: none; border: 0; color: var(--accent); font: inherit; font-size: 14px; padding: 4px 0; cursor: pointer; }
@@ -227,11 +227,18 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 }
 .wz-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .wz-check {
-  position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center;
-  background: var(--panel); border: 2px solid var(--line); font-size: 14px; color: var(--accent); font-weight: 700;
+  position: absolute; top: 8px; right: 8px; min-width: 24px; height: 24px; padding: 0 5px; border-radius: 6px; display: grid; place-items: center;
+  background: var(--panel); border: 2px solid var(--line); font-size: 13px; color: var(--accent); font-weight: 700; white-space: nowrap;
 }
-.wz-tile.on .wz-check { border-color: var(--accent); }
+.wz-check.on { border-color: var(--accent); }
+.wz-hint { margin: -8px 0 10px; font-size: 13px; color: var(--muted); }
+.wz-regions { margin: 0 0 10px; }
 .wz-budget { display: grid; gap: 10px; }
+.wz-brief { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 13.5px; line-height: 1.45; }
+.wz-brief strong { display: block; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+.wz-brief p { margin: 2px 0; }
+.wz-brief b { color: var(--ink); }
+.wz-brief i { color: var(--muted); font-style: normal; }
 .wz-label { margin: 4px 0 -2px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .wz-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; width: fit-content; }
 .wz-seg button, .wz-chips button {

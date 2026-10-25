@@ -36,9 +36,10 @@ def save(png: bytes, out: Path) -> None:
 def items(opt: dict) -> list[tuple[str, str]]:
     out = [(r["id"], r["prompt"]) for r in opt["regions"]]
     out += [(c["id"], c["prompt"]) for c in opt["countries"].values()]
+    out += [(x["id"], x["prompt"]) for x in opt["environments"]]
     out += [(t["id"], t["prompt"]) for t in opt["types"]]
-    out += [(x["id"], x["prompt"]) for x in opt["settings"]]
-    out += [(f["id"], f["prompt"]) for f in opt["features"]]
+    out += [(g["id"], g["prompt"]) for g in opt["goals"]]
+    out += [(f["id"], f["prompt"]) for f in opt["priorities"]]
     return out
 
 

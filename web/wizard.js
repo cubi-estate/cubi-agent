@@ -1,17 +1,28 @@
-// Home wizard: six quick picks (region → country → type → setting → bedrooms and
-// budget → must-haves) that build a plain search message and send it to the agent like a typed one (ask() in
-// app.js). Every step can continue or search now. Options and image prompts are in
-// /static/wizard/options.json (the images come from scripts/make_wizard_images.py);
-// listing counts come from /api/wizard (Cubi's corpus, cached on the server).
+// Home wizard: five quick picks (feel → country → type → goal and budget → priorities)
+// that build a plain search message and a living brief, then send the message to the
+// agent like a typed one (ask() in app.js). Every step can continue or search now.
+// Options and image prompts are in /static/wizard/options.json (the images come from
+// scripts/make_wizard_images.py); listing counts come from /api/wizard (Cubi's corpus,
+// cached on the server).
+//
+// Hard and soft: country, deal, types (OR), bedrooms, budget and must-haves are written
+// as filters; the feel of a place and "nice to have" priorities go after "ideally", which
+// Cubi's search ranks on without excluding anything (live 2026-10-25: "ideally with a sea
+// view" kept all 8,432 Greek 1-bed flats; "near the coast" in any form cut them to 11).
+// At most three wishes go in: from the fourth Cubi started applying one as a filter
+// ("ideally with a sea view, furnished and close to public transport" cut 538 Spanish
+// fixer-uppers to 14; any two of them kept 538).
 (() => {
   const root = document.getElementById("wizard");
   if (!root) return;
-  const STEPS = ["Region", "Country", "Type", "Setting", "Size and budget", "Must-haves"];
+  const STEPS = ["Feel", "Country", "Type", "Goal and budget", "Priorities"];
   const THE = new Set(["Netherlands", "United Kingdom", "Czech Republic"]);  // "in the Netherlands"
-  const MAX_FEATURES = 8;  // amenities shown; condition tiles (renovated, to renovate) come on top
+  const MAX_PRIORITIES = 8;  // shown at once; condition tiles (renovated, to renovate) come on top
+  const MAX_SOFT = 3;  // wishes written after "ideally"; see the note above
   const NEW_MIN = 100;  // "new this week" shown from this many; fewer says more about scraping than the market
   let opt = null, stats = { countries: {} };
-  const pick = { region: null, country: null, type: null, setting: null, beds: null, deal: "sale", budget: null, features: [] };
+  // budget: a number, "flexible" (no cap, by choice), "unsure" (no cap, still open) or null.
+  const pick = { envs: [], region: null, country: null, types: [], goal: null, beds: null, budget: null, nice: [], must: [] };
   let step = 0;
 
   const el = (tag, cls, text) => {
@@ -23,6 +34,9 @@
   const compact = n => n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, "") + "M"
     : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(n);
   const money = n => "€" + n.toLocaleString("en-GB");
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const list = a => a.join(", ").replace(/, ([^,]*)$/, " and $1");
+  const toggle = (arr, id) => arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id];
 
   function countryStats(names) {
     let homes = 0, fresh = 0, any = false;
@@ -35,7 +49,7 @@
     return `${compact(homes)} homes on Cubi` + (fresh >= NEW_MIN ? ` · ${compact(fresh)} new this week` : "");
   }
 
-  function tile({ id, label, blurb, stat, selected, onClick, multi }) {
+  function tile({ id, label, blurb, stat, selected, badge, onClick }) {
     const b = el("button", "wz-tile" + (selected ? " on" : ""));
     b.type = "button";
     b.setAttribute("aria-pressed", selected ? "true" : "false");
@@ -47,7 +61,7 @@
     img.src = `/static/wizard/${id}.jpg`;
     img.onerror = () => img.remove();  // the coloured tile stays
     ph.append(img);
-    if (multi) ph.append(el("span", "wz-check", selected ? "✓" : ""));
+    if (badge != null) ph.append(el("span", "wz-check" + (selected ? " on" : ""), selected ? badge : ""));
     b.append(ph, el("strong", null, label));
     if (blurb) b.append(el("span", "wz-blurb", blurb));
     if (stat) b.append(el("span", "wz-stat", stat));
@@ -56,62 +70,121 @@
   }
 
   const country = () => opt.countries[pick.country] || null;
-  // A setting or feature can need a landscape ("needs": coast, mountains, lakes) or
-  // a climate; with no country picked yet, nothing is ruled out.
+  const goal = () => opt.goals.find(g => g.id === pick.goal) || null;
+  const deal = () => (goal() || {}).deal || "sale";
+  // "Build" with no type picked means land; the brief says so ("assumed").
+  const typesInferred = () => !pick.types.length && !!(goal() || {}).types;
+  const types = () => pick.types.length ? pick.types : ((goal() || {}).types || []);
+  const hasLand = () => types().includes("land");
+  const studioOk = () => types().every(t => t === "apartment");
+  const typeOf = id => opt.types.find(t => t.id === id);
+  const bedsLabel = n => n === 0 ? "Studio" : n >= 4 ? "4+" : String(n);
+
+  // Does this environment or priority make sense for the country (landscape, climate),
+  // the property types (any of them) and the goal? Nothing picked rules nothing out.
   const fits = x => {
     const c = country();
     if (x.needs && c && !c.has.includes(x.needs)) return false;
     if (x.climate && (!c || !x.climate.includes(c.climate))) return false;
-    if (x.types && pick.type && !x.types.includes(pick.type)) return false;
-    if (x.deal && x.deal !== pick.deal) return false;
+    const t = types();
+    if (x.types && t.length && !t.some(id => x.types.includes(id))) return false;
+    if (x.goals && pick.goal && !x.goals.includes(pick.goal)) return false;
     return true;
   };
-  const settings = () => {
-    const list = opt.settings.filter(fits);
-    // An apartment search starts in a city, a house or villa search out of one.
-    const city = x => x.id === "city";
-    if (pick.type === "apartment") list.sort((a, b) => city(b) - city(a));
-    else if (pick.type) list.sort((a, b) => city(a) - city(b));
-    return list;
-  };
-  // Must-haves that make sense for this country, type, setting and deal, the most
-  // relevant first ("top" names a climate, landscape, setting, type or deal).
-  function features() {
-    // The landscape counts only once it is the chosen setting: Portugal has mountains,
-    // but a seaside villa there wants a sea view before a fireplace.
+  const envs = () => opt.environments.filter(e => pick.envs.includes(e.id));
+  // Countries that offer every landscape the picked feel needs come first.
+  const countryFits = name => envs().every(e => !e.needs || opt.countries[name].has.includes(e.needs));
+
+  // Priorities that make sense here, the most relevant first ("top" names a climate,
+  // an environment, a type, a goal or a deal; a goal or deal match outranks a landscape
+  // match, which outranks the climate, so "furnished" surfaces for renters and investors).
+  const CLIMATES = ["warm", "mild", "cold"];
+  const weight = t => opt.goals.some(g => g.id === t) || t === "sale" || t === "rent" ? 3 : CLIMATES.includes(t) ? 1 : 2;
+  function priorities() {
     const c = country() || {};
-    const ctx = new Set([c.climate, pick.setting, pick.type, pick.deal].filter(Boolean));
-    if (pick.setting === "lake") ctx.add("lakes");
-    const ranked = opt.features.filter(f => fits(f) && !f.group)
-      .map((f, i) => ({ f, score: i - ((f.top || []).some(t => ctx.has(t)) ? 100 : 0) }))
+    const ctx = new Set([c.climate, ...pick.envs, ...types(), pick.goal, deal()].filter(Boolean));
+    const ranked = opt.priorities.filter(f => fits(f) && !f.group)
+      .map((f, i) => ({ f, score: i - 100 * Math.max(0, ...(f.top || []).filter(t => ctx.has(t)).map(weight)) }))
       .sort((a, b) => a.score - b.score).map(x => x.f);
-    const shown = ranked.slice(0, MAX_FEATURES);
-    for (const f of ranked.slice(MAX_FEATURES)) if (pick.features.includes(f.id)) shown.push(f);
-    return [...shown, ...opt.features.filter(f => fits(f) && f.group)];
+    const shown = ranked.slice(0, MAX_PRIORITIES);
+    for (const f of ranked.slice(MAX_PRIORITIES)) if (pick.nice.includes(f.id) || pick.must.includes(f.id)) shown.push(f);
+    return [...shown, ...opt.priorities.filter(f => fits(f) && f.group)];
   }
-  const bedsLabel = n => n === 0 ? "Studio" : n >= 4 ? "4+" : String(n);
+  const chosen = which => opt.priorities.filter(f => fits(f) && pick[which].includes(f.id));
+  const stateOf = id => pick.must.includes(id) ? "must" : pick.nice.includes(id) ? "nice" : "";
+
+  // "with a pool", "with a garden", "in a quiet spot" → "with a pool and a garden, in a quiet spot"
+  function phrases(items) {
+    const withs = items.filter(p => p.startsWith("with ")).map(p => p.slice(5));
+    const rest = items.filter(p => !p.startsWith("with "));
+    const parts = (withs.length ? ["with " + list(withs)] : []).concat(rest);
+    return withs.length > 1 ? parts.join(", ") : list(parts);  // one "and" per sentence
+  }
 
   function query() {
-    const t = opt.types.find(x => x.id === pick.type);
-    const setting = opt.settings.find(x => x.id === pick.setting && fits(x));
-    // "By the sea" searches as a sea view: every coastal wording ("by the sea", "near the
-    // beach", "on the coast") cut Greek 1-bed flats from 648 to 0-1 on Cubi, a sea view
-    // to 89 (live 2026-10-24). Picked together, it counts once.
-    const viaFeature = setting && setting.feature ? opt.features.find(f => f.id === setting.feature) : null;
-    const chosen = features().filter(f => pick.features.includes(f.id) && f !== viaFeature);
-    if (viaFeature) chosen.unshift(viaFeature);
-    const pre = chosen.filter(f => f.pre).map(f => f.pre);
-    let noun = t ? t.plural : "Homes";
-    if (pick.beds === 0) noun = "Studio apartments";
-    else if (pick.beds && pick.beds < 4) noun = `${pick.beds}-bedroom ${noun.toLowerCase()}`;
-    if (pre.length) noun = pre.join(" ") + " " + noun.charAt(0).toLowerCase() + noun.slice(1);
-    noun = noun.charAt(0).toUpperCase() + noun.slice(1);
-    let q = `${noun} ${pick.deal === "rent" ? "to rent" : "for sale"}${setting && setting.phrase ? " " + setting.phrase : ""} in ${THE.has(pick.country) ? "the " : ""}${pick.country}`;
-    const feats = chosen.filter(f => f.phrase).map(f => f.phrase);
-    if (pick.beds >= 4) feats.unshift("4 or more bedrooms");
-    if (feats.length) q += " with " + feats.join(", ").replace(/, ([^,]*)$/, " and $1");
-    if (pick.budget) q += ` up to ${money(pick.budget)}${pick.deal === "rent" ? " a month" : ""}`;
+    const t = types().map(typeOf).filter(Boolean);
+    const must = chosen("must"), nice = chosen("nice");
+    const beds = hasLand() ? null : pick.beds;  // a plot has no bedrooms
+    let noun = t.length ? t.map(x => x.plural.toLowerCase()).join(" or ") : "homes";
+    if (beds === 0) noun = "studio apartments";
+    else if (beds && beds < 4) noun = `${beds}-bedroom ${noun}`;
+    const pre = must.filter(f => f.pre).map(f => f.pre);
+    if (pre.length) noun = pre.join(" ") + " " + noun;
+    let q = `${cap(noun)} ${deal() === "rent" ? "to rent" : "for sale"} in ${THE.has(pick.country) ? "the " : ""}${pick.country}`;
+    if (goal() && goal().phrase) q += " " + goal().phrase;
+    const hard = must.filter(f => f.phrase).map(f => f.phrase);
+    if (beds >= 4) hard.unshift("with 4 or more bedrooms");
+    if (hard.length) q += " " + phrases(hard);
+    if (typeof pick.budget === "number") q += ` up to ${money(pick.budget)}${deal() === "rent" ? " a month" : ""}`;
+    const soft = [...envs().filter(fits).map(e => e.soft), ...nice.map(f => f.phrase || f.pre)].slice(0, MAX_SOFT);
+    if (soft.length) q += ", ideally " + phrases(soft);
     return q;
+  }
+
+  // The living brief: what will filter, what will only rank, what is still open.
+  function brief() {
+    const facts = [], prefs = [], open = [], skipped = [];
+    if (pick.country) facts.push(pick.country); else open.push("country");
+    facts.push(deal() === "rent" ? "to rent" : "for sale");
+    const t = types().map(typeOf).filter(Boolean);
+    const beds = hasLand() ? null : pick.beds;
+    if (beds === 0) facts.push("studio apartments");  // a studio is an apartment: the type isn't open
+    else if (t.length) facts.push(t.map(x => x.plural.toLowerCase()).join(" or ") + (typesInferred() ? " (assumed from Build)" : ""));
+    else open.push("property type");
+    if (!hasLand() && beds !== 0) {
+      if (beds != null) facts.push(beds >= 4 ? "4 or more bedrooms" : `${beds} bedroom${beds > 1 ? "s" : ""}`);
+      else open.push("bedrooms");
+    }
+    if (typeof pick.budget === "number") facts.push(`up to ${money(pick.budget)}${deal() === "rent" ? " a month" : ""}`);
+    else if (pick.budget === "flexible") facts.push("any budget");
+    else open.push("budget");
+    const must = chosen("must");
+    if (must.length) facts.push("must have: " + list(must.map(f => f.label.toLowerCase())));
+    for (const e of opt.environments.filter(e => pick.envs.includes(e.id))) {
+      if (fits(e)) prefs.push(e.id === "coast" ? "by the sea (ranked by sea view)" : e.label.toLowerCase());
+      else skipped.push(`${e.label.toLowerCase()} — ${pick.country} has no ${e.needs}`);
+    }
+    prefs.push(...chosen("nice").map(f => f.label.toLowerCase()));
+    const later = prefs.splice(MAX_SOFT);  // the search takes three; the chat takes the rest
+    if (later.length) open.push("also wanted, ask in the chat: " + list(later));
+    if (pick.goal === "invest") prefs.push("an investment — Cubi has asking prices, no yields");
+    if (pick.goal === "build") prefs.push("to build on — buildability isn't verified by Cubi");
+    open.push("town or city (narrow it in the chat)");
+    const box = el("div", "wz-brief");
+    box.append(el("strong", null, "Cubi Agent understands"));
+    const row = (name, items, note) => {
+      if (!items.length) return;
+      const p = el("p");
+      p.append(el("b", null, name), " ");
+      if (note) p.append(el("i", null, note + " "));
+      p.append(list(items));
+      box.append(p);
+    };
+    row("Filters:", facts);
+    row("Preferences:", prefs, "(rank the homes, never exclude)");
+    row("Skipped:", skipped);
+    row("Still open:", open);
+    return box;
   }
 
   function render() {
@@ -131,92 +204,113 @@
     root.append(head, el("p", "wz-step", `${step + 1} of ${STEPS.length} · ${STEPS[step]}`));
 
     const grid = el("div", "wz-grid");
-    let title = "", canContinue = true;
+    let title = "", hint = "", canContinue = true;
     if (step === 0) {
-      title = "Where in Europe?";
-      canContinue = !!pick.region;
-      for (const r of opt.regions) grid.append(tile({
-        id: r.id, label: r.label, blurb: r.blurb, stat: countryStats(r.countries), selected: pick.region === r.id,
-        onClick: () => { if (pick.region !== r.id) pick.country = null; pick.region = r.id; render(); },
+      title = "Where would you love to wake up?";
+      hint = "Pick the feeling, one or more. These rank the homes; a town or city can come later.";
+      for (const e of opt.environments) grid.append(tile({
+        id: e.id, label: e.label, blurb: e.blurb, badge: "✓", selected: pick.envs.includes(e.id),
+        onClick: () => { pick.envs = toggle(pick.envs, e.id); render(); },
       }));
     } else if (step === 1) {
       title = "Which country?";
       canContinue = !!pick.country;
+      const chips = el("div", "wz-chips wz-regions");
+      for (const r of [{ id: null, label: "All" }, ...opt.regions]) {
+        const b = el("button", pick.region === r.id ? "on" : "", r.label);
+        b.type = "button";
+        b.addEventListener("click", () => { pick.region = r.id; render(); });
+        chips.append(b);
+      }
+      root.append(el("h3", "wz-title", title), chips);
+      title = "";
       const region = opt.regions.find(r => r.id === pick.region);
-      const names = [...region.countries].sort((a, b) => (stats.countries[b]?.homes || 0) - (stats.countries[a]?.homes || 0));
+      const names = (region ? region.countries : Object.keys(opt.countries))
+        .sort((a, b) => countryFits(b) - countryFits(a) || (stats.countries[b]?.homes || 0) - (stats.countries[a]?.homes || 0));
       for (const n of names) {
         const c = opt.countries[n];
+        const miss = envs().filter(e => e.needs && !c.has.includes(e.needs)).map(e => e.label.toLowerCase());
         grid.append(tile({
-          id: c.id, label: n, blurb: c.blurb, stat: countryStats([n]), selected: pick.country === n,
-          onClick: () => { if (pick.country !== n) pick.features = []; pick.country = n; render(); },
+          id: c.id, label: n, blurb: miss.length ? `Not ${list(miss)}` : c.blurb, stat: countryStats([n]), selected: pick.country === n,
+          onClick: () => { if (pick.country !== n) { pick.nice = []; pick.must = []; } pick.country = n; render(); },
         }));
       }
     } else if (step === 2) {
-      title = "What kind of home?";
+      title = "What kind of space do you imagine?";
+      hint = "More than one is fine: the search takes any of them.";
       for (const t of opt.types) grid.append(tile({
-        id: t.id, label: t.label, blurb: t.blurb, selected: pick.type === t.id,
+        id: t.id, label: t.label, blurb: t.blurb, badge: "✓", selected: pick.types.includes(t.id),
         onClick: () => {
-          pick.type = pick.type === t.id ? null : t.id;
-          if (pick.beds === 0 && pick.type && pick.type !== "apartment") pick.beds = null;
+          pick.types = toggle(pick.types, t.id);
+          if (pick.beds === 0 && !studioOk()) pick.beds = null;
           render();
         },
       }));
     } else if (step === 3) {
-      title = "What kind of place?";
-      for (const x of settings()) grid.append(tile({
-        id: x.id, label: x.label, blurb: x.blurb, selected: pick.setting === x.id,
-        onClick: () => { pick.setting = pick.setting === x.id ? null : x.id; render(); },
-      }));
-    } else if (step === 4) {
-      title = "How many bedrooms, and up to how much?";
+      title = "What are you planning, and what budget feels comfortable?";
       grid.className = "wz-budget";
-      const beds = el("div", "wz-chips");
-      beds.setAttribute("aria-label", "Bedrooms");
-      for (const n of opt.bedrooms) {
-        if (n === 0 && pick.type && pick.type !== "apartment") continue;
-        const b = el("button", pick.beds === n ? "on" : "", bedsLabel(n));
-        b.type = "button";
-        b.addEventListener("click", () => { pick.beds = pick.beds === n ? null : n; render(); });
-        beds.append(b);
-      }
-      const deal = el("div", "wz-seg");
-      for (const [k, label] of [["sale", "Buy"], ["rent", "Rent"]]) {
-        const b = el("button", pick.deal === k ? "on" : "", label);
-        b.type = "button";
-        b.addEventListener("click", () => { if (pick.deal !== k) pick.budget = null; pick.deal = k; render(); });
-        deal.append(b);
-      }
-      const chips = el("div", "wz-chips");
-      for (const v of [...opt.budgets[pick.deal], null]) {
-        const label = v == null ? "Any budget" : `Up to ${money(v)}${pick.deal === "rent" ? " / month" : ""}`;
-        const b = el("button", pick.budget === v ? "on" : "", label);
-        b.type = "button";
-        b.addEventListener("click", () => { pick.budget = v; render(); });
-        chips.append(b);
-      }
-      grid.append(el("p", "wz-label", "Bedrooms"), beds, el("p", "wz-label", "Budget"), deal, chips);
-    } else {
-      title = "Anything you can't do without?";
-      for (const f of features()) grid.append(tile({
-        id: f.id, label: f.label, blurb: f.blurb, multi: true, selected: pick.features.includes(f.id),
+      const goals = el("div", "wz-grid");
+      for (const g of opt.goals) goals.append(tile({
+        id: g.id, label: g.label, blurb: g.blurb, selected: pick.goal === g.id,
         onClick: () => {
-          const on = pick.features.includes(f.id);
-          // One condition at most: renovated or to renovate.
-          const rest = pick.features.filter(x => x !== f.id &&
-            !(f.group && opt.features.find(o => o.id === x)?.group === f.group));
-          pick.features = on ? rest : [...rest, f.id];
+          const before = deal();
+          pick.goal = pick.goal === g.id ? null : g.id;
+          if (deal() !== before && typeof pick.budget === "number") pick.budget = null;  // € a month is not a price
           render();
         },
       }));
+      grid.append(el("p", "wz-label", "Goal"), goals);
+      if (!hasLand()) {
+        const beds = el("div", "wz-chips");
+        beds.setAttribute("aria-label", "Bedrooms");
+        for (const n of opt.bedrooms) {
+          if (n === 0 && !studioOk()) continue;
+          const b = el("button", pick.beds === n ? "on" : "", bedsLabel(n));
+          b.type = "button";
+          b.addEventListener("click", () => { pick.beds = pick.beds === n ? null : n; render(); });
+          beds.append(b);
+        }
+        grid.append(el("p", "wz-label", "Bedrooms (optional)"), beds);
+      }
+      const chips = el("div", "wz-chips");
+      const rent = deal() === "rent";
+      for (const v of [...opt.budgets[deal()], "flexible", "unsure"]) {
+        const label = v === "flexible" ? "Flexible" : v === "unsure" ? "Not sure yet" : `Up to ${money(v)}${rent ? " / month" : ""}`;
+        const b = el("button", pick.budget === v ? "on" : "", label);
+        b.type = "button";
+        b.addEventListener("click", () => { pick.budget = pick.budget === v ? null : v; render(); });
+        chips.append(b);
+      }
+      grid.append(el("p", "wz-label", rent ? "Monthly budget" : "Purchase budget"), chips);
+    } else {
+      title = "What matters most to you?";
+      hint = "Tap once for nice to have (ranks the homes), twice for a must-have (filters them).";
+      for (const f of priorities()) {
+        const state = stateOf(f.id);
+        grid.append(tile({
+          id: f.id, label: f.label, badge: state === "must" ? "✓ Must" : "✓", selected: !!state,
+          blurb: state === "must" ? "Must-have · tap again to clear" : state === "nice" ? "Nice to have · tap again for must-have" : f.blurb,
+          onClick: () => {
+            // One condition at most: renovated or to renovate.
+            const other = x => x !== f.id && !(f.group && opt.priorities.find(o => o.id === x)?.group === f.group);
+            pick.nice = pick.nice.filter(other); pick.must = pick.must.filter(other);
+            if (state === "") pick.nice.push(f.id);
+            else if (state === "nice") pick.must.push(f.id);
+            render();
+          },
+        }));
+      }
     }
-    root.append(el("h3", "wz-title", title), grid);
+    if (title) root.append(el("h3", "wz-title", title));
+    if (hint) root.append(el("p", "wz-hint", hint));
+    root.append(grid);
 
     // A search needs a country: three at once timed out on Cubi's free-text search (live 2026-10-24).
-    const preview = pick.country ? query() : "";
-    if (preview) root.append(el("p", "wz-preview", `“${preview}”`));
+    if (step > 0 || pick.envs.length) root.append(brief());
+    if (pick.country) root.append(el("p", "wz-preview", `“${query()}”`));
     const actions = el("div", "wz-actions");
     if (step < STEPS.length - 1) {
-      const next = el("button", "wz-next", step >= 2 ? "Continue (or skip)" : "Continue");
+      const next = el("button", "wz-next", step === 1 ? "Continue" : "Continue (or skip)");
       next.type = "button";
       next.disabled = !canContinue;
       next.addEventListener("click", () => { step += 1; render(); });
@@ -228,7 +322,7 @@
     if (!pick.country) go.title = "Pick a country to search";
     go.addEventListener("click", () => ask(query()));
     actions.append(go);
-    root.append(actions, el("p", "wz-note", (step === 0 ? "Search opens once you pick a country. " : "") +
+    root.append(actions, el("p", "wz-note", (step < 2 ? "Search opens once you pick a country. " : "") +
       "Images are AI-generated inspiration, not listings."));
   }
 

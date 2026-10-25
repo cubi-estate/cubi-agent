@@ -49,28 +49,37 @@ def test_options_cover_every_region_country_once_and_ids_are_unique():
     in_regions = [c for r in opt["regions"] for c in r["countries"]]
     assert sorted(in_regions) == sorted(opt["countries"])
     ids = [r["id"] for r in opt["regions"]] + [c["id"] for c in opt["countries"].values()] + \
-          [t["id"] for t in opt["types"]] + [x["id"] for x in opt["settings"]] + [f["id"] for f in opt["features"]]
-    assert len(ids) == len(set(ids)) == 48
+          [x["id"] for x in opt["environments"]] + [t["id"] for t in opt["types"]] + [g["id"] for g in opt["goals"]] + \
+          [f["id"] for f in opt["priorities"]]
+    assert len(ids) == len(set(ids)) == 56
 
 
 def test_options_tags_are_ones_the_page_knows():
     opt = json.loads((ROOT / "web" / "wizard" / "options.json").read_text())
     types = {t["id"] for t in opt["types"]}
+    goals = {g["id"] for g in opt["goals"]}
     climates, lands = {"warm", "mild", "cold"}, {"coast", "mountains", "lakes"}
     for c in opt["countries"].values():
         assert c["climate"] in climates and set(c["has"]) <= lands
-    tops = climates | lands | types | {x["id"] for x in opt["settings"]} | {"sale", "rent"}
-    for x in opt["settings"] + opt["features"]:
+    for g in opt["goals"]:
+        assert g["deal"] in {"sale", "rent"} and set(g.get("types", [])) <= types
+    for x in opt["environments"]:
+        assert x.get("needs") in lands | {None} and x["soft"], x["id"]
+    tops = climates | lands | types | goals | {x["id"] for x in opt["environments"]} | {"sale", "rent"}
+    for x in opt["priorities"]:
         assert x.get("needs") in lands | {None}, x["id"]
         assert set(x.get("types", [])) <= types and set(x.get("climate", [])) <= climates, x["id"]
-        assert set(x.get("top", [])) <= tops and x.get("deal") in {None, "sale", "rent"}, x["id"]
-        assert ("phrase" in x) or ("pre" in x) or (x.get("feature") in {f["id"] for f in opt["features"]}), x["id"]
+        assert set(x.get("top", [])) <= tops and set(x.get("goals", [])) <= goals, x["id"]
+        # The page merges "with ..." phrases; a condition is an adjective before the noun.
+        assert ("phrase" in x) != ("pre" in x), x["id"]
+        assert "land" in x.get("types", ["land"]) or x["id"] not in ("sea", "mountainview", "plot", "quiet"), x["id"]
 
 
 def test_every_option_has_its_image():
     opt = json.loads((ROOT / "web" / "wizard" / "options.json").read_text())
     ids = [r["id"] for r in opt["regions"]] + [c["id"] for c in opt["countries"].values()] + \
-          [t["id"] for t in opt["types"]] + [x["id"] for x in opt["settings"]] + [f["id"] for f in opt["features"]]
+          [x["id"] for x in opt["environments"]] + [t["id"] for t in opt["types"]] + [g["id"] for g in opt["goals"]] + \
+          [f["id"] for f in opt["priorities"]]
     assert [i for i in ids if not (ROOT / "web" / "wizard" / f"{i}.jpg").exists()] == []
 
 
