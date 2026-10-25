@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 PropertyType = Literal[
     "apartment", "house", "villa", "townhouse", "penthouse", "studio", "land", "duplex", "farmhouse"
@@ -31,6 +31,22 @@ class SearchFilter(BaseModel):
     features: list[str] = Field(description="Structural features asked for, in English Title Case (e.g. 'Balcony', 'Pool', 'Sea View'). Empty if none.")
     lang: Literal["en", "pt", "es", "fr", "de", "nl"] = Field(description="Language the user wrote in.")
     needs_free_text_search: bool = Field(description="false whenever the user names a town or city and the rest fits the fields above (features like balcony or pool DO fit). true only if the request hinges on something no field can hold: a landscape region instead of a town ('Algarve', 'Tuscany'), proximity ('near the beach'), or a mood ('quiet', 'charming').")
+
+    @field_validator("location")
+    @classmethod
+    def _plain_places(cls, places: list[str]) -> list[str]:
+        # "/Lyon" and "/france/lauvergne-rhone-alpes/rhône/lyon/": the model sometimes
+        # writes a place as a site path, and Cubi then knows no such place (tester F17,
+        # the start page's Lyon button). A path's last part is the place.
+        out = []
+        for p in places:
+            last = [seg for seg in p.split("/") if seg.strip()]
+            name = last[-1].strip(" -_") if last else ""
+            if name and "/" in p and name.islower():
+                name = name[:1].upper() + name[1:]
+            if name and name not in out:
+                out.append(name)
+        return out
 
     def to_filter_args(self, limit: int = 8) -> dict:
         args: dict = {"lang": self.lang, "limit": limit, "transaction_type": self.transaction_type}

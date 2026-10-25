@@ -62,3 +62,18 @@ def test_in_band_error_detected():
     assert not _in_band_error("Showing 3 properties.")
     assert not _in_band_error('{"listings": []}')
     assert _in_band_error("Too many tool calls from this client in the last minute. Wait about a minute.")
+
+
+def test_a_place_written_as_a_site_path_is_the_place():
+    # Tester F17: the Lyon button's place came back "/Lyon" or a site path, and Cubi knew no such place.
+    from agent.schema import SearchFilter
+    base = dict(type=[], transaction_type="rent", min_price=None, max_price=None, min_bedrooms=None,
+                max_bedrooms=None, min_living_area=None, has_parking=None, features=[], lang="fr",
+                needs_free_text_search=False)
+    def loc(places):
+        return SearchFilter(location=places, **base).location
+    assert loc(["/Lyon"]) == ["Lyon"]
+    assert loc(["/france/lauvergne-rhone-alpes/rhône/lyon/"]) == ["Lyon"]
+    assert loc(["aix-en-provence/"]) == ["Aix-en-provence"]
+    assert loc(["Vila Nova de Gaia", "Porto"]) == ["Vila Nova de Gaia", "Porto"]
+    assert loc(["/"]) == []
