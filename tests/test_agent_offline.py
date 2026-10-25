@@ -463,3 +463,16 @@ def test_non_euro_prices_reach_the_card():
     out = {}
     listings._facts_line("Apartment | 1 ba | 31 m2 living | 1 999 PLN/mo", out)
     assert out["price_text"] == "1 999 PLN/mo" and out["price"] == 1999.0 and out["living_area"] == 31.0
+
+
+def test_card_number_not_on_screen_is_asked_in_code(tmp_path):
+    """Live (iteration 8): 'Is #9 overpriced?' with six cards leaked the model's notes."""
+    llm = _ScriptedLLM([], "{}")
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=llm)
+    agent_.shown = listings.parse(CARDS)
+    agent_.has_results = True
+    final = list(agent_.turn("Is #9 overpriced?"))[-1]
+    assert final["type"] == "answer"
+    assert final["text"] == "There is no card #9 — the homes on screen are #1–#2. Which one do you mean?"
+    assert not [c for c in llm.calls if not c.get("response_format")]  # no model call
+    assert agent_._no_such_card("Is #2 overpriced?") == ""

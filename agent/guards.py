@@ -305,7 +305,22 @@ def drop_all_have_claims(answer: str) -> tuple[str, int]:
     return _drop_sentences(answer, _ALL_WISH)
 
 
+_THINK_BLOCK = re.compile(r"(?s)<think>.*?(?:</think>|$)")
+
+
+def strip_reasoning(answer: str) -> tuple[str, int]:
+    """The model's notes must never reach the user. With thinking off it still
+    wrote them, ending in a bare "</think>" before the real answer (live, 'Is #9
+    overpriced?' with six cards)."""
+    out = _THINK_BLOCK.sub("", answer)
+    if "</think>" in out:
+        out = out.rsplit("</think>", 1)[1]
+    out = out.strip()
+    return out, int(out != answer.strip())
+
+
 def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple[str, dict]:
+    answer, reasoning = strip_reasoning(answer)
     answer = _STRAY_HASH.sub(r"\1", answer)
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
     answer, scrubbed = scrub_contacts(answer)
@@ -338,4 +353,4 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
     return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
                     "absence_wording_fixed": absence, "source_filler_dropped": filler,
-                    "all_have_claims_dropped": wishes}
+                    "all_have_claims_dropped": wishes, "reasoning_stripped": reasoning}

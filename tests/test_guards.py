@@ -19,3 +19,15 @@ def test_claims_that_every_home_has_a_wish_are_dropped():
 def test_bounds_and_counts_with_all_are_kept():
     for a in ("All are below your budget of €700,000.", "All six are in Porto.", "The pool at #2 is heated."):
         assert guards.drop_all_have_claims(a) == (a, 0)
+
+
+def test_model_reasoning_never_reaches_the_user():
+    # Live (iteration 8, bc5b4db): 'Is #9 overpriced?' with six cards on screen.
+    leaked = ("We don't have #9 listed. Need clarify. Probably nonexistent. Tell user we only have up to #6."
+              "</think>\n\nThere is no #9 here — which of #1–#6 do you mean?")
+    assert guards.strip_reasoning(leaked) == ("There is no #9 here — which of #1–#6 do you mean?", 1)
+    assert guards.strip_reasoning("<think>notes</think>Answer.") == ("Answer.", 1)
+    assert guards.strip_reasoning("<think>notes never closed") == ("", 1)
+    assert guards.strip_reasoning("Plain answer.") == ("Plain answer.", 0)
+    out, report = guards.apply("Notes.</think>Which card do you mean?", "", "en", set())
+    assert out == "Which card do you mean?" and report["reasoning_stripped"] == 1

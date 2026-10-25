@@ -43,6 +43,15 @@ HISTORY_TOOL_CAP = 1500
 LOOP_ROLE = os.environ.get("LOOP_ROLE", "super")
 LOOP_THINKING = os.environ.get("LOOP_THINKING", "off") == "on"
 
+NO_SUCH_CARD = {
+    "en": "There is no card #{n} — the homes on screen are {on}. Which one do you mean?",
+    "pt": "Não há nenhum cartão #{n} — as casas no ecrã são {on}. A qual se refere?",
+    "es": "No hay ninguna tarjeta #{n}: las viviendas en pantalla son {on}. ¿A cuál se refiere?",
+    "fr": "Il n'y a pas de carte n°{n} : les biens affichés sont {on}. Duquel parlez-vous ?",
+    "de": "Es gibt keine Karte #{n} – angezeigt werden {on}. Welche meinen Sie?",
+    "nl": "Er is geen kaart #{n} — op het scherm staan {on}. Welke bedoelt u?",
+}
+
 SEARCH_HOMES_TOOL = {
     "type": "function",
     "function": {
@@ -211,6 +220,15 @@ class Agent:
             rows.append(f"#{c['n']} {c.get('id', '?')} — {c.get('type', 'Home')}, {place}, {c.get('price_text', 'price n/a')}")
         return ("\n\nHomes on screen now (card number → listing id). When the user refers to a card, pass "
                 "its listing id; the app also resolves card numbers itself:\n" + "\n".join(rows))
+
+    def _no_such_card(self, text: str) -> str:
+        """The question for "Is #9 overpriced?" when only six cards are on screen.
+        Left to the model, this was where its reasoning leaked into the answer."""
+        n = ordinals.ordinal(text, len(self.shown))
+        if not self.shown or not n or n <= len(self.shown):
+            return ""
+        on = "#1" if len(self.shown) == 1 else f"#1–#{len(self.shown)}"
+        return NO_SUCH_CARD.get(self.lang, NO_SUCH_CARD["en"]).format(n=n, on=on)
 
     def _resolve_listing(self, given: str) -> tuple[str | None, str]:
         """The listing a price/contact/detail call is about: the card the user named wins,
@@ -748,10 +766,13 @@ class Agent:
                              "content": result[:TOOL_TEXT_CAP] + lang_note})
             turn_msgs.append({"role": "tool", "tool_call_id": call_id, "content": result[:HISTORY_TOOL_CAP]})
 
+        answer = self._no_such_card(text)
+        if answer:
+            pass  # "#9" with six cards on screen: asked in code, no tool or model call
         # A find-homes turn that doesn't point at a card on screen is a search: run it
         # in code. Saves a round trip, and the model can't answer "from memory" with no
         # cards — it did, when a search was repeated word for word.
-        if skill.name == "find-homes" and ordinals.ordinal(text, len(self.shown)) is None:
+        elif skill.name == "find-homes" and ordinals.ordinal(text, len(self.shown)) is None:
             call = {"id": "auto_search", "type": "function",
                     "function": {"name": "search_homes", "arguments": json.dumps({"request": text}, ensure_ascii=False)}}
             call_msg = {"role": "assistant", "content": "", "tool_calls": [call]}
@@ -790,8 +811,7 @@ class Agent:
             yield from run_call(inventory.TOOL, {"request": text}, "auto_budget")
             tools = []
 
-        answer = ""
-        for step in range(MAX_STEPS + 1):
+        for step in range(0 if answer else MAX_STEPS + 1):
             force_answer = step == MAX_STEPS
             t_llm = time.monotonic()
             r = self.cli.chat.completions.create(
