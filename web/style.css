@@ -85,6 +85,7 @@ main { flex: 1; width: 100%; max-width: 860px; margin: 0 auto; padding: 16px 16p
 .bubble.bot ul, .bubble.bot ol { margin: 0 0 8px; padding-left: 20px; }
 .bubble.bot h4 { margin: 10px 0 4px; font-size: 15px; }
 .bubble.error { background: var(--warn-soft); border: 1px solid transparent; color: var(--warn); margin-top: 10px; }
+.restart-note { margin: 10px 0 0; font-size: 13px; color: var(--warn); }
 
 .steps { margin-top: 8px; font-size: 13.5px; color: var(--muted); }
 .steps summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }

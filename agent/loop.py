@@ -53,6 +53,17 @@ NO_SUCH_CARD = {
     "nl": "Er is geen kaart #{n} — op het scherm staan {on}. Welke bedoelt u?",
 }
 
+# "Is #2 overpriced?" in a chat with no cards: a restart forgot the search (tester F19)
+# or the user never ran one. The model asked "which card number (like #2)?".
+NO_CARDS_YET = {
+    "en": "There are no homes on screen in this chat yet, so there is no card #{n}. Search first, then ask about a card.",
+    "pt": "Ainda não há casas no ecrã nesta conversa, por isso não existe o cartão #{n}. Pesquise primeiro e depois pergunte por um cartão.",
+    "es": "Todavía no hay viviendas en pantalla en este chat, así que no existe la tarjeta #{n}. Busque primero y luego pregunte por una tarjeta.",
+    "fr": "Aucun bien n'est encore affiché dans cette conversation, donc il n'y a pas de carte n°{n}. Lancez d'abord une recherche, puis posez votre question.",
+    "de": "In diesem Chat werden noch keine Objekte angezeigt, also gibt es keine Karte #{n}. Suchen Sie zuerst und fragen Sie dann nach einer Karte.",
+    "nl": "Er staan in deze chat nog geen woningen op het scherm, dus er is geen kaart #{n}. Zoek eerst en vraag dan naar een kaart.",
+}
+
 SEARCH_HOMES_TOOL = {
     "type": "function",
     "function": {
@@ -227,6 +238,8 @@ class Agent:
         """The question for "Is #9 overpriced?" when only six cards are on screen.
         Left to the model, this was where its reasoning leaked into the answer."""
         n = ordinals.ordinal(text, len(self.shown))
+        if n and not self.shown:
+            return NO_CARDS_YET.get(self.lang, NO_CARDS_YET["en"]).format(n=n)
         if not self.shown or not n or n <= len(self.shown):
             return ""
         on = "#1" if len(self.shown) == 1 else f"#1–#{len(self.shown)}"

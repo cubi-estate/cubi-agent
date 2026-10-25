@@ -501,6 +501,16 @@ def test_card_number_not_on_screen_is_asked_in_code(tmp_path):
     assert agent_._no_such_card("Is #2 overpriced?") == ""
 
 
+def test_card_number_in_an_empty_chat_says_search_first(tmp_path):
+    """After a restart forgot the search (tester F19), 'Is #2 overpriced?' got "which card (like #2)?"."""
+    llm = _ScriptedLLM([], "{}")
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=llm)
+    final = list(agent_.turn("Is #2 overpriced?"))[-1]
+    assert final["type"] == "answer" and final["text"].startswith("There are no homes on screen")
+    assert not [c for c in llm.calls if not c.get("response_format")]  # no model call
+    assert agent_._no_such_card("Apartments in Lisbon under 500k") == ""
+
+
 def test_price_question_on_a_named_card_compares_in_code(tmp_path):
     """Live (iteration 8): 'Is #1 a good deal? Just answer yes or no.' → 'No.' with no comparison."""
     import shutil

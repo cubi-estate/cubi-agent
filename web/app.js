@@ -321,6 +321,42 @@ function suggestions(box, list) {
 
 function scrollDown() { window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }
 
+// A redeploy takes the endpoint away for a few minutes (the public link answers 404
+// "No tunnel") and the restart forgets every chat (tester F6, F19). The page waits
+// for the agent to come back and sends the message then, instead of a dead end.
+const RESTART = {
+  en: { wait: "The demo is restarting — your message goes out as soon as it's back…",
+        lost: "The demo restarted, so earlier results in this chat are forgotten: search again before asking about a card." },
+  pt: { wait: "A demo está a reiniciar — a sua mensagem segue assim que voltar…",
+        lost: "A demo reiniciou e esqueceu os resultados anteriores desta conversa: pesquise de novo antes de perguntar por um cartão." },
+  es: { wait: "La demo se está reiniciando — tu mensaje se enviará en cuanto vuelva…",
+        lost: "La demo se reinició y olvidó los resultados anteriores de este chat: busca de nuevo antes de preguntar por una tarjeta." },
+  fr: { wait: "La démo redémarre — votre message partira dès son retour…",
+        lost: "La démo a redémarré et a oublié les résultats précédents : relancez une recherche avant de parler d'une carte." },
+  de: { wait: "Die Demo startet neu — Ihre Nachricht wird gesendet, sobald sie zurück ist…",
+        lost: "Die Demo wurde neu gestartet und hat frühere Ergebnisse vergessen: Suchen Sie erneut, bevor Sie nach einer Karte fragen." },
+  nl: { wait: "De demo start opnieuw op — uw bericht gaat zodra hij terug is…",
+        lost: "De demo is herstart en is eerdere resultaten vergeten: zoek opnieuw voordat u naar een kaart vraagt." },
+};
+const DOWN = new Set([404, 502, 503, 504]);
+const REACH_FOR_MS = 4 * 60 * 1000, POLL_MS = 5000;
+
+async function reach(send, label) {
+  const until = Date.now() + REACH_FOR_MS;
+  for (;;) {
+    let res = null;
+    try { res = await send(); } catch (e) { res = null; }
+    if (res && !DOWN.has(res.status)) return res;
+    if (Date.now() > until) { if (res) return res; throw new Error("unreachable"); }
+    label.textContent = (RESTART[document.documentElement.lang] || RESTART.en).wait;
+    for (;;) {   // wait for the health check, not for another failed turn
+      await new Promise(r => setTimeout(r, POLL_MS));
+      try { if ((await fetch("/api/health", { cache: "no-store" })).ok) break; } catch (e) { /* still down */ }
+      if (Date.now() > until) break;
+    }
+  }
+}
+
 async function ask(text) {
   if (busy || !text.trim()) return;
   busy = true; send.disabled = true;
@@ -340,11 +376,12 @@ async function ask(text) {
   const step = s => { const li = document.createElement("li"); li.textContent = s; stepList.appendChild(li); nSteps++; };
   const fail = msg => { bot.hidden = false; bot.className = "bubble error"; bot.textContent = msg; };
 
+  const had = sessionId;
   try {
-    const res = await fetch("/api/chat", {
+    const res = await reach(() => fetch("/api/chat", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text, session_id: sessionId }),
-    });
+    }), label);
     if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
     const reader = res.body.getReader(), dec = new TextDecoder();
     let buf = "";
@@ -357,7 +394,15 @@ async function ask(text) {
         const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
         if (!line) continue;
         const ev = JSON.parse(line);
-        if (ev.type === "session") sessionId = ev.id;
+        if (ev.type === "session") {
+          if (had && ev.id !== had) {   // the server no longer knows this chat: say so before "#2" means nothing
+            const note = document.createElement("p");
+            note.className = "restart-note";
+            note.textContent = (RESTART[document.documentElement.lang] || RESTART.en).lost;
+            bot.before(note);
+          }
+          sessionId = ev.id;
+        }
         else if (ev.type === "action") { step(ev.text); label.textContent = ev.text; }
         else if (ev.type === "error") fail(ev.text);
         else if (ev.type === "answer") {
