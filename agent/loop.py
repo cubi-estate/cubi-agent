@@ -527,7 +527,8 @@ class Agent:
             n = body.get("n_comps") or 0
             how_many = ("Do not call the comparison thin or the comparables few."
                         if n >= guards.AMPLE_COMPS else "You may say the comparison rests on few homes.")
-            return text + f"\n\n[{n} comparable homes] {how_many}"
+            return (text + f"\n\n[{n} comparable homes] {how_many} Give the range and where the asking price "
+                    f"sits in it, even if the user asked for yes or no or one word: never answer yes or no.")
         n_card = ordinals.ordinal(how, 99) if how.startswith("card") else None
         label = f"#{n_card}" if n_card else "this home"
         n, city = body.get("n_comps"), body.get("city") or "the same city"
@@ -809,6 +810,16 @@ class Agent:
             self._pair = (a["n"], b["n"])
             yield from run_call(similarmod.TOOL, args, "auto_pair")
             tools = []
+        elif skill.name == "check-asking-price" and self._resolve_listing("")[0]:
+            # The card is known, so the comparison runs in code: "Is #1 a good deal? Just
+            # answer yes or no." got a bare "No." with no comparison at all (tester F7).
+            call = {"id": "auto_price", "type": "function",
+                    "function": {"name": "compare_asking_prices", "arguments": "{}"}}
+            call_msg = {"role": "assistant", "content": "", "tool_calls": [call]}
+            messages.append(call_msg)
+            turn_msgs.append(call_msg)
+            yield from run_call("compare_asking_prices", {}, "auto_price")
+            tools = [t for t in tools if t["function"]["name"] != "compare_asking_prices"]
         elif skill.name == "home-news":
             call = {"id": "auto_news", "type": "function", "function": {"name": "home_news", "arguments": "{}"}}
             call_msg = {"role": "assistant", "content": "", "tool_calls": [call]}

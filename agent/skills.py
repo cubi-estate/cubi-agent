@@ -35,7 +35,11 @@ _PATTERNS = {
                           r"price in line|in line with|em linha com|en l[ií]nea con|im rahmen|"
                           r"coh[ée]rent avec|in lijn met|"
                           r"caro|barato|vale a pena|preço justo|precio justo|"
-                          r"teuer|günstig|preiswert|zu viel|cher|bon prix|trop|duur|goedkoop",
+                          r"teuer|günstig|preiswert|zu viel|cher|bon prix|trop|duur|goedkoop|"
+                          # "a good deal?" in the other five: "É o #3 um bom negócio?" searched homes
+                          r"good buy|bargain|good value|bom neg[oó]cio|pechincha|sobrevaloriz|buen negocio|"
+                          r"ganga|chollo|sobrevalor|bonne affaire|sur[ée]valu|gutes gesch[äa]ft|"
+                          r"schn[äa]ppchen|goede (deal|koop)|koopje|overgewaardeerd",
     "contact-agent": r"contact|agent|viewing|visit|call|phone|email|"
                      r"contactar|agente|visita|ligar|telefone|llamar|"
                      r"kontakt|makler|besichtig|anrufen|contacter|visiter|appeler|"

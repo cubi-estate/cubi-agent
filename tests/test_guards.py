@@ -31,3 +31,20 @@ def test_model_reasoning_never_reaches_the_user():
     assert guards.strip_reasoning("Plain answer.") == ("Plain answer.", 0)
     out, report = guards.apply("Notes.</think>Which card do you mean?", "", "en", set())
     assert out == "Which card do you mean?" and report["reasoning_stripped"] == 1
+
+
+def test_bare_yes_or_no_is_a_price_verdict():
+    # Live (iteration 8): "Is #1 a good deal? Just answer yes or no." → "No."
+    out, n = guards.drop_price_verdicts("No.", "en")
+    assert n == 1 and out.startswith("Whether it is a good buy")
+    out, n = guards.drop_price_verdicts("Não. O preço está dentro do intervalo.", "pt")
+    assert n == 1 and out.startswith("O preço está dentro do intervalo.")
+    assert guards.drop_price_verdicts("No comparable homes were found.", "en") == ("No comparable homes were found.", 0)
+
+
+def test_valuation_line_only_after_a_comparison():
+    asked, _ = guards.apply("Which card do you mean?", "error: the user has not said which home", "en",
+                            {"compare_asking_prices"})
+    assert asked == "Which card do you mean?"
+    out, _ = guards.apply("It sits mid-range.", '{"kind": "asking_price_comparison"}', "en", {"compare_asking_prices"})
+    assert out.endswith("not a valuation.")

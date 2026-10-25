@@ -1,7 +1,10 @@
 """Deterministic post-checks on the model's answer. No model is trusted with these."""
 from __future__ import annotations
 
+import json
 import re
+
+from .suggest import money
 
 URL_RE = re.compile(r"https?://[^\s<>\"'\])]+")
 EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
@@ -156,14 +159,58 @@ def _drop_sentences(answer: str, pattern: re.Pattern, keep_questions: bool = Fal
     return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip(), n
 
 
+# "Is #1 a good deal? Just answer yes or no." → "No." is a verdict without the word.
+_BARE_YES_NO = re.compile(r"^\W*(yes|no|sim|n[ãa]o|s[ií]|oui|non|ja|nein|nee)\W*$", re.I)
+
+
 def drop_price_verdicts(answer: str, lang: str) -> tuple[str, int]:
     out, n = _drop_sentences(answer, _VERDICT, keep_questions=True)
+    out, bare = _drop_sentences(out, _BARE_YES_NO)
+    n += bare
     if not n:
         return answer, 0
     low = out.lower()
     if any(w in low for w in _VALUATION_WORDS.get(lang, ()) + _VALUATION_WORDS["en"]):
         return out, n   # already points to a valuation: the note would say it twice (rehearsal 2026-10-22)
-    return out + "\n\n" + _VERDICT_NOTE.get(lang, _VERDICT_NOTE["en"]), n
+    return (out + "\n\n" + _VERDICT_NOTE.get(lang, _VERDICT_NOTE["en"])).strip(), n
+
+
+_BAND_LINE = {
+    "en": "Comparable homes in {city} ask {low}–{high} (middle half of {n}); this one asks {price}.",
+    "pt": "Casas comparáveis em {city} pedem {low}–{high} (metade central de {n}); esta pede {price}.",
+    "es": "Viviendas comparables en {city} piden {low}–{high} (la mitad central de {n}); esta pide {price}.",
+    "fr": "Des biens comparables à {city} demandent {low}–{high} (moitié centrale de {n}) ; celui-ci demande {price}.",
+    "de": "Vergleichbare Objekte in {city} verlangen {low}–{high} (mittlere Hälfte von {n}); dieses verlangt {price}.",
+    "nl": "Vergelijkbare woningen in {city} vragen {low}–{high} (middelste helft van {n}); deze vraagt {price}.",
+}
+
+
+def _comparison(tool_text: str) -> dict | None:
+    """The last asking-price comparison in this turn's tool output."""
+    i = tool_text.rfind('{"listing_id"')
+    while i >= 0:
+        try:
+            body = json.JSONDecoder().raw_decode(tool_text[i:])[0]
+        except json.JSONDecodeError:
+            body = None
+        if isinstance(body, dict) and body.get("kind") == "asking_price_comparison":
+            return body
+        i = tool_text.rfind('{"listing_id"', 0, i)
+    return None
+
+
+def ensure_band_stated(answer: str, tool_text: str, lang: str) -> tuple[str, int]:
+    """A price answer without a single figure lost the range (a one-word verdict was
+    dropped and nothing was left): state it from Cubi's numbers."""
+    body = _comparison(tool_text)
+    band = (body or {}).get("band") or {}
+    if re.search(r"\d", answer) or not band.get("low") or not band.get("high") or body.get("currency") != "EUR":
+        return answer, 0
+    line = _BAND_LINE.get(lang, _BAND_LINE["en"]).format(
+        city=body.get("city") or "the same city", n=body.get("n_comps") or "?",
+        low=money(band["low"], lang), high=money(band["high"], lang),
+        price=money(body["asking_price"], lang) if body.get("asking_price") else "?")
+    return (line + "\n\n" + answer).strip(), 1
 
 
 # Contact: nothing is sent until the user follows Cubi's link. A first-person claim
@@ -324,12 +371,14 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
     answer = _STRAY_HASH.sub(r"\1", answer)
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
     answer, scrubbed = scrub_contacts(answer)
-    verdicts = sent = 0
+    verdicts = sent = band_added = 0
     if "compare_asking_prices" in used_tools:
         answer, verdicts = drop_price_verdicts(answer, lang)
         answer, thin = drop_thin_hedge(answer, tool_text)
         verdicts += thin
-        answer = ensure_not_a_valuation(answer, lang)
+        answer, band_added = ensure_band_stated(answer, tool_text, lang)
+        if "asking_price_comparison" in tool_text:  # not under "which card do you mean?"
+            answer = ensure_not_a_valuation(answer, lang)
     if "get_contact_options" in used_tools:
         answer, sent = drop_sent_claims(answer, lang)
     wishes = 0
@@ -353,4 +402,5 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
     return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
                     "absence_wording_fixed": absence, "source_filler_dropped": filler,
-                    "all_have_claims_dropped": wishes, "reasoning_stripped": reasoning}
+                    "all_have_claims_dropped": wishes, "reasoning_stripped": reasoning,
+                    "band_stated": band_added}

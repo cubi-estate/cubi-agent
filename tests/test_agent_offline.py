@@ -65,6 +65,9 @@ def test_skill_selection():
     assert skills.select("is the first one overpriced?", has_results=False) == "find-homes"
     assert skills.select("Como posso contactar o agente?", has_results=True) == "contact-agent"
     assert skills.select("3-bed house in Faro", has_results=True) == "find-homes"
+    for q in ("É o #3 um bom negócio? Responda sim ou não.", "¿Es el #3 un buen negocio?",
+              "Le n°3 est-il une bonne affaire ?", "Ist #3 ein gutes Geschäft?", "Is #3 een goede deal?"):
+        assert skills.select(q, has_results=True) == "check-asking-price", q
 
 
 def test_skills_load_from_vendored_pack():
@@ -482,3 +485,23 @@ def test_card_number_not_on_screen_is_asked_in_code(tmp_path):
     assert final["text"] == "There is no card #9 — the homes on screen are #1–#2. Which one do you mean?"
     assert not [c for c in llm.calls if not c.get("response_format")]  # no model call
     assert agent_._no_such_card("Is #2 overpriced?") == ""
+
+
+def test_price_question_on_a_named_card_compares_in_code(tmp_path):
+    """Live (iteration 8): 'Is #1 a good deal? Just answer yes or no.' → 'No.' with no comparison."""
+    import shutil
+    shutil.copy(ROOT / "fixtures" / "mcp" / "compare_asking_prices_e2b8bad0d74a.json", tmp_path)
+    llm = _ScriptedLLM([SimpleNamespace(content="No.", tool_calls=None)], "{}")
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=llm)
+    agent_.shown = [{"n": 1, "id": "iad_pt:151312", "location": "Porto"}]
+    agent_.seen_refs = {"iad_pt:151312"}
+    agent_.has_results = True
+    final = list(agent_.turn("Is #1 a good deal? Just answer yes or no."))[-1]
+    assert final["skill"] == "check-asking-price"
+    assert not final["text"].startswith("No") and final["guards"]["verdicts_dropped"] == 1
+    assert "independent valuation" in final["text"]
+    assert "€360,000–€380,000 (middle half of 16); this one asks €365,000" in final["text"]  # stated in code
+    assert final["guards"]["band_stated"] == 1
+    loop_call = [c for c in llm.calls if not c.get("response_format")][0]
+    assert "360000" in loop_call["messages"][-1]["content"]  # the model saw the comparison
+    assert "never answer yes or no" in loop_call["messages"][-1]["content"]
