@@ -71,6 +71,15 @@ def test_no_band_gives_a_ready_sentence():
     assert "may say the comparison rests on few" in Agent._no_band_brief(few, "card #1")
 
 
+def test_an_unfinished_comparison_is_not_called_no_comparables():
+    """Tester F18: a slow check said 'Cubi has no comparable homes'; Cubi had 19."""
+    body = {"listing_id": "x:1", "band": None, "reason": "search_incomplete", "city": "Lisboa"}
+    out = Agent._no_band_brief(json.dumps(body), "card #2")
+    assert "could not be done right now" in out and "There is no range" not in out
+    uncounted = Agent._no_band_brief(json.dumps({**body, "reason": "not_enough_comparable_listings"}), "card #2")
+    assert "does not have enough comparable homes in Lisboa" in uncounted and "has no comparable" not in uncounted
+
+
 def test_thin_hedge_dropped_only_when_comparables_are_ample():
     from agent import guards
     ans = ("The asking price lies within the range, based on 19 comparable homes. Given the modest number of "

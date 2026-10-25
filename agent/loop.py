@@ -532,13 +532,20 @@ class Agent:
         n_card = ordinals.ordinal(how, 99) if how.startswith("card") else None
         label = f"#{n_card}" if n_card else "this home"
         n, city = body.get("n_comps"), body.get("city") or "the same city"
+        if body.get("reason") == "search_incomplete":
+            # Cubi's comparables search did not finish. Tester F18: a slow check was
+            # told as "Cubi has no comparable homes"; a minute later it had 19.
+            return (text + f"\n\n[no result for {label}] Cubi's comparison did not finish this time. Say "
+                    f"that the price check for {label} could not be done right now and offer to try again. "
+                    f"Say nothing about comparable homes, how many there are, or the price.")
         if body.get("reason") == "comparables_disagree" and n:
             why = (f"the {n} comparable homes Cubi has in {city} vary too much in asking price "
                    f"to give a fair range")
         elif n:
             why = f"Cubi has only {n} comparable {'home' if n == 1 else 'homes'} in {city}, too few for a range"
         else:
-            why = f"Cubi has no comparable homes in {city} with an asking price"
+            # No count: Cubi said "not enough", not "none".
+            why = f"Cubi does not have enough comparable homes in {city} with an asking price for a range"
         return (text + f"\n\n[no range for {label}] Say this, in the user's language, and nothing more about "
                 f"the price: \"There is no range of asking prices to compare {label} with: {why}. That says "
                 f"nothing about whether its price is high or low.\" Then one short line that this compares "
