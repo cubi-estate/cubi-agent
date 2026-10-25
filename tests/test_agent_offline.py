@@ -529,3 +529,23 @@ def test_price_question_on_a_named_card_compares_in_code(tmp_path):
     loop_call = [c for c in llm.calls if not c.get("response_format")][0]
     assert "360000" in loop_call["messages"][-1]["content"]  # the model saw the comparison
     assert "never answer yes or no" in loop_call["messages"][-1]["content"]
+
+
+def test_refining_a_country_wide_search_keeps_the_search(tmp_path):
+    """Live (F4 follow-ups): "Only ones with 3 bedrooms" after a wizard search of Spain went
+    to Cubi alone, and Cubi asked where."""
+    from agent.schema import SearchFilter
+    base = dict(min_price=None, max_bedrooms=None, min_living_area=None, has_parking=None, lang="en",
+                needs_free_text_search=True, transaction_type="sale")
+    before = SearchFilter(location=["Spain"], type=["apartment"], max_price=400000, min_bedrooms=None,
+                          features=["Pool"], **base)
+    after = before.model_copy(update={"min_bedrooms": 3})
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=_ScriptedLLM([], "{}"))
+    first = agent_._free_query("Apartments for sale in Spain with a pool up to €400,000, ideally with a sea view",
+                               before, None)
+    assert first.startswith("Apartments for sale in Spain") and agent_.wish == "ideally with a sea view"
+    q = agent_._free_query("Only ones with 3 bedrooms", after, before)
+    assert q == ("Apartments for sale in Spain with at least 3 bedrooms and pool up to €400,000, "
+                 "ideally with a sea view. Only ones with 3 bedrooms")
+    # Naming the place again is a search of its own: sent as typed.
+    assert agent_._free_query("Villas for sale in Spain", before, before) == "Villas for sale in Spain"

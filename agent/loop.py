@@ -28,7 +28,7 @@ from urllib.parse import unquote
 import httpx
 
 from . import extract as extractmod
-from . import guards, inventory, lang as langmod, listings, llm, ordinals, pivot, similar as similarmod, steps, skills as skillsmod, suggest, tavily_tool, x_tool
+from . import guards, inventory, lang as langmod, listings, llm, normalize, ordinals, pivot, similar as similarmod, steps, skills as skillsmod, suggest, tavily_tool, x_tool
 from .fixtures import connect, listing_ref
 from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
@@ -159,6 +159,32 @@ def _describe(f: SearchFilter, lang: str = "en") -> str:
     return " · ".join(bits)
 
 
+def _sentence(f: SearchFilter) -> str:
+    """The filter as one plain English search, for Cubi's free-text search."""
+    nouns = [t + ("es" if t.endswith("ch") else "s") for t in f.type] or ["homes"]
+    noun = " or ".join(nouns)
+    if f.min_bedrooms and f.max_bedrooms in (None, f.min_bedrooms) and f.min_bedrooms < 4 and f.max_bedrooms:
+        noun = f"{f.min_bedrooms}-bedroom {noun}"
+    q = f"{noun[:1].upper()}{noun[1:]} {'to rent' if f.transaction_type == 'rent' else 'for sale'}"
+    if f.location:
+        q += " in " + ", ".join(f.location)
+    withs = [x.lower() for x in f.features] + (["parking"] if f.has_parking else [])
+    if f.min_bedrooms and not noun[0].isdigit():
+        withs.insert(0, f"at least {f.min_bedrooms} bedrooms")
+    if withs:
+        q += " with " + (", ".join(withs[:-1]) + " and " + withs[-1] if len(withs) > 1 else withs[0])
+    if f.min_living_area:
+        q += f", at least {f.min_living_area:,.0f} m²"
+    month = " a month" if f.transaction_type == "rent" else ""
+    if f.min_price and f.max_price:
+        q += f", €{f.min_price:,.0f} to €{f.max_price:,.0f}{month}"
+    elif f.max_price:
+        q += f" up to €{f.max_price:,.0f}{month}"
+    elif f.min_price:
+        q += f" from €{f.min_price:,.0f}{month}"
+    return q
+
+
 def _long_date(iso: str | None) -> str:
     """'2026-05-02' -> '2 May 2026': one unambiguous form for the model to copy."""
     import datetime as _dt
@@ -189,6 +215,7 @@ class Agent:
         self.data_lang = "en"  # the language asked of Cubi's connector
         self._chips: dict[str, str] = {}  # a translated button → its English original
         self.sale_only: list[str] = []
+        self.wish = ""  # the "ideally …" part of the last free-text search, kept for its refinements
         self.stats = {"llm_in": 0, "llm_out": 0, "fallback_searches": 0, "filter_searches": 0}
         self.timings: list[tuple[str, float]] = []  # this turn's stages, seconds
         self.cards: list[dict] = []  # listings from this turn's last search, shown as cards
@@ -385,13 +412,15 @@ class Agent:
                 res = self.mcp.call_tool("search_properties", {"query": request, "lang": self.data_lang, "limit": self.limit})
                 header = "[filter_listings failed; searched with search_properties (free text)]\n"
         else:
+            before = self.filter
             if ex.filter is not None:
                 self.filter = ex.filter
             self.stats["fallback_searches"] += 1
             yield {"type": "action", "text": "Request needs free-text search (no place, a whole country, or "
                                              "something like 'near the beach') — using Cubi's free-text search "
                                              "(runs Cubi's own server-side language model)"}
-            res = self.mcp.call_tool("search_properties", {"query": request, "lang": self.data_lang, "limit": self.limit})
+            query = self._free_query(request, ex.filter, before)
+            res = self.mcp.call_tool("search_properties", {"query": query, "lang": self.data_lang, "limit": self.limit})
             header = "[searched with search_properties (free text)]\n"
         if not res["is_error"]:
             self.has_results = True
@@ -401,6 +430,21 @@ class Agent:
                 self.focus = None  # a new result set: "it" no longer means the old home
                 self.seen_refs |= {c["id"].lower() for c in self.cards if c.get("id")}
         yield header + res["text"]
+
+    def _free_query(self, request: str, f: SearchFilter | None, before: SearchFilter | None) -> str:
+        """What Cubi's free-text search gets. A refinement of a country-wide search
+        ("Only ones with 3 bedrooms", "With a garden") went on its own and Cubi asked
+        where (tester F4 follow-ups, live 2026-10-25): it is rebuilt from the merged
+        filter, the earlier wishes and the user's own words."""
+        soft = re.search(normalize.SOFT, request, re.I)
+        names_place = f is not None and any(suggest.norm(p) in suggest.norm(request) for p in f.location)
+        if before is None or f is None or not f.location or names_place:
+            self.wish = request[soft.start():].strip(" ,.") if soft else ""
+            return request
+        if soft:
+            self.wish = request[soft.start():].strip(" ,.")
+        query = _sentence(f) + (f", {self.wish}" if self.wish else "")
+        return f"{query}. {request.strip()}"
 
     def _compare_budget(self, request: str) -> Iterator[dict | str]:
         """compare_inventory for the cities and budget in the request. A refinement
