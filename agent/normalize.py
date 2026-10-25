@@ -64,6 +64,14 @@ FREE_TEXT = (r"\b(near|close to|perto|junto|cerca|pres|nahe|am see|bij|"
 LAND_AS_EXTRA = r"\b(with (some |a lot of |lots of )?land|com (muito )?terreno|con terreno|avec terrain|mit grundstuck|met grond)\b"
 HOUSE_WORDS = r"\b(house|home|casa|moradia|quinta|maison|haus|hauschen|huis|huisje|woning|chalet|villa|farmhouse|property)\b"
 
+# From here on the user is wishing, not requiring: "…, ideally with a sea view and
+# furnished". The wizard writes its nice-to-haves this way; Cubi's free-text search
+# ranks on them. Nemotron still listed them as features ("sea_view",
+# "quiet_countryside", live 2026-10-25), which a later structured follow-up would
+# have applied as hard filters.
+SOFT = (r"\b(ideally|preferably|nice to have|would be nice|if possible|idealmente|de preferencia|"
+        r"preferiblemente|idealement|de preference|idealerweise|am liebsten|liefst|bij voorkeur)\b")
+
 
 def same_place(f: SearchFilter, current: SearchFilter) -> bool:
     """The new filter searches where the current one did (or names no place at all)."""
@@ -110,17 +118,25 @@ def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) ->
     else:
         data["transaction_type"] = current.transaction_type
 
+    soft = re.search(SOFT, text)
+    hard, wish = (text[:soft.start()], text[soft.start():]) if soft else (text, "")
     canon: list[str] = []
     for name, pattern in FEATURES.items():
-        in_text = _has(pattern, text)
-        in_model = any(_has(pattern, _plain(x)) for x in data["features"])
+        in_text = _has(pattern, hard)
+        # With a wish in the message, the model's features need the user's own words before it.
+        in_model = soft is None and any(_has(pattern, _plain(x)) for x in data["features"])
         if in_text or in_model:
             canon.append(name)
-    # Keep any other feature the model found (e.g. 'Fireplace'), minus parking words.
+    # Keep any other feature the model found (e.g. 'Fireplace'), minus parking words —
+    # but not a token it coined for a wish ("quiet_countryside") or a wish's own words.
     for x in data["features"]:
         px = _plain(x)
-        if not any(_has(p, px) for p in FEATURES.values()) and not _has(PARKING, px) and px not in TYPES:
-            canon.append(x)
+        if any(_has(p, px) for p in FEATURES.values()) or _has(PARKING, px) or px in TYPES:
+            continue
+        words = r"\b" + re.escape(px.replace("_", " ")) + r"\b"
+        if ("_" in px or _has(words, wish)) and not _has(words, hard):
+            continue
+        canon.append(x)
     data["features"] = canon
     # Parking is a requirement only when asked for. Models fill `false` for "not
     # mentioned", which the connector reads as "must have no parking" and which
