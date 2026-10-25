@@ -41,6 +41,14 @@ FEATURES = {
     "Garden": r"\b(garden|jardi\w*|garten|tuin)\b",
     "Elevator": r"\b(lift|elevator|elevador|ascensor|ascenseur|aufzug|fahrstuhl)\b",
     "Sea View": r"(sea view|vista\w* (para o |al |ao )?mar|vue (sur la )?mer|meerblick|zeezicht)",
+    # Condition words. The wizard puts them before the noun ("Renovated houses…"); the
+    # chip line dropped them though Cubi filtered on them (live 2026-10-25, 237 of the
+    # Portuguese rental houses). "to renovate" is not "renovated": no \w* on the stem.
+    "Renovated": r"\b(renovated|refurbished|remodel+ed|renovad[ao]s?|reformad[ao]s?|remodelad[ao]s?|renove[es]?|"
+                 r"renoviert\w*|saniert\w*|gerenoveerd)\b",
+    "Furnished": r"\b(furnished|mobilad[ao]s?|amueblad[ao]s?|meuble[es]?|mobliert\w*|gemeubileerd)\b",
+    "Fixer-Upper": r"\b(fixer[- ]upper|to renovate|needs? (renovation|work)|para (renovar|reformar|recuperar|restaurar)|"
+                   r"a (renover|restaurer)|renovierungsbedurftig\w*|sanierungsbedurftig\w*|opknapper|op te knappen)\b",
 }
 PARKING = r"\b(garage|garag\w*|garaj\w*|parking|parkeer\w*|tiefgarage|stellplatz|estacionamento|aparcamiento)\b"
 

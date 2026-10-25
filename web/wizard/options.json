@@ -74,16 +74,16 @@
                 "prompt": "Colourful medieval merchant houses on a cobbled street in Tallinn's old town, Estonia."}
   },
   "environments": [
-    {"id": "coast", "label": "By the sea", "soft": "with a sea view", "needs": "coast", "missing": "no coastline",
-     "blurb": "Ranked by sea view — Cubi can't measure the walk to the beach yet",
+    {"id": "coast", "label": "By the sea", "phrase": "with a sea view", "needs": "coast", "missing": "no coastline",
+     "blurb": "Homes with a sea view — Cubi can't measure the walk to the beach yet",
      "prompt": "A row of houses just behind a sandy beach with a calm sea, a coastal path in front."},
-    {"id": "mountains", "label": "Mountains & forests", "soft": "in the mountains", "needs": "mountains", "missing": "no real mountains", "blurb": "Fresh air, views and winter sports",
+    {"id": "mountains", "label": "Mountains & forests", "phrase": "in the mountains", "needs": "mountains", "missing": "no real mountains", "blurb": "Fresh air, views and winter sports",
      "prompt": "A few houses on a green mountain slope with forest and high peaks behind."},
-    {"id": "city", "label": "City life", "soft": "in a city", "blurb": "Shops, transport and cafés on foot",
+    {"id": "city", "label": "City life", "phrase": "in a city", "blurb": "Shops, transport and cafés on foot",
      "prompt": "A lively but tidy European city street of apartment buildings with cafés on the ground floor and trees."},
-    {"id": "countryside", "label": "Quiet countryside", "soft": "in quiet countryside", "blurb": "Space, silence and land",
+    {"id": "countryside", "label": "Quiet countryside", "phrase": "in quiet countryside", "blurb": "Space, silence and land",
      "prompt": "A lone farmhouse among fields and woodland in gently rolling countryside."},
-    {"id": "lake", "label": "Near a lake", "soft": "near a lake", "needs": "lakes", "missing": "few lakeside homes", "blurb": "Water, beaches and boats",
+    {"id": "lake", "label": "Near a lake", "phrase": "near a lake", "needs": "lakes", "missing": "few lakeside homes", "blurb": "Lakefront and lake-view homes",
      "prompt": "Houses with gardens running down to a calm lake with a small wooden jetty, forest around."}
   ],
   "types": [

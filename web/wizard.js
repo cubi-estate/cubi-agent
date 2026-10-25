@@ -19,6 +19,10 @@
   const THE = new Set(["Netherlands", "United Kingdom", "Czech Republic"]);  // "in the Netherlands"
   const MAX_PRIORITIES = 8;  // shown at once; condition tiles (renovated, to renovate) come on top
   const MAX_SOFT = 3;  // wishes written after "ideally"; see the note above
+  // A picked landscape is a filter, not a wish: Cubi's free-text search ignores an
+  // "ideally …" clause when ranking (Italy, 2026-10-25: the top homes were the same with
+  // and without "ideally with a lake view"), while "near a lake" as a requirement
+  // returned 725 lakeside homes. Each landscape's `phrase` is written before the budget.
   const NEW_MIN = 100;  // "new this week" shown from this many; fewer says more about scraping than the market
   let opt = null, stats = { countries: {} };
   // budget: a number, "flexible" (no cap, by choice), "unsure" (no cap, still open) or null.
@@ -132,11 +136,11 @@
     if (pre.length) noun = pre.join(" ") + " " + noun;
     let q = `${cap(noun)} ${deal() === "rent" ? "to rent" : "for sale"} in ${THE.has(pick.country) ? "the " : ""}${pick.country}`;
     if (goal() && goal().phrase) q += " " + goal().phrase;
-    const hard = must.filter(f => f.phrase).map(f => f.phrase);
+    const hard = [...envs().filter(fits).map(e => e.phrase), ...must.filter(f => f.phrase).map(f => f.phrase)];
     if (beds >= 4) hard.unshift("with 4 or more bedrooms");
     if (hard.length) q += " " + phrases(hard);
     if (typeof pick.budget === "number") q += ` up to ${money(pick.budget)}${deal() === "rent" ? " a month" : ""}`;
-    const soft = [...envs().filter(fits).map(e => e.soft), ...nice.map(f => f.phrase || f.pre)].slice(0, MAX_SOFT);
+    const soft = nice.map(f => f.phrase || f.pre).slice(0, MAX_SOFT);
     if (soft.length) q += ", ideally " + phrases(soft);
     return q;
   }
@@ -159,12 +163,12 @@
     if (typeof pick.budget === "number") facts.push(`up to ${money(pick.budget)}${deal() === "rent" ? " a month" : ""}`);
     else if (pick.budget === "flexible") facts.push("any budget");
     else open.push("budget");
-    const must = chosen("must");
-    if (must.length) facts.push("must have: " + list(must.map(f => f.label.toLowerCase())));
     for (const e of opt.environments.filter(e => pick.envs.includes(e.id))) {
-      if (fits(e)) prefs.push(e.id === "coast" ? "by the sea (ranked by sea view)" : e.label.toLowerCase());
+      if (fits(e)) facts.push(e.id === "coast" ? "a sea view" : e.phrase);
       else skipped.push(`${e.label.toLowerCase()} — ${e.missing} in ${THE.has(pick.country) ? "the " : ""}${pick.country}`);
     }
+    const must = chosen("must");
+    if (must.length) facts.push("must have: " + list(must.map(f => f.label.toLowerCase())));
     prefs.push(...chosen("nice").map(f => f.label.toLowerCase()));
     const later = prefs.splice(MAX_SOFT);  // the search takes three; the chat takes the rest
     if (later.length) open.push("also wanted, ask in the chat: " + list(later));
@@ -182,7 +186,7 @@
       box.append(p);
     };
     row("Filters:", facts);
-    row("Preferences:", prefs, "(rank the homes, never exclude)");
+    row("Wishes:", prefs, "(sent along; the chat can turn one into a filter)");
     row("Skipped:", skipped);
     row("Still open:", open);
     return box;
@@ -208,7 +212,7 @@
     let title = "", hint = "", canContinue = true;
     if (step === 0) {
       title = "Where would you love to wake up?";
-      hint = "Pick the feeling, one or more. These rank the homes; a town or city can come later.";
+      hint = "Pick the feeling, one or more. These filter the homes; a town or city can come later.";
       for (const e of opt.environments) grid.append(tile({
         id: e.id, label: e.label, blurb: e.blurb, badge: "✓", selected: pick.envs.includes(e.id),
         onClick: () => { pick.envs = toggle(pick.envs, e.id); render(); },

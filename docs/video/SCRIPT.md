@@ -26,11 +26,12 @@ music you have the rights to. Upload to YouTube as **Public** and put the link i
 
    Also walk the wizard once on the day, in a new chat: **By the sea → Portugal →
    House and Townhouse → Buy to live, Up to €700,000 → Garden & privacy twice (must-have)
-   → Search.** Expect a brief with "garden & privacy" under *Filters* and "by the sea
-   (ranked by sea view)" under *Preferences*, then 1,000+ homes in under 10 s and an
-   answer that says "preferring a sea view" — never "all have a garden" (a guard drops
-   that). If the count is small, a listings change has made Garden rare: pick Terrace
-   instead and read the brief aloud as it stands.
+   → Search.** Expect a brief with "a sea view" and "must have: garden & privacy" under
+   *Filters* (a picked landscape filters — Cubi's free-text search ignores an "ideally"
+   wish when ranking, live 2026-10-25), then about 400 homes in under 10 s, a chip line
+   "for sale · house/townhouse · ≤ €700,000 · Sea View + Garden · in Portugal" and never
+   "all have a garden" (a guard drops that). If the count is small, a listings change
+   has made Garden rare: pick Terrace instead and read the brief aloud as it stands.
 
    Results change as listings change. Note the shares on turns 3–4, the card numbers
    turn 5 compares and what turn 6 says about the price, and fix those voice-over
@@ -61,7 +62,7 @@ music you have the rights to. Upload to YouTube as **Public** and put the link i
 |---|---|---|---|
 | 1 | 0:00–0:12 | Card 1 (problem) | Moving from Germany, torn between Porto and Valencia? That's two countries, two languages and a handful of portals that don't talk to each other. |
 | 2 | 0:12–0:25 | Card 2 (how it's built) | Cubi Agent is one conversation over two point three million listings in twenty European countries. NVIDIA Nemotron 3 Super, on Nebius Token Factory, reads the request and writes the answer; the app runs on Nebius AI Cloud. |
-| 3 | 0:25–0:37 | New chat. Tap By the sea → Portugal → House, Townhouse → Buy to live, Up to €700,000 → Garden & privacy twice; hold a beat on the brief, then Search | No typing to start with: pick a feeling, a country, a kind of home, a plan and a budget, and what matters. The brief under the pictures says what will filter and what will only rank — and the search is one plain sentence. |
+| 3 | 0:25–0:37 | New chat. Tap By the sea → Portugal → House, Townhouse → Buy to live, Up to €700,000 → Garden & privacy twice; hold a beat on the brief, then Search | No typing to start with: pick a feeling, a country, a kind of home, a plan and a budget, and what matters. The brief under the pictures says what filters, what is only a wish and what is still open — and the search is one plain sentence. |
 | 4 | 0:37–0:59 | Click New chat, paste turn 1, let the steps stream, scroll over the six cards, end on the three buttons | Or ask in German: a flat to buy in Porto or Valencia, up to four hundred thousand, two bedrooms at least. *(pause on the step log)* Nemotron turns that into a structured filter; code checks it, and the agent searches each city separately. Every card comes from Cubi's data, not from the model. |
 | 5 | 0:59–1:21 | Paste turn 2, then scroll to the Sources list | Then the question a mover actually has: what are the schools and public transport like? The agent searches the web with Tavily, one search per city and topic, and writes the two cities side by side. Every point carries a numbered source, linked in code, and where no source covers a topic, it says so. |
 | 6 | 1:21–1:41 | Paste turn 3: bars grow. Click "And up to €500,000?": bars move, markers stay at the old shares | And from Cubi's own data: what does four hundred thousand buy in Lisbon versus Porto? *(read the two shares on screen)* Raise it to five hundred, and the bars move from the old shares. Cubi counted these; the model only wrote the sentence around them. |

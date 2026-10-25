@@ -47,3 +47,12 @@ def test_guard_drops_all_listed_include_furnishings():
             "basic amenities like Wi-Fi. You can refine by town.")
     out, n = guards.drop_all_have_claims(text)
     assert n == 1 and "furnishings" not in out and "refine by town" in out
+
+
+def test_condition_words_before_the_noun_are_filters():
+    """"Renovated houses to rent in Portugal": Cubi filtered on it (237 homes, live
+    2026-10-25) but the chip line said only "to rent · house · in Portugal"."""
+    f = normalize.apply(_f(features=[]), "Renovated houses to rent in Portugal")
+    assert f.features == ["Renovated"]
+    f = normalize.apply(_f(features=[]), "Casas para renovar em Lisboa, idealmente mobiladas")
+    assert f.features == ["Fixer-Upper"]  # "para renovar" is not "renovada"; the wish stays a wish
