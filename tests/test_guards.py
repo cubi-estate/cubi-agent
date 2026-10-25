@@ -48,3 +48,18 @@ def test_valuation_line_only_after_a_comparison():
     assert asked == "Which card do you mean?"
     out, _ = guards.apply("It sits mid-range.", '{"kind": "asking_price_comparison"}', "en", {"compare_asking_prices"})
     assert out.endswith("not a valuation.")
+
+
+def test_listing_ids_never_reach_the_answer():
+    cards = ["acasadajoana_pt:26471243", "afinest_pt:25505032"]
+    out, n = guards.scrub_ids("The asking price for #2 (afinest_pt:25505032) is €447,500.", cards)
+    assert out == "The asking price for #2 is €447,500." and n == 1
+    out, _ = guards.scrub_ids("Listing acasadajoana_pt:26471243 has a balcony; portadafrente:a0cTg00000L7ItoIAF does not.", cards)
+    assert out == "#1 has a balcony; this home does not."
+    out, _ = guards.scrub_ids("Tell me the card number (e.g., #1) or the exact listing ID of the apartment.", cards)
+    assert out == "Tell me the card number (e.g., #1) of the apartment."
+
+
+def test_id_scrub_leaves_links_times_and_prices_alone():
+    text = "See [the listing](https://www.idealista.pt/imovel/123/) at 10:30 — €410,000, ratio 3:1."
+    assert guards.scrub_ids(text, []) == (text, 0)

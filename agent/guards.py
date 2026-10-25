@@ -336,6 +336,25 @@ def drop_thin_hedge(answer: str, tool_text: str) -> tuple[str, int]:
 _STRAY_HASH = re.compile(r"(^|[\s(])#(?=[A-ZÀ-Ý][a-zà-ÿ])")
 
 
+# "#2 (afinest_pt:25505032)": a listing id is plumbing, not something a buyer can use,
+# and a judge read it as a leak (2026-10-25). Ids are "<source>:<code>"; the lookbehind
+# keeps "https://" and paths out. A card on screen becomes its number, any other id
+# "this home"; "or the exact listing ID" offers the user something they can't see.
+_ID = r"(?<![\w/.:@])[a-z][a-z0-9_]{2,}:[A-Za-z0-9][\w.-]{3,}"
+_ID_PAREN = re.compile(rf"\s*\(\s*(?:listing\s+)?(?:id\s*:?\s*)?{_ID}\s*\)", re.I)
+_ID_BARE = re.compile(rf"(?:\blisting\s+)?(?:\bid\s*:?\s*)?({_ID})", re.I)
+_ID_OFFER = re.compile(r",?\s+or\s+(?:the\s+)?(?:exact\s+)?(?:listing\s+)?id\b", re.I)
+
+
+def scrub_ids(answer: str, cards: list[str] = ()) -> tuple[str, int]:
+    n = len(re.findall(_ID, answer)) + len(_ID_OFFER.findall(answer))
+    if not n:
+        return answer, 0
+    out = _ID_PAREN.sub("", answer)
+    out = _ID_BARE.sub(lambda m: f"#{cards.index(m.group(1)) + 1}" if m.group(1) in cards else "this home", out)
+    return _ID_OFFER.sub("", out), n
+
+
 # "All include a private pool": a wish ranks the results, it doesn't filter them, so a
 # claim about every home is unchecked (live 2026-10-24, three of twelve wizard searches).
 _ALL = (r"\b(all|every|each of|both|todos|todas|tous|toutes|alle|allemaal|ambos|ambas|cada)\b")
@@ -366,9 +385,11 @@ def strip_reasoning(answer: str) -> tuple[str, int]:
     return out, int(out != answer.strip())
 
 
-def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple[str, dict]:
+def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
+          cards: list[str] = ()) -> tuple[str, dict]:
     answer, reasoning = strip_reasoning(answer)
     answer = _STRAY_HASH.sub(r"\1", answer)
+    answer, ids = scrub_ids(answer, list(cards))
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
     answer, scrubbed = scrub_contacts(answer)
     verdicts = sent = band_added = 0
@@ -402,5 +423,5 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str]) -> tuple
     return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
                     "absence_wording_fixed": absence, "source_filler_dropped": filler,
-                    "all_have_claims_dropped": wishes, "reasoning_stripped": reasoning,
+                    "all_have_claims_dropped": wishes, "reasoning_stripped": reasoning, "ids_scrubbed": ids,
                     "band_stated": band_added}

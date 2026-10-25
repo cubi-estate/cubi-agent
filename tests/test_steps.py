@@ -22,7 +22,7 @@ def test_steps_as_loop_writes_them_match_their_templates():
         "Reading recent posts about housing in Lisbon on X (last 7 days)": "x",
         "Comparing #1 and #4 feature by feature": "pair",
         "2 matching home(s) in Porto, matched on features and surroundings, not price": "matches",
-        "Looking up contact options — card #1 (abc_pt:1)": "with_ref",
+        "Looking up contact options — card #1": "with_ref",
         "Price history: which home? (no card number or known id)": "which",
         "Budget comparison: not available right now": "na",
         "News search unavailable: timeout": "news_na",
@@ -42,8 +42,8 @@ def test_native_languages_cover_every_template_with_the_same_placeholders():
 
 
 def test_localize_keeps_the_variable_parts_and_translates_nested_labels():
-    out = steps.localize("Looking up contact options — card #1 (abc_pt:1)", "de")
-    assert out == "Suche Kontaktmöglichkeiten — Karte #1 (abc_pt:1)"
+    out = steps.localize("Looking up contact options — card #1", "de")
+    assert out == "Suche Kontaktmöglichkeiten — Karte #1"
     assert steps.localize("Finding homes like it in Porto — card #2 (x:9)", "pt") == \
         "A procurar casas parecidas em Porto — cartão #2 (x:9)"
     assert steps.localize("Searching listings in Valencia (structured filter)", "es") == \

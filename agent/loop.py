@@ -74,7 +74,8 @@ SEARCH_HOMES_TOOL = {
 BASE_RULES = (
     "You are Cubi, a home-search assistant for Europe, running on an open model. "
     "Answer in the user's language ({lang}). Only describe homes the tools returned. Never invent "
-    "URLs, ids, prices or contact details.\n"
+    "URLs, ids, prices or contact details. Refer to a home by its card number (#2), never by its "
+    "listing id: the user never sees ids.\n"
     "In this app the skill's `filter_listings` and `search_properties` are both reached "
     "through `search_homes`, which chooses between them; call `search_homes` for any new "
     "or refined search, and `get_listing` for one home's details.\n"
@@ -486,7 +487,7 @@ class Agent:
                 return
             args["listing_id"] = ref
             self.focus = ref
-            label += f" — {how} ({ref})"
+            label += f" — {how}"
             done_kind = {"compare_asking_prices": "price", "get_contact_options": "contact"}.get(name)
             if done_kind:
                 self.done.add(suggest.key(done_kind, ref))
@@ -564,7 +565,7 @@ class Agent:
         self.done.add(suggest.key("news", ref))
         n = ordinals.ordinal(how, 99) if how.startswith("card") else None
         label = f"#{n}" if n else "this home"
-        yield {"type": "action", "text": f"Checking the price history — {how} ({ref})"}
+        yield {"type": "action", "text": f"Checking the price history — {how}"}
         hist = None
         try:
             res = self.mcp.call_tool("get_price_history", {"listing_id": ref})
@@ -892,7 +893,8 @@ class Agent:
         if "research_area" in used or "home_news" in used:
             answer, cited = tavily_tool.link_citations(answer, self.sources, self.lang)
             tool_text += "\n".join(src["url"] for src in self.sources.values())
-        answer, report = guards.apply(answer, tool_text, self.lang, used)
+        answer, report = guards.apply(answer, tool_text, self.lang, used,
+                                      [str(c.get("id")) for c in self.shown])
         report["citations_linked"] = cited
         turn_msgs.append({"role": "assistant", "content": answer})
         self.history += turn_msgs

@@ -42,7 +42,7 @@ EN = {
     # Composite steps: {label} and {how} are themselves localized (LABELS, HOWS).
     "which": "{label}: which home? (no card number or known id)",
     "na": "{label}: not available right now",
-    "with_ref": "{label} — {how} ({ref})",
+    "with_ref": "{label} — {how}",
     # labels
     "l_listing": "Opening the listing",
     "l_prices": "Comparing asking prices nearby",
@@ -88,7 +88,7 @@ NATIVE: dict[str, dict[str, str]] = {
         "tool_error": "Erro da ferramenta: {error}",
         "which": "{label}: que casa? (sem número de cartão nem id conhecido)",
         "na": "{label}: indisponível de momento",
-        "with_ref": "{label} — {how} ({ref})",
+        "with_ref": "{label} — {how}",
         "l_listing": "A abrir o anúncio",
         "l_prices": "A comparar preços pedidos na zona",
         "l_contact": "A procurar formas de contacto",
@@ -126,7 +126,7 @@ NATIVE: dict[str, dict[str, str]] = {
         "tool_error": "Error de la herramienta: {error}",
         "which": "{label}: ¿qué vivienda? (sin número de tarjeta ni id conocido)",
         "na": "{label}: no disponible ahora mismo",
-        "with_ref": "{label} — {how} ({ref})",
+        "with_ref": "{label} — {how}",
         "l_listing": "Abriendo el anuncio",
         "l_prices": "Comparando precios de oferta en la zona",
         "l_contact": "Buscando formas de contacto",
@@ -164,7 +164,7 @@ NATIVE: dict[str, dict[str, str]] = {
         "tool_error": "Erreur de l'outil : {error}",
         "which": "{label} : quel bien ? (pas de numéro de carte ni d'id connu)",
         "na": "{label} : indisponible pour le moment",
-        "with_ref": "{label} — {how} ({ref})",
+        "with_ref": "{label} — {how}",
         "l_listing": "Ouverture de l'annonce",
         "l_prices": "Comparaison des prix demandés à proximité",
         "l_contact": "Recherche des moyens de contact",
@@ -202,7 +202,7 @@ NATIVE: dict[str, dict[str, str]] = {
         "tool_error": "Werkzeugfehler: {error}",
         "which": "{label}: welches Objekt? (keine Kartennummer und keine bekannte ID)",
         "na": "{label}: gerade nicht verfügbar",
-        "with_ref": "{label} — {how} ({ref})",
+        "with_ref": "{label} — {how}",
         "l_listing": "Öffne das Angebot",
         "l_prices": "Vergleiche Angebotspreise in der Nähe",
         "l_contact": "Suche Kontaktmöglichkeiten",
@@ -240,7 +240,7 @@ NATIVE: dict[str, dict[str, str]] = {
         "tool_error": "Fout in hulpmiddel: {error}",
         "which": "{label}: welke woning? (geen kaartnummer of bekende id)",
         "na": "{label}: nu niet beschikbaar",
-        "with_ref": "{label} — {how} ({ref})",
+        "with_ref": "{label} — {how}",
         "l_listing": "De advertentie openen",
         "l_prices": "Vraagprijzen in de buurt vergelijken",
         "l_contact": "Contactmogelijkheden opzoeken",
@@ -279,7 +279,7 @@ _ORDER = sorted(STEPS, key=lambda k: (k in ("which", "na", "with_ref"), bool(_fi
 
 
 def _neutral(key: str) -> bool:
-    """No words to translate ("{label} — {how} ({ref})"): the English one serves every language."""
+    """No words to translate ("{label} — {how}"): the English one serves every language."""
     return not re.search(r"[^\W\d_]", _FIELD.sub("", EN[key]))
 
 
