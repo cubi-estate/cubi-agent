@@ -77,3 +77,12 @@ def test_a_place_written_as_a_site_path_is_the_place():
     assert loc(["aix-en-provence/"]) == ["Aix-en-provence"]
     assert loc(["Vila Nova de Gaia", "Porto"]) == ["Vila Nova de Gaia", "Porto"]
     assert loc(["/"]) == []
+
+
+def test_a_type_or_feature_listed_twice_counts_once():
+    from agent.schema import SearchFilter
+    f = SearchFilter(location=["Lisbon"], type=["apartment", "apartment"], transaction_type="sale",
+                     min_price=None, max_price=500000, min_bedrooms=None, max_bedrooms=None,
+                     min_living_area=None, has_parking=None, features=["Balcony", "balcony", "Pool"],
+                     lang="en", needs_free_text_search=False)
+    assert f.type == ["apartment"] and f.features == ["Balcony", "Pool"]

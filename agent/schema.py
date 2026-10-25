@@ -48,6 +48,18 @@ class SearchFilter(BaseModel):
                 out.append(name)
         return out
 
+    @field_validator("type", "features")
+    @classmethod
+    def _once_each(cls, values: list[str]) -> list[str]:
+        # The model sometimes lists a type twice ("apartment/apartment" in the search
+        # line, live 2026-10-25); one is enough for the filter and the line.
+        seen, out = set(), []
+        for v in values:
+            if v.lower() not in seen:
+                seen.add(v.lower())
+                out.append(v)
+        return out
+
     def to_filter_args(self, limit: int = 8) -> dict:
         args: dict = {"lang": self.lang, "limit": limit, "transaction_type": self.transaction_type}
         if self.transaction_type == "rent":
