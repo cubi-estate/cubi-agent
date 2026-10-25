@@ -162,7 +162,7 @@
     if (must.length) facts.push("must have: " + list(must.map(f => f.label.toLowerCase())));
     for (const e of opt.environments.filter(e => pick.envs.includes(e.id))) {
       if (fits(e)) prefs.push(e.id === "coast" ? "by the sea (ranked by sea view)" : e.label.toLowerCase());
-      else skipped.push(`${e.label.toLowerCase()} — ${pick.country} has no ${e.needs}`);
+      else skipped.push(`${e.label.toLowerCase()} — ${e.missing} in ${THE.has(pick.country) ? "the " : ""}${pick.country}`);
     }
     prefs.push(...chosen("nice").map(f => f.label.toLowerCase()));
     const later = prefs.splice(MAX_SOFT);  // the search takes three; the chat takes the rest
@@ -229,9 +229,9 @@
         .sort((a, b) => countryFits(b) - countryFits(a) || (stats.countries[b]?.homes || 0) - (stats.countries[a]?.homes || 0));
       for (const n of names) {
         const c = opt.countries[n];
-        const miss = envs().filter(e => e.needs && !c.has.includes(e.needs)).map(e => e.label.toLowerCase());
+        const miss = envs().filter(e => e.needs && !c.has.includes(e.needs)).map(e => e.missing);
         grid.append(tile({
-          id: c.id, label: n, blurb: miss.length ? `Not ${list(miss)}` : c.blurb, stat: countryStats([n]), selected: pick.country === n,
+          id: c.id, label: n, blurb: miss.length ? cap(list(miss)) : c.blurb, stat: countryStats([n]), selected: pick.country === n,
           onClick: () => { if (pick.country !== n) { pick.nice = []; pick.must = []; } pick.country = n; render(); },
         }));
       }

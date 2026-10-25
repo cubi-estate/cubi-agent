@@ -65,6 +65,7 @@ def test_options_tags_are_ones_the_page_knows():
         assert g["deal"] in {"sale", "rent"} and set(g.get("types", [])) <= types
     for x in opt["environments"]:
         assert x.get("needs") in lands | {None} and x["soft"], x["id"]
+        assert ("needs" in x) == ("missing" in x), x["id"]  # a landscape a country can lack needs its own wording
     tops = climates | lands | types | goals | {x["id"] for x in opt["environments"]} | {"sale", "rent"}
     for x in opt["priorities"]:
         assert x.get("needs") in lands | {None}, x["id"]
