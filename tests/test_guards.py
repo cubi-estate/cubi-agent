@@ -63,3 +63,36 @@ def test_listing_ids_never_reach_the_answer():
 def test_id_scrub_leaves_links_times_and_prices_alone():
     text = "See [the listing](https://www.idealista.pt/imovel/123/) at 10:30 — €410,000, ratio 3:1."
     assert guards.scrub_ids(text, []) == (text, 0)
+
+
+_PLN = """Your search: Poland · house · budget up to 1,757,800 PLN — found 74 matching properties.
+
+**1. Dom Zegrze**
+   Location: Nieporęt, Masovian Voivodeship
+   House | 191 m2 living | 1 750 000 PLN
+   URL: https://cubi.estate/r/otodom_pl%3A1
+   ID: otodom_pl:1
+
+**2. Słoneczny Taras nad Jeziorem**
+   Location: Łowyń, Greater Poland Voivodeship
+   House | 2 ba | 228 m2 living | 999 999 PLN
+   URL: https://cubi.estate/r/metrohouse_pl%3A2
+   ID: metrohouse_pl:2
+"""
+
+
+def test_over_budget_claims_go_when_every_card_is_within_the_stated_cap():
+    # Live 2026-10-25: złoty prices read against a €400,000 budget.
+    a = ("Found 74 listings. Many exceed the budget, but #5 mentions a lake view, while others like #2 "
+         "also highlight lakeside locations though above the limit. Ask for details on any home.")
+    out, n = guards.drop_false_over_budget(a, _PLN)
+    assert out == "Found 74 listings. Ask for details on any home." and n == 1  # both claims sat in one sentence
+    out, report = guards.apply(a, _PLN, "en", {"search_homes"})
+    assert report["over_budget_dropped"] == 1 and "limit" not in out
+
+
+def test_over_budget_claims_stay_when_a_card_really_is_above_the_cap():
+    above = _PLN.replace("1 750 000 PLN", "1 950 000 PLN")
+    a = "Found 74. #1 is above the limit. Ask away."
+    assert guards.drop_false_over_budget(a, above) == (a, 0)
+    assert guards.drop_false_over_budget(a, "no cap stated here") == (a, 0)

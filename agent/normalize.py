@@ -52,6 +52,29 @@ FEATURES = {
 }
 PARKING = r"\b(garage|garag\w*|garaj\w*|parking|parkeer\w*|tiefgarage|stellplatz|estacionamento|aparcamiento)\b"
 
+# Concepts a card tag can be matched to: the features above, parking, and the
+# landscapes and comforts the wizard writes ("near a lake", "with a fireplace").
+# A tag lights up on the card when the request names the concept it belongs to.
+CONCEPTS = {
+    **FEATURES,
+    "Parking": PARKING,
+    "Lake": r"\b(lake\w*|jezior\w*|jezer\w*|lago|lac|seeblick|am see|meerzicht)\b",
+    "Mountain": r"\b(mountain\w*|montanh\w*|montan\w*|montagn\w*|berg\w*|gory|gorski\w*|alpin\w*)\b",
+    "Countryside": r"\b(countryside|rural|campo|campagne|landlich\w*|platteland|wiejsk\w*|quiet|sossegad\w*|tranquil\w*|calme|ruhig\w*|rustig\w*)\b",
+    "Fireplace": r"\b(fireplace|lareira|chimenea|cheminee|kamin\w*|kominek|open haard)\b",
+    "Sauna": r"\b(sauna)\b",
+    "Air Conditioning": r"\b(air[- ]?con\w*|ac|ar condicionado|aire acondicionado|climatis\w*|klimaanlage|airco|klimatyzacj\w*)\b",
+    "Family": r"\b(family|famil\w*|school\w*|escola\w*|colegio\w*|ecole\w*|schule\w*|school|szko\w*)\b",
+    "Transport": r"\b(transport\w*|metro|tram|bus|station|estacao|estacion|gare|bahnhof|komunikacj\w*)\b",
+}
+
+
+def hits(request: str, tags: list[str]) -> list[str]:
+    """The tags that belong to a concept the request names."""
+    text = _plain(request)
+    wanted = [pat for pat in CONCEPTS.values() if _has(pat, text)]
+    return [t for t in tags if any(_has(pat, _plain(t)) for pat in wanted)]
+
 # Specific types the user named → they win over a generic apartment/house.
 TYPES = {
     "penthouse": r"\b(penthouse|atico|cobertura|attique)\b",

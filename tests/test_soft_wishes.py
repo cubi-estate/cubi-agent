@@ -56,3 +56,10 @@ def test_condition_words_before_the_noun_are_filters():
     assert f.features == ["Renovated"]
     f = normalize.apply(_f(features=[]), "Casas para renovar em Lisboa, idealmente mobiladas")
     assert f.features == ["Fixer-Upper"]  # "para renovar" is not "renovada"; the wish stays a wish
+
+
+def test_card_tags_the_request_asked_for_are_hits():
+    tags = ["Brick facade", "Lake", "Recently renovated roof", "Garden", "pvc windows"]
+    assert normalize.hits("Houses for sale in Poland near a lake up to €400,000, ideally with a garden and renovated", tags) == \
+        ["Lake", "Recently renovated roof", "Garden"]
+    assert normalize.hits("Apartments to rent in Lisboa", tags) == []

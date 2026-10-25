@@ -118,7 +118,7 @@ function card(c, t) {
     <div class="what">${esc(c.type || "Home")}</div>
     <div class="where">${esc(places(c.location))}</div>
     ${facts.length ? `<div class="facts">${esc(facts.join(" · "))}</div>` : ""}
-    ${(c.tags || []).length ? `<div class="tags">${c.tags.slice(0, 3).map(x => `<span>${esc(x)}</span>`).join("")}</div>` : ""}
+    ${(c.tags || []).length ? `<div class="tags">${c.tags.slice(0, 3).map(x => `<span class="${(c.hits || []).includes(x) ? "hit" : ""}">${esc(x)}</span>`).join("")}</div>` : ""}
     ${c.updated ? `<div class="updated">${esc(t.updated)} ${esc(c.updated)}</div>` : ""}
     <div class="links">
       ${open ? `<a class="open" href="${esc(open)}" target="_blank" rel="noopener">${esc(t.open)}</a>` : ""}

@@ -371,6 +371,36 @@ def drop_all_have_claims(answer: str) -> tuple[str, int]:
     return _drop_sentences(answer, _ALL_WISH)
 
 
+# "Many exceed the budget … #2 … though above the limit": the model compared złoty
+# prices with a euro budget (live 2026-10-25: cap 1,757,800 PLN, every card under
+# it, #2 at 999,999 PLN called over the limit). Cubi states the cap in the cards'
+# currency; when every priced card is within it, an over-budget sentence is false.
+_CAP = re.compile(r"budget up to ([\d][\d,.\u202f ]*?)\s*([A-Z]{3})\b")
+_OVER_BUDGET = re.compile(
+    r"\b(exceed\w*|above|over|beyond|outside|higher than|more than|past)\s+(the |your |that |this )?"
+    r"(stated |price |budget |set )?(budget|limit|cap|ceiling|maximum|max)\b|\bover budget\b|"
+    r"\b(acima|al[ée]m) do (or[çc]amento|limite)\b|\b(supera\w*|por encima d)el? (presupuesto|l[ií]mite)\b|"
+    r"\b(au-dessus|au-del[àa]) (du|de la) (budget|limite)\b|\b[üu]ber (dem|das) (budget|limit)\b|"
+    r"\bboven (het|de) (budget|limiet)\b", re.I)
+
+
+def drop_false_over_budget(answer: str, tool_text: str) -> tuple[str, int]:
+    caps = _CAP.findall(tool_text)
+    if not caps:
+        return answer, 0
+    amount, currency = caps[-1]
+    try:
+        cap = float(re.sub(r"[^\d.]", "", amount.replace(",", "")))
+    except ValueError:
+        return answer, 0
+    from agent import listings  # listings imports no guards; imported here to keep the module light
+    prices = [(c.get("price"), (c.get("price_text") or "").upper()) for c in listings.parse(tool_text)]
+    priced = [p for p, txt in prices if p is not None and currency in txt]
+    if not priced or any(p > cap for p in priced):
+        return answer, 0
+    return _drop_sentences(answer, _OVER_BUDGET)
+
+
 _THINK_BLOCK = re.compile(r"(?s)<think>.*?(?:</think>|$)")
 
 
@@ -402,9 +432,10 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
             answer = ensure_not_a_valuation(answer, lang)
     if "get_contact_options" in used_tools:
         answer, sent = drop_sent_claims(answer, lang)
-    wishes = 0
+    wishes = over = 0
     if "search_homes" in used_tools:
         answer, wishes = drop_all_have_claims(answer)
+        answer, over = drop_false_over_budget(answer, tool_text)
     absence = 0
     if "find_similar_elsewhere" in used_tools:
         answer, v1 = drop_price_verdicts(answer, lang)
@@ -423,5 +454,5 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
     return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
                     "absence_wording_fixed": absence, "source_filler_dropped": filler,
-                    "all_have_claims_dropped": wishes, "reasoning_stripped": reasoning, "ids_scrubbed": ids,
+                    "all_have_claims_dropped": wishes, "over_budget_dropped": over, "reasoning_stripped": reasoning, "ids_scrubbed": ids,
                     "band_stated": band_added}

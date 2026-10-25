@@ -32,7 +32,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
-from . import config, llm, steps, wizard
+from . import config, llm, normalize, steps, wizard
 from .loop import Agent, _describe
 
 log = logging.getLogger("cubi_agent")
@@ -159,16 +159,18 @@ def _ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def _card(c: dict, f) -> dict:
-    """Card for the page: tags de-duplicated, the ones matching the request first."""
-    wanted = {x.lower() for x in (f.features if f else [])} | ({"garage", "parking"} if f and f.has_parking else set())
+def _card(c: dict, f, asked: str = "") -> dict:
+    """Card for the page: tags de-duplicated, the ones the request asked for first
+    and marked as `hits` (the page shows them in green)."""
+    asked = " ".join([asked] + list(f.features if f else []) + (["parking"] if f and f.has_parking else []))
     seen, tags = set(), []
     for t in c.get("tags", []):
         if t.lower() not in seen:
             seen.add(t.lower())
             tags.append(t)
-    tags.sort(key=lambda t: not any(w in t.lower() for w in wanted))
-    return {**c, "tags": tags}
+    hit = set(normalize.hits(asked, tags))
+    tags.sort(key=lambda t: t not in hit)
+    return {**c, "tags": tags, "hits": [t for t in tags if t in hit]}
 
 
 def _line(ev: dict) -> bytes:
@@ -196,7 +198,7 @@ def _turn(sid: str, sess: _Session, message: str) -> Iterator[bytes]:
                 skill = ev["skill"]
                 f = sess.agent.filter
                 ev = {"type": "answer", "text": ev["text"],
-                      "listings": [_card(c, f) for c in ev.get("listings", [])],
+                      "listings": [_card(c, f, message + " " + getattr(sess.agent, "wish", "")) for c in ev.get("listings", [])],
                       "inventory": ev.get("inventory"),
                       "similar": ev.get("similar"),
                       "suggestions": ev.get("suggestions") or [],
