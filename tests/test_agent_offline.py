@@ -361,6 +361,20 @@ def test_new_place_starts_a_fresh_search():
     assert kept.transaction_type == "rent" and kept.has_parking is True
 
 
+def test_a_new_town_drops_the_carried_country():
+    """Tester F1: after the wizard's Portugal, 'Faro, 2 bedrooms' searched 'Faro, Portugal'."""
+    current = _f(location=["Portugal"])
+    got = normalize.apply(_f(location=["Faro", "Portugal"], min_bedrooms=2, max_price=300000),
+                          "Faro, 2 bedrooms, under 300k", current)
+    assert got.location == ["Faro"]
+    for loc, msg in ((["Faro", "Portugal"], "Faro, Portugal"), (["Lisboa", "Cascais"], "also in Cascais"),
+                     (["Portugal"], "only with a pool")):
+        assert normalize.apply(_f(location=loc), msg, _f(location=["Lisboa"] if "Cascais" in loc else ["Portugal"])
+                               ).location == loc, msg
+    porto = normalize.apply(_f(location=["Braga", "Porto"]), "Braga in Portugal", _f(location=["Porto"]))
+    assert porto.location == ["Braga"]  # "porto" is not a word of "portugal"
+
+
 def test_connector_calls_use_this_turns_language(tmp_path):
     agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=SimpleNamespace())
     agent_.shown = listings.parse(CARDS)

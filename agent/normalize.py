@@ -72,6 +72,20 @@ def same_place(f: SearchFilter, current: SearchFilter) -> bool:
     return {_plain(x).strip() for x in f.location} == {_plain(x).strip() for x in current.location}
 
 
+ALSO = r"\b(also|too|as well|tambem|tambien|aussi|auch|ook|ainda)\b"
+
+
+def _new_places(places: list[str], before: list[str], text: str) -> list[str]:
+    """A follow-up naming a new place searches that place: the earlier places the
+    model carried over go, unless the user names them again or says "also".
+    Tester F1: after the wizard's "Portugal", "Faro, 2 bedrooms, under 300k"
+    searched "Faro, Portugal" and half the cards were 280 km away."""
+    old = {_plain(x).strip() for x in before}
+    if not any(_plain(x).strip() not in old for x in places) or _has(ALSO, text):
+        return places
+    return [x for x in places if _plain(x).strip() not in old or _has(rf"\b{re.escape(_plain(x).strip())}\b", text)]
+
+
 def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) -> SearchFilter:
     """Clean the model's filter using the user's own words.
 
@@ -79,6 +93,8 @@ def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) ->
     carries its cue; otherwise the conversation's value stands.
     """
     text = _plain(message)
+    if current is not None:
+        f = f.model_copy(update={"location": _new_places(f.location, current.location, text)})
     data = f.model_dump()
     # A refinement keeps the conversation's sale/rent and parking; a search for a
     # different place starts fresh. Live test 2026-10-20: after a Lisbon rental,
