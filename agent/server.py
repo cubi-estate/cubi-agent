@@ -43,8 +43,11 @@ MAX_MESSAGE_CHARS = 500
 SESSION_TTL_S = int(os.environ.get("SESSION_TTL_S", "1800"))
 MAX_SESSIONS = int(os.environ.get("MAX_SESSIONS", "300"))
 MAX_TURNS_PER_SESSION = int(os.environ.get("MAX_TURNS_PER_SESSION", "30"))
-IP_TURNS_PER_MIN = int(os.environ.get("IP_TURNS_PER_MIN", "8"))
-IP_TURNS_PER_DAY = int(os.environ.get("IP_TURNS_PER_DAY", "120"))
+# Per address. A room of judges on venue Wi-Fi shares one address, so these fit a
+# room, not a person (tester P0): 40 turns ≈ 120 connector calls a minute, under
+# Cubi's 200 for the demo's token; the whole-demo budget below still bounds a day.
+IP_TURNS_PER_MIN = int(os.environ.get("IP_TURNS_PER_MIN", "40"))
+IP_TURNS_PER_DAY = int(os.environ.get("IP_TURNS_PER_DAY", "1000"))
 # Whole-demo spend guard: Token Factory, Tavily and the connector's quota.
 DEMO_TURNS_PER_DAY = int(os.environ.get("DEMO_TURNS_PER_DAY", "1500"))
 # Behind a proxy (Fly, Render, Nebius) the client address is the first X-Forwarded-For hop.

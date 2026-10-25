@@ -82,7 +82,7 @@ def main() -> int:
                 ok = False
                 continue
         if i > 1:
-            time.sleep(PAUSE_S)  # the demo allows 8 turns a minute per address (IP_TURNS_PER_MIN)
+            time.sleep(PAUSE_S)  # paced like a person, well under IP_TURNS_PER_MIN (40 a minute per address)
         session, out = turn(base, msg, session)
         last = out["answer"] or {}
         ans = out["answer"] or {}
