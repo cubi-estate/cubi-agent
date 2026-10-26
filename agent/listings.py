@@ -171,6 +171,51 @@ def render_cards(head: str, cards: list[dict]) -> str:
     return "\n".join(parts).rstrip() + "\n"
 
 
+_LABELS = ("Location:", "URL:", "ID:", "Last changed:", "Ask Cubi", "Tags:", "Image:")
+
+
+def _excerpt(block: list[str]) -> str:
+    """The card's description excerpt, folded: the first line that is neither the
+    title, a labelled line nor the facts line."""
+    for raw in block[1:]:
+        line = raw.strip()
+        if not line or line.startswith(_LABELS) or " | " in line:
+            continue
+        return re.sub(r"[^a-z0-9]+", "", line.lower())[:80]
+    return ""
+
+
+def collapse(text: str, limit: int) -> tuple[str, dict[str, list[str]], list[dict]]:
+    """The same reply without copies of a home: the same description text and
+    asking price (and living area, when both give one) under different ids — a
+    Sierra Blanca villa came as three Rentola cards at €18,000 (live 2026-10-26).
+    Returns the text (renumbered), {kept id: [copy ids]} and the kept cards."""
+    blocks: list[list[str]] = []
+    for raw in text.splitlines():
+        if _HEAD.match(raw.strip()):
+            blocks.append([raw])
+        elif blocks:
+            blocks[-1].append(raw)
+    first: dict[tuple, str] = {}
+    groups: dict[str, list[str]] = {}
+    copies: set[str] = set()
+    for block in blocks:
+        card = parse("\n".join(block))[0]
+        ex = _excerpt(block)
+        if not card.get("id") or len(ex) < 40 or card.get("price") is None:
+            continue
+        key = (ex, card["price"], card.get("living_area"))
+        if key in first:
+            groups.setdefault(first[key], []).append(card["id"])
+            copies.add(card["id"])
+        else:
+            first[key] = card["id"]
+    if not copies:
+        return text, {}, parse(text)
+    out, _ = keep(text, lambda c: c.get("id") not in copies, limit)
+    return out, groups, parse(out)
+
+
 def keep(text: str, wanted, limit: int) -> tuple[str, list[dict]]:
     """The same reply with only the cards `wanted(card)` accepts, at most `limit`,
     renumbered; also returns the cards left out. Titles and descriptions are kept."""

@@ -119,6 +119,7 @@ function card(c, t) {
     <div class="where">${esc(places(c.location))}</div>
     ${facts.length ? `<div class="facts">${esc(facts.join(" · "))}</div>` : ""}
     ${(c.tags || []).length ? `<div class="tags">${c.tags.slice(0, 3).map(x => `<span class="${(c.hits || []).includes(x) ? "hit" : ""}">${esc(x)}</span>`).join("")}</div>` : ""}
+    ${c.copies ? `<div class="copies">${esc((D[document.documentElement.lang] || D.en).copies(c.copies + 1))}</div>` : ""}
     ${c.updated ? `<div class="updated">${esc(t.updated)} ${esc(c.updated)}</div>` : ""}
     <div class="links">
       ${open ? `<a class="open" href="${esc(open)}" target="_blank" rel="noopener">${esc(t.open)}</a>` : ""}
@@ -139,37 +140,37 @@ const D = {
         area: "Neighbourhood & environment", desc: "Description", translated: "translated", original: "the agency's own text", features: "Features",
         open: "Open listing", ask: "Ask Cubi", contact: "Contact via Cubi", walk: "min on foot", drive: "min by car", perm2: "per m²",
         note: "Asking price, not a valuation. The brief is written from the listing's own text and Cubi's area data.",
-        map: "Map", mapExact: "Pinned at the listed address", mapTown: "Town centre: the listing gives no exact address", pois: "places nearby from OpenStreetMap", nomap: "Map not available right now", nopois: "places nearby unavailable right now" },
+        map: "Map", mapExact: "Pinned at the listed address", mapTown: "Town centre: the listing gives no exact address", pois: "places nearby from OpenStreetMap", nomap: "Map not available right now", nopois: "places nearby unavailable right now", copies: n => `Listed ${n} times on Cubi; the copies are hidden` },
   pt: { tap: "Toque para ver detalhes", close: "Fechar", reading: "A ler o anúncio…", notavail: "Não foi possível ler o anúncio agora.",
         photos: "Fotos", nophotos: "As fotos estão na página do anúncio.", tldr: "Em resumo", good: "Pontos fortes", warn: "A verificar antes de decidir",
         area: "Bairro e ambiente", desc: "Descrição", translated: "traduzida", original: "texto da agência", features: "Características",
         open: "Ver anúncio", ask: "Perguntar à Cubi", contact: "Contactar via Cubi", walk: "min a pé", drive: "min de carro", perm2: "por m²",
         note: "Preço pedido, não uma avaliação. O resumo vem do texto do anúncio e dos dados de área da Cubi.",
-        map: "Mapa", mapExact: "Na morada anunciada", mapTown: "Centro da localidade: o anúncio não dá a morada exata", pois: "lugares próximos do OpenStreetMap", nomap: "Mapa indisponível agora", nopois: "lugares próximos indisponíveis agora" },
+        map: "Mapa", mapExact: "Na morada anunciada", mapTown: "Centro da localidade: o anúncio não dá a morada exata", pois: "lugares próximos do OpenStreetMap", nomap: "Mapa indisponível agora", nopois: "lugares próximos indisponíveis agora", copies: n => `Anunciada ${n} vezes na Cubi; as cópias estão ocultas` },
   es: { tap: "Toca para ver detalles", close: "Cerrar", reading: "Leyendo el anuncio…", notavail: "No se pudo leer el anuncio ahora.",
         photos: "Fotos", nophotos: "Las fotos están en la página del anuncio.", tldr: "En resumen", good: "Puntos fuertes", warn: "Comprobar antes de decidir",
         area: "Barrio y entorno", desc: "Descripción", translated: "traducida", original: "texto de la agencia", features: "Características",
         open: "Ver anuncio", ask: "Preguntar a Cubi", contact: "Contactar vía Cubi", walk: "min a pie", drive: "min en coche", perm2: "por m²",
         note: "Precio de venta pedido, no una tasación. El resumen sale del texto del anuncio y de los datos de zona de Cubi.",
-        map: "Mapa", mapExact: "En la dirección anunciada", mapTown: "Centro de la localidad: el anuncio no da la dirección exacta", pois: "lugares cercanos de OpenStreetMap", nomap: "Mapa no disponible ahora", nopois: "lugares cercanos no disponibles ahora" },
+        map: "Mapa", mapExact: "En la dirección anunciada", mapTown: "Centro de la localidad: el anuncio no da la dirección exacta", pois: "lugares cercanos de OpenStreetMap", nomap: "Mapa no disponible ahora", nopois: "lugares cercanos no disponibles ahora", copies: n => `Anunciada ${n} veces en Cubi; las copias están ocultas` },
   fr: { tap: "Touchez pour les détails", close: "Fermer", reading: "Lecture de l'annonce…", notavail: "L'annonce n'a pas pu être lue pour le moment.",
         photos: "Photos", nophotos: "Les photos sont sur la page de l'annonce.", tldr: "En bref", good: "Points forts", warn: "À vérifier avant de décider",
         area: "Quartier et environnement", desc: "Description", translated: "traduite", original: "texte de l'agence", features: "Caractéristiques",
         open: "Voir l'annonce", ask: "Demander à Cubi", contact: "Contacter via Cubi", walk: "min à pied", drive: "min en voiture", perm2: "par m²",
         note: "Prix demandé, pas une estimation. Le résumé vient du texte de l'annonce et des données de zone de Cubi.",
-        map: "Carte", mapExact: "À l'adresse annoncée", mapTown: "Centre de la localité : l'annonce ne donne pas l'adresse exacte", pois: "lieux à proximité d'OpenStreetMap", nomap: "Carte indisponible pour le moment", nopois: "lieux à proximité indisponibles pour le moment" },
+        map: "Carte", mapExact: "À l'adresse annoncée", mapTown: "Centre de la localité : l'annonce ne donne pas l'adresse exacte", pois: "lieux à proximité d'OpenStreetMap", nomap: "Carte indisponible pour le moment", nopois: "lieux à proximité indisponibles pour le moment", copies: n => `Annoncé ${n} fois sur Cubi ; les copies sont masquées` },
   de: { tap: "Antippen für Details", close: "Schließen", reading: "Inserat wird gelesen…", notavail: "Das Inserat konnte gerade nicht gelesen werden.",
         photos: "Fotos", nophotos: "Fotos gibt es auf der Inseratseite.", tldr: "Kurz gesagt", good: "Pluspunkte", warn: "Vor der Entscheidung prüfen",
         area: "Umgebung", desc: "Beschreibung", translated: "übersetzt", original: "Text des Maklers", features: "Ausstattung",
         open: "Inserat öffnen", ask: "Cubi fragen", contact: "Über Cubi kontaktieren", walk: "Min. zu Fuß", drive: "Min. mit dem Auto", perm2: "pro m²",
         note: "Angebotspreis, keine Bewertung. Die Kurzfassung stammt aus dem Inseratstext und Cubis Umgebungsdaten.",
-        map: "Karte", mapExact: "An der angegebenen Adresse", mapTown: "Ortsmitte: das Inserat nennt keine genaue Adresse", pois: "Orte in der Nähe aus OpenStreetMap", nomap: "Karte gerade nicht verfügbar", nopois: "Orte in der Nähe gerade nicht verfügbar" },
+        map: "Karte", mapExact: "An der angegebenen Adresse", mapTown: "Ortsmitte: das Inserat nennt keine genaue Adresse", pois: "Orte in der Nähe aus OpenStreetMap", nomap: "Karte gerade nicht verfügbar", nopois: "Orte in der Nähe gerade nicht verfügbar", copies: n => `${n}-mal auf Cubi inseriert; die Kopien sind ausgeblendet` },
   nl: { tap: "Tik voor details", close: "Sluiten", reading: "Advertentie wordt gelezen…", notavail: "De advertentie kon nu niet worden gelezen.",
         photos: "Foto's", nophotos: "Foto's staan op de advertentiepagina.", tldr: "In het kort", good: "Pluspunten", warn: "Controleer voor u beslist",
         area: "Buurt en omgeving", desc: "Beschrijving", translated: "vertaald", original: "tekst van de makelaar", features: "Kenmerken",
         open: "Advertentie openen", ask: "Vraag Cubi", contact: "Contact via Cubi", walk: "min lopen", drive: "min rijden", perm2: "per m²",
         note: "Vraagprijs, geen taxatie. De samenvatting komt uit de advertentietekst en Cubi's omgevingsdata.",
-        map: "Kaart", mapExact: "Op het opgegeven adres", mapTown: "Centrum van de plaats: de advertentie geeft geen exact adres", pois: "plekken in de buurt uit OpenStreetMap", nomap: "Kaart nu niet beschikbaar", nopois: "plekken in de buurt nu niet beschikbaar" },
+        map: "Kaart", mapExact: "Op het opgegeven adres", mapTown: "Centrum van de plaats: de advertentie geeft geen exact adres", pois: "plekken in de buurt uit OpenStreetMap", nomap: "Kaart nu niet beschikbaar", nopois: "plekken in de buurt nu niet beschikbaar", copies: n => `${n} keer op Cubi aangeboden; de kopieën zijn verborgen` },
 };
 const ENV = { quiet: "Quiet (road and rail noise)", clean_air: "Clean air (PM2.5)", leafy: "Leafy", coastal: "Coastal",
               flood_safe: "Flood-safe", wildfire_safer: "Lower wildfire weather", seismic_safer: "Lower seismic risk", stable_ground: "Stable ground" };
