@@ -86,7 +86,10 @@ runs every country at once (the sentence ends ", anywhere in Europe"; lakeside h
 up to €400k came back from Italy, Spain and Portugal in 9 s on 2026-10-26), and the
 first button then is "Compare #1 and #3 feature by feature" — two countries side by
 side, the table naming "Gittana, Italy" and "Alcaucín, Spain". Broad Europe-wide
-picks (a sea view, no feel) can take 15 s or time out, so it stays off the filmed path.
+picks (a sea view, no feel) can take 15 s or hit Cubi's 22 s limit; when they do, the
+agent searches Spain, Italy, Portugal and Germany side by side, merges the cards by
+country and says so (a rental with a mountain view near a lake timed out on 2026-10-26
+and the reply asked for a town — that is the case this covers). It stays off the filmed path.
 
 Not filmed either (rehearsal turns 8–9): the price check against similar
 homes ("Is #2 overpriced?": the range of asking prices and how many comparable homes

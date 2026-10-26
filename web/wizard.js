@@ -184,8 +184,9 @@
     if (pick.goal === "invest") prefs.push("an investment — Cubi has asking prices, no yields");
     if (pick.goal === "build") prefs.push("to build on — buildability isn't verified by Cubi");
     open.push(anywhere() ? "a country or a town (narrow it in the chat)" : "town or city (narrow it in the chat)");
-    if (anywhere()) notes.push("a Europe-wide search takes longer and a very broad one can time out — a feel or a must-have "
-                               + "keeps it sharp. The homes come from different countries; the chat can compare two of them feature by feature");
+    if (anywhere()) notes.push("a Europe-wide search takes longer; if it hits Cubi's time limit the agent searches Spain, Italy, "
+                               + "Portugal and Germany side by side instead and says so. The homes come from different countries; "
+                               + "the chat can compare two of them feature by feature");
     const box = el("div", "wz-brief");
     box.append(el("strong", null, "Cubi Agent understands"));
     const row = (name, items, note) => {

@@ -22,6 +22,7 @@ import json
 import os
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Generator, Iterator
 from urllib.parse import unquote
 
@@ -37,6 +38,12 @@ MAX_STEPS = 5
 CITE_AGAIN = ("Rewrite that answer with the same content, putting the number of the source each point comes "
               "from right after it, like [S2]. Drop any point no source supports. Answer in {lang}.")
 MAX_SEARCH_PLACES = 3  # a multi-place search runs once per place, up to this many
+# A Europe-wide free-text search the connector could not finish within its deadline
+# (22 s: "Houses to rent with a mountain view and near a lake, anywhere in Europe"
+# timed out and the model asked for a town, live 2026-10-26) is run again as one
+# search per big market, side by side: a country-wide search finishes in seconds.
+BIG_MARKETS = ("Spain", "Italy", "Portugal", "Germany")
+INCOMPLETE = ("search_incomplete", "query_timeout")
 LANG_NAMES = {"en": "English", "pt": "European Portuguese", "es": "Spanish", "fr": "French", "de": "German",
               "nl": "Dutch"}
 TOOL_TEXT_CAP = 12000
@@ -227,6 +234,18 @@ def _sentence(f: SearchFilter) -> str:
     return q
 
 
+def _error_code(text: str) -> str:
+    """The connector's in-band error code ("search_incomplete", "query_timeout"…), or ""."""
+    head = text.lstrip()
+    if not head.startswith("{"):
+        return ""
+    try:
+        body = json.loads(head)
+    except json.JSONDecodeError:
+        return ""
+    return str(body.get("code") or "") if isinstance(body, dict) else ""
+
+
 def _long_date(iso: str | None) -> str:
     """'2026-05-02' -> '2 May 2026': one unambiguous form for the model to copy."""
     import datetime as _dt
@@ -274,6 +293,7 @@ class Agent:
         self.bars: dict | None = None  # this turn's budget bars, for the page
         self.similar: dict | None = None  # this turn's side-by-side table, for the page
         self.anywhere = False  # the last search ran Europe-wide (no place; "anywhere in Europe")
+        self.split = False  # the Europe-wide search ran per big market (the whole-corpus pass timed out)
         self.area_places: list[str] = []  # places of the last area research, for suggestions
         self._pair: tuple[int, int] | None = None  # card numbers of a pair comparison in flight
         self.done: set[str] = set()  # what this conversation asked and did, so suggestions don't repeat it
@@ -381,7 +401,12 @@ class Agent:
             return self.mcp.call_tool(tool, args)
         want = args.get("limit") or self.limit
         res = self.mcp.call_tool(tool, {**args, "limit": max(want, OVERFETCH if tool == "filter_listings" else 10)})
-        if res["is_error"]:
+        return self._screen(res, want)
+
+    def _screen(self, res: dict, want: int) -> dict:
+        """The screening step of _screened on a result already fetched (with extra)."""
+        on = self._screening()
+        if res["is_error"] or not any(on.values()):
             return res
         floor = MIN_PRICE[self.filter.transaction_type]
 
@@ -465,6 +490,57 @@ class Agent:
                 "result as given here; a place with no matches had none under these filters.")
         return {"is_error": False, "text": listings.render_cards(head, merged)}, ""
 
+    def _per_market(self, request: str, f: SearchFilter | None) -> Generator[dict, None, tuple[dict, str]]:
+        """A Europe-wide free-text search that did not finish in the connector's time,
+        run as one search per big market at once and merged: the user asked for every
+        country, not for a town, and a country-wide search finishes in seconds."""
+        per = max(2, -(-self.limit // len(BIG_MARKETS)))
+        wish = f", {self.wish}" if self.wish else ""
+
+        def query(country: str) -> str:
+            if f is None:
+                return f"{request.strip()} — only in {country}"
+            return _sentence(f.model_copy(update={"location": [country]})) + wish
+
+        names = ", ".join(BIG_MARKETS[:-1]) + f" and {BIG_MARKETS[-1]}"
+        yield {"type": "action", "text": f"The Europe-wide search did not finish in Cubi's time limit — searching "
+                                         f"{names} side by side instead"}
+        self.split = True
+        self.stats["fallback_searches"] += len(BIG_MARKETS)
+        self.stats["market_searches"] = self.stats.get("market_searches", 0) + len(BIG_MARKETS)
+        limit = 10 if any(self._screening().values()) else per
+        calls = [{"query": query(c), "lang": self.data_lang, "limit": limit} for c in BIG_MARKETS]
+        t0 = time.monotonic()
+        with ThreadPoolExecutor(max_workers=len(BIG_MARKETS)) as pool:
+            results = list(pool.map(lambda a: self.mcp.call_tool("search_properties", a), calls))
+        self._timed(f"search_properties × {len(BIG_MARKETS)} markets, in parallel", t0)
+        merged: list[dict] = []
+        notes, failed, screened = [], [], False
+        for country, res in zip(BIG_MARKETS, results):
+            if res["is_error"]:
+                failed.append(country)
+                notes.append(f"{country}: did not finish")
+                continue
+            res = self._screen(res, per)
+            screened = screened or bool(res.get("screened"))
+            cards = listings.parse(res["text"])
+            notes.append(f"{country}: {len(cards)} shown" + ("" if cards else " (no matches)"))
+            merged.extend(cards)
+        if len(failed) == len(BIG_MARKETS):
+            yield {"type": "action", "text": "No market search finished either"}
+            return results[0], ("[neither the Europe-wide search nor the searches per country finished in "
+                                "Cubi's time limit. Say the search could not finish this time and offer to try "
+                                "again, or to try one country; do not ask for a town — the user asked for all "
+                                "of Europe]\n")
+        for i, c in enumerate(merged, 1):
+            c["n"] = i
+        head = (f"[the Europe-wide search did not finish in Cubi's time limit, so it ran once per big market "
+                f"— {names} — side by side, and the results are merged, grouped by country. Per country: "
+                f"{'; '.join(notes)}. Say in one sentence that these homes come from {names}, Cubi's biggest "
+                f"markets, not from every country on Cubi; a country with no matches had none. Do not ask for "
+                f"a town]\n")
+        return {"is_error": False, "text": listings.render_cards("", merged).strip("\n"), "screened": screened}, head
+
     def _search_homes(self, request: str) -> Iterator[dict | str]:
         offered = [p for p in self.sale_only if suggest.norm(suggest.for_sale(self.lang, p)) == suggest.norm(request)]
         self.sale_only = []   # places _why_none found with homes for sale but none to rent
@@ -489,7 +565,7 @@ class Agent:
         self.stats["llm_out"] += ex.usage.get("out", 0)
         if ex.filter is not None and ex.route == "filter":
             self.filter = ex.filter
-            self.anywhere = False
+            self.anywhere = self.split = False
             self.stats["filter_searches"] += 1
             yield {"type": "action", "text": f"Understood: {_describe(ex.filter, self.user_lang)}", "model": ex.model,
                    "latency_s": ex.latency_s}
@@ -519,8 +595,15 @@ class Agent:
                                              "something like 'near the beach') — using Cubi's free-text search "
                                              "(runs Cubi's own server-side language model)"}
             query = self._free_query(request, ex.filter, before)
-            res = self._screened("search_properties", {"query": query, "lang": self.data_lang, "limit": self.limit})
-            header = "[searched with search_properties (free text)]\n"
+            if self.anywhere and self.split:
+                # A refinement of a Europe-wide search that already had to run per
+                # market: as broad as before, so straight to the markets.
+                res, header = yield from self._per_market(request, ex.filter)
+            else:
+                res = self._screened("search_properties", {"query": query, "lang": self.data_lang, "limit": self.limit})
+                header = "[searched with search_properties (free text)]\n"
+                if res["is_error"] and self.anywhere and _error_code(res["text"]) in INCOMPLETE:
+                    res, header = yield from self._per_market(request, ex.filter)
         if not res["is_error"]:
             self.has_results = True
             self.cards = listings.parse(res["text"])
@@ -538,7 +621,7 @@ class Agent:
         soft = re.search(normalize.SOFT, request, re.I)
         names_place = f is not None and any(suggest.norm(p) in suggest.norm(request) for p in f.location)
         if f is not None and f.location:
-            self.anywhere = False
+            self.anywhere = self.split = False
         elif ANYWHERE.search(suggest.norm(request)):
             self.anywhere = True  # Cubi searches every country only when the request says so
         if before is None or f is None or not f.location or names_place:

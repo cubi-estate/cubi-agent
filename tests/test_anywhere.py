@@ -77,3 +77,72 @@ def test_the_words_that_mean_every_country():
     no = ["Houses in Europe Street, Lisbon", "anywhere in Portugal", "a European-style villa"]
     assert all(ANYWHERE.search(suggest.norm(q)) for q in yes), [q for q in yes if not ANYWHERE.search(suggest.norm(q))]
     assert not any(ANYWHERE.search(suggest.norm(q)) for q in no)
+
+
+# ---- the whole-corpus pass times out → one search per big market, side by side ----
+import json  # noqa: E402
+
+from agent import fixtures  # noqa: E402
+from agent.loop import BIG_MARKETS, Agent, _error_code  # noqa: E402
+
+INCOMPLETE = json.dumps({"is_error": True, "code": "search_incomplete", "tool": "search_properties",
+                         "message": "The search did not finish in time, so there is no result"})
+CARD_ES = ("**1. House for rent Marbella**\n   Location: Marbella, Andalusia, Spain\n   4 bd | 11 000 EUR / month\n"
+           "   URL: https://cubi.estate/r/es1\n   ID: rentola_es:1\n")
+CARD_IT = ("**1. Casa Indipendente**\n   Location: Castel di Sangro, Abruzzo, Italy\n   3 bd | 500 EUR / month\n"
+           "   URL: https://cubi.estate/r/it1\n   ID: gabetti_it:1\n")
+NONE = "No properties matched these filters."
+
+
+def _agent(tmp_path, reply):
+    agent = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=object())
+    calls = []
+
+    def call(name, args):
+        calls.append((name, args))
+        text = reply(args)
+        return {"is_error": text.lstrip().startswith("{"), "text": text, "structured": None}  # as mcp_client reads it
+    agent.mcp.call_tool = call
+    agent.anywhere, agent.wish = True, "ideally in a quiet spot"
+    return agent, calls
+
+
+def _run(gen):
+    try:
+        while True:
+            next(gen)
+    except StopIteration as e:
+        return e.value
+
+
+def test_the_connectors_error_code_is_read():
+    assert _error_code(INCOMPLETE) == "search_incomplete"
+    assert _error_code(json.dumps({"is_error": True, "code": "query_timeout"})) == "query_timeout"
+    assert _error_code(CARD_ES) == "" and _error_code("{not json") == "" and _error_code("[1]") == ""
+
+
+def test_a_timed_out_europe_wide_search_runs_per_market_and_merges(tmp_path):
+    """Live 2026-10-26: "Houses to rent with a mountain view and near a lake, anywhere in
+    Europe, ideally in a quiet spot" timed out at Cubi's 22 s deadline and the model
+    asked for a town. Spain and Italy answered in seconds each, side by side."""
+    agent, calls = _agent(tmp_path, lambda a: CARD_ES if " in Spain" in a["query"]
+                          else CARD_IT if " in Italy" in a["query"] else NONE)
+    f = _f(type=["house"], transaction_type="rent", features=["mountain view", "near a lake"])
+    res, header = _run(agent._per_market("Houses to rent …, anywhere in Europe", f))
+    assert not res["is_error"] and agent.split
+    cards = listings.parse(res["text"])
+    assert [c["n"] for c in cards] == [1, 2]
+    assert "Spain" in cards[0]["location"] and "Italy" in cards[1]["location"]
+    queries = sorted(a["query"] for _, a in calls)
+    assert len(queries) == len(BIG_MARKETS) and all(q.endswith(", ideally in a quiet spot") for q in queries)
+    assert "Houses to rent in Spain with mountain view and near a lake, ideally in a quiet spot" in queries
+    assert "Portugal: 0 shown (no matches)" in header and "Spain: 1 shown" in header
+    assert "not from every country on Cubi" in header and "Do not ask for a town" in header
+
+
+def test_when_no_market_finishes_the_model_is_told_not_to_ask_for_a_town(tmp_path):
+    agent, calls = _agent(tmp_path, lambda a: INCOMPLETE)
+    res, header = _run(agent._per_market("Houses to rent, anywhere in Europe", None))
+    assert res["is_error"] and "do not ask for a town" in header
+    assert len(calls) == len(BIG_MARKETS)
+    assert sorted(a["query"] for _, a in calls) == sorted(f"Houses to rent, anywhere in Europe — only in {c}" for c in BIG_MARKETS)
