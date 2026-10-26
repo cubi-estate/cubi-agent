@@ -91,6 +91,8 @@ agent searches Spain, Italy, Portugal and Germany side by side, merges the cards
 country and says so (a rental with a mountain view near a lake timed out on 2026-10-26
 and the reply asked for a town — that is the case this covers). It stays off the filmed path.
 
+Not filmed, in the app since Oct 26 evening: **tap a card** and the home opens in a pane on the right (full screen on a phone) — Nemotron nano's brief in the user's language (in short, highlights, things to check before deciding, e.g. "Needs renovation", "Energy class F"), Cubi's surroundings profile (noise, air, flood, wildfire, seismic; minutes on foot to a supermarket, school, park; climate; €/m²), the agency's description and every tag by section; about 2 s; photos only when the listing carries them (Cubi's connector sends none today, so the pane links to the listing page). If there is a spare beat in turn 7 or 8, one tap on a card shows it.
+
 Not filmed either (rehearsal turns 8–9): the price check against similar
 homes ("Is #2 overpriced?": the range of asking prices and how many comparable homes
 it rests on; with too few, one plain sentence saying there is no range, never a
