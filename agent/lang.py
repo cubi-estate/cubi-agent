@@ -73,7 +73,7 @@ _OTHER_WORDS = {
           "cerco cerchiamo affitto affittare vendita comprare camere camera letto appartamento appartamenti villetta "
           "casa case giardino terrazzo terrazza piscina mare vicino zona al mese fino massimo bilocale trilocale "
           "mostrami secondo seconda primo prima quanto costa solo come posso contattare contatto agente annuncio "
-          "prezzo simili novita sceso",
+          "prezzo simili novita sceso cosa si compra compro comprano lisbona oppure euro",
     "pl": "mieszkanie mieszkania dom domy pokoje pokoj sprzedaz wynajem w z do na i za tys szukam chce blisko "
           "morza ogrod balkon basen miesiac kupic wynajac pokaz drugie pierwsze",
     "sv": "lagenhet hus till salu hyra rum med och i nara havet soker jag bostad villa tomt per manad visa",
@@ -81,11 +81,33 @@ _OTHER_WORDS = {
     "no": "leilighet hus til salgs leie soverom med og i naer sjoen soker jeg bolig hage per maned vis",
     "cs": "byt dum prodej pronajem pokoje se s v u blizko hledam koupit mesic zahrada",
     "ro": "apartament casa vanzare inchiriere camere cu si in langa caut cumpar gradina luna",
-    "hu": "lakas haz elado kiado szobas szoba es keresek kert honap",
+    "hu": "lakas haz elado kiado szobas szoba es keresek kert honap egy vagy venni vasarolni berelni ezer "
+          "legfeljebb mennyi mennyit mennyibe kerul ember tengerparti kozel mutasd euro hazat lakast kap",
     "tr": "daire ev satilik kiralik oda ile ve yakin ariyorum bahce havuz ay",
-    "fi": "asunto talo myytavana vuokra huone ja lahella etsin piha kuukausi",
+    "fi": "asunto talo myytavana myydaan vuokra vuokrata huone ja lahella etsin piha kuukausi haluan ostaa "
+          "alle enintaan euroa eurolla mita saa tai kaksio yksio kolmio meren rannalla nayta paljon maksaa",
 }
 _OTHER_VOCAB = {lang: set(words.split()) for lang, words in _OTHER_WORDS.items()}
+
+# Hungarian and Finnish glue endings onto words ("lakást", "asuntoa", "Portosta",
+# "Lisszabonban"), so the bare word lists miss most of a real sentence and the
+# Finnish "ä" tipped it to German (tester F9). For these two a word also counts
+# when it is a listed word plus up to three letters, or a long word with a case
+# ending of that language.
+_STEMMED = ("hu", "fi")
+_CASE_ENDING = {
+    "hu": re.compile(r"^\w{4,}(?:ban|ben|bol|bol|ert|nal|nel|hoz|hez|bol|ba|be)$"),
+    "fi": re.compile(r"^\w{4,}(?:ssa|ssa|sta|lla|lta|ksi|lle|ista|issa)$"),
+}
+
+
+def _other_hits(lang: str, plain: list[str], vocab: set[str]) -> int:
+    if lang not in _STEMMED:
+        return _word_hits(plain, vocab)
+    ending = _CASE_ENDING[lang]
+    return sum(1 for t in plain
+               if t in vocab or ending.match(t)
+               or any(len(w) >= 4 and t.startswith(w) and len(t) - len(w) <= 3 for w in vocab))
 
 
 def _word_hits(tokens: list[str], vocab: set[str]) -> int:
@@ -103,7 +125,7 @@ def needs_check(text: str) -> bool:
     plain = [f for t in tokens
              if (f := unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode()) == t or len(f) > 1]
     six = max(_word_hits(tokens, _VOCAB[lang]) for lang in LANGS)
-    other = max(_word_hits(plain, v) for v in _OTHER_VOCAB.values())
+    other = max(_other_hits(lang, plain, v) for lang, v in _OTHER_VOCAB.items())
     # Two words at least: one stray letter ("#2's" → "s", Czech "with") is not a language.
     return other >= 2 and other > six
 

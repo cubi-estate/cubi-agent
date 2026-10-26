@@ -147,12 +147,14 @@ _VERDICT_NOTE = {
 }
 
 
-def _drop_sentences(answer: str, pattern: re.Pattern, keep_questions: bool = False) -> tuple[str, int]:
-    """Remove matching sentences, line by line, keeping the answer's layout."""
+def _drop_sentences(answer: str, pattern: re.Pattern, keep_questions: bool = False,
+                    keep: re.Pattern | None = None) -> tuple[str, int]:
+    """Remove matching sentences, line by line, keeping the answer's layout. `keep` exempts a sentence."""
     n, lines = 0, []
     for line in answer.split("\n"):
         parts = re.split(r"(?<=[.!?])\s+", line)
-        kept = [x for x in parts if not pattern.search(x) or (keep_questions and x.rstrip().endswith("?"))]
+        kept = [x for x in parts if not pattern.search(x) or (keep_questions and x.rstrip().endswith("?"))
+                or (keep is not None and keep.search(x))]
         n += len(parts) - len(kept)
         if kept or not line.strip():
             lines.append(" ".join(kept))
@@ -297,11 +299,38 @@ _ABSENCE_CLAIM = re.compile(
     r"heeft geen|beschikt niet|zonder (?:balkon|terras|lift|parkeer|garage|tuin|zwembad))", re.I)
 
 
+# "There is no similar home in Porto" is about the search, not a home, and is
+# the honest opening of a no-match answer: dropping it left replies starting
+# "Therefore, …" (tester F3). Kept when the absent thing is homes/matches.
+_NO_MATCH = re.compile(
+    r"\b(?:no|zero|nenhu\w*|ningu\w*|aucun\w*|kein\w*|geen)\s+(?:[\w-]+\s+){0,2}"
+    r"(?:homes?|match(?:es)?|listings?|propert(?:y|ies)|results?|alternatives?|comparables|options?|"
+    r"im[óo]ve(?:l|is)|casas?|viviendas?|pisos?|inmuebles?|resultados?|logements?|biens?|r[ée]sultats?|"
+    r"treffer|wohnungen|immobilien|ergebniss?e?|woningen|resultaten|objecten)\b|"
+    # "their listings lack enough data to compare": a gap in Cubi's data, not the home (tester F2)
+    r"\b(?:lack\w*|enough|sufficient)\b.{0,40}\b(?:data|details|information|readings)\b", re.I)
+
+
 def fix_absence_wording(answer: str) -> tuple[str, int]:
     """Reword "absent from the listing", drop "the home lacks …". Returns (answer, changes)."""
     answer, reworded = _ABSENT_FROM.subn("not mentioned in", answer)
-    answer, dropped = _drop_sentences(answer, _ABSENCE_CLAIM)
+    answer, dropped = _drop_sentences(answer, _ABSENCE_CLAIM, keep=_NO_MATCH)
     return answer, reworded + dropped
+
+
+# "since 15 September 15, 2026": handed "15 September 2026", the model once mixed in
+# the US form on a filmed price-history line (tester F12). The same day on both sides
+# of the month name is that garble, never a range ("15 to 20 September" has no repeat).
+_DOUBLED_DAY = re.compile(r"\b(\d{1,2})(\.?\s+(?:de\s+)?)([^\W\d_]{3,})\s+\1(?:st|nd|rd|th)?,?\s+((?:de\s+)?\d{4})\b")
+
+
+def fix_doubled_dates(answer: str) -> tuple[str, int]:
+    def one(m: re.Match) -> str:
+        year = m.group(4)
+        if "de" in m.group(2) and not year.startswith("de"):
+            year = "de " + year    # "15 de setembro de 2026"
+        return f"{m.group(1)}{m.group(2)}{m.group(3)} {year}"
+    return _DOUBLED_DAY.subn(one, answer)
 
 
 # Area research: "No source indicated a lack of school information" — filler about
@@ -446,13 +475,15 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
     if "research_area" in used_tools:
         answer, filler = _drop_sentences(answer, _NO_SOURCE_FILLER)
     pct = 0
+    dates = 0
     if "home_news" in used_tools:
         answer, v = drop_price_verdicts(answer, lang)   # "a bargain after the cut"
         verdicts += v
+        answer, dates = fix_doubled_dates(answer)
     if "compare_inventory" in used_tools or "home_news" in used_tools:
         answer, pct = drop_unbacked_percentages(answer, tool_text)
     return answer, {"urls_removed": removed, "items_dropped": dropped, "contacts_scrubbed": scrubbed,
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
                     "absence_wording_fixed": absence, "source_filler_dropped": filler,
                     "all_have_claims_dropped": wishes, "over_budget_dropped": over, "reasoning_stripped": reasoning, "ids_scrubbed": ids,
-                    "band_stated": band_added}
+                    "band_stated": band_added, "dates_fixed": dates}

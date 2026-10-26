@@ -168,3 +168,65 @@ def test_english_makes_no_translation_calls(tmp_path):
     llm = _LLM({}, f"Here is one flat: {URL}")
     final = list(_agent(tmp_path, llm).turn("2-bed apartment in Porto under 400k"))[-1]
     assert llm.kinds() == ["extract", "loop"] and final["lang"] == "en"
+
+
+@pytest.mark.parametrize("text", [
+    "Eladó lakás Lisszabonban 300 000 euróig", "Lakást keresek Portóban, legfeljebb 250 ezer euró",
+    "Mennyit ér egy lakás Lisszabonban?", "Mit kap az ember 400 000 euróért Lisszabonban vagy Portóban?",
+    "Myytävä asunto Lissabonissa alle 300 000 euroa", "Etsin asuntoa Portosta, enintään 250 000 euroa",
+    "Haluan ostaa talon Portugalista", "Mitä 400 000 eurolla saa Lissabonista tai Portosta?",
+])
+def test_hungarian_and_finnish_go_through_english(text):
+    # Tester F9: inflected words missed the lists; Hungarian answered in English, Finnish in German.
+    assert needs_check(text)
+
+
+@pytest.mark.parametrize("text", [
+    "Ich suche ein Haus in Berlin zum Verkaufen und Vermieten", "la propuesta de Alicante",
+    "Ich möchte eine Wohnung in Lissabon kaufen, maximal 300000", "busco piso en Madrid hasta 250000 con terraza",
+])
+def test_stemming_leaves_the_six_alone(text):
+    assert not needs_check(text)
+
+
+@pytest.mark.parametrize("english", [
+    "What can be bought for 400,000 euros in Lisbon or Porto?",
+    "What do you get for 400,000 euros in Lisbon or Porto?",
+    "What can you get for 400,000 euros in Lisbon or Porto?",
+    "What can be purchased for 400,000 euros in Lisbon or Porto?",
+    "what does 400k get you in Lisbon vs Porto",
+])
+def test_translated_budget_questions_compare_budgets(english):
+    # Tester F11: the pivot's English ("can be bought", "get for") fell through to an exact-price search.
+    from agent import skills
+    assert skills.select(english.lower(), False) == "compare-budget"
+
+
+def test_a_card_price_question_is_not_a_budget_comparison():
+    from agent import skills
+    assert skills.select("what do you get for the price of #2?", True) != "compare-budget"
+
+
+def test_the_italian_budget_question_goes_through_english():
+    assert needs_check("Cosa si compra con 400.000 euro a Lisbona o a Porto?")
+    assert not needs_check("qué se compra con 400.000 euros en Lisboa o Oporto?")
+    assert not needs_check("o que se compra com 400 mil euros em Lisboa ou no Porto?")
+
+
+def test_an_english_answer_on_a_dutch_turn_is_translated(monkeypatch):
+    # Tester F21: "Wat koop je voor €400.000 in Lissabon en Porto?" answered in English once.
+    asked = []
+    monkeypatch.setattr(pivot, "back", lambda cli, name, answer, chips, code="": asked.append(name) or ("In Lissabon …", []))
+    me = SimpleNamespace(lang="nl", cli=None)
+    english = "We compared apartments with two bedrooms: 11.2% of the listings in Lisbon are within the budget."
+    assert Agent._in_turn_language(me, english) == ("In Lissabon …", 1) and asked == ["Dutch"]
+    dutch = "Voor een vraagprijs tot €400.000 valt 15,1 % van de woningen in Lissabon binnen dat budget."
+    assert Agent._in_turn_language(me, dutch) == (dutch, 0)
+    assert Agent._in_turn_language(SimpleNamespace(lang="en", cli=None), english) == (english, 0)
+    assert len(asked) == 1
+
+
+def test_a_failed_translation_keeps_the_answer(monkeypatch):
+    monkeypatch.setattr(pivot, "back", lambda *a, **k: None)
+    english = "We compared apartments in Lisbon and Porto, and 15% of the listings are within the budget."
+    assert Agent._in_turn_language(SimpleNamespace(lang="de", cli=None), english) == (english, 0)

@@ -14,7 +14,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from agent import fixtures, guards, similar  # noqa: E402
+from agent import fixtures, guards, similar, skills as skillsmod  # noqa: E402
 from agent.loop import Agent  # noqa: E402
 
 
@@ -99,7 +99,7 @@ def test_no_match_is_said(tmp_path):
     final = list(agent.turn("Show me homes like #2 in Lisbon"))[-1]
     assert final["listings"] == [] and len(final["similar"]["columns"]) == 1
     text = similar.tool_text(_result(matches=0), [], "#2")
-    assert "No documented match in Lisboa" in text and "do not suggest a looser match" in text
+    assert "No matching home was found in Lisboa" in text and "do not suggest a looser match" in text
 
 
 def test_same_city_and_failures_draw_nothing(tmp_path):
@@ -175,6 +175,27 @@ def test_absence_claims_are_dropped_in_every_language(sentence):
     assert n == 1 and out == "Ok."
 
 
+@pytest.mark.parametrize("opening", [
+    "There is no similar home in Porto within your budget.",
+    "There are no comparable homes in Lisbon, so none could be shown.",
+    "No comparable homes could be shown for this listing.",
+    "Não há nenhum imóvel semelhante no Porto.",
+    "No hay ninguna vivienda similar en Oporto.",
+    "Il n'y a aucun logement comparable à Porto.",
+    "Es gibt keine vergleichbaren Wohnungen in Porto.",
+    "Er zijn geen vergelijkbare woningen in Porto.",
+])
+def test_no_match_opening_is_kept(opening):
+    # Tester F3: the honest no-match sentence went, so the reply opened "Therefore, …".
+    text = opening + " Therefore, I would widen the search to the whole district."
+    assert guards.fix_absence_wording(text) == (text, 0)
+
+
+def test_a_home_lacking_something_still_goes_beside_a_no_match_sentence():
+    out, n = guards.fix_absence_wording("There is no similar home in Porto. The Lisbon flat has no lift.")
+    assert n == 1 and out == "There is no similar home in Porto."
+
+
 def test_does_not_mention_is_kept():
     text = "The Lisbon listing does not mention parking."
     assert guards.fix_absence_wording(text) == (text, 0)
@@ -183,3 +204,49 @@ def test_does_not_mention_is_kept():
 def test_the_guard_runs_only_for_similar_homes():
     answer, rep = guards.apply("Parking is absent from the listing.", "", "en", {"get_listing"})
     assert "absent" in answer and rep["absence_wording_fixed"] == 0
+
+
+def test_no_match_line_reports_the_connector_pool():
+    # Tester F2: the line read "in_city" (absent live) as 0 candidates and always blamed size.
+    line = similar.no_match_line("Bragança", {"candidates": 4, "dropped": {"bedrooms": 0, "area": 0, "undocumented": 4}})
+    assert "4 candidate homes in Bragança" in line and "don't state enough features" in line
+    assert "bedrooms" not in line and "15%" not in line and " 0 " not in line
+    line = similar.no_match_line("Faro", {"candidates": 150, "dropped": {"bedrooms": 120, "area": 30}})
+    assert "150 candidate homes" in line and "120 with a different number of bedrooms" in line and "30 with" in line
+    assert "no candidate homes" in similar.no_match_line("Évora", {"candidates": 0, "dropped": {}})
+    assert "4 candidate" in similar.no_match_line("Évora", {"in_city": 4, "dropped": {"area": 4}})  # older shape
+
+
+def test_a_data_gap_sentence_survives_the_absence_guard():
+    text = ("There is no documented match in Bragança. Their listings lack sufficient feature or environment data "
+            "for a comparison.")
+    assert guards.fix_absence_wording(text) == (text, 0)
+    assert guards.fix_absence_wording("Ok. The Porto flat lacks a lift.") == ("Ok.", 1)
+
+
+@pytest.mark.parametrize("text", ["casas como a #1 em Bragança", "pisos como el #2 en Valencia"])
+def test_como_a_card_is_a_similar_homes_request(text):
+    assert skillsmod.select(text.lower(), True) == "similar-elsewhere"
+
+
+@pytest.mark.parametrize("garbled, fixed", [
+    ("Cubi has seen no change in this home's asking price since 15 September 15, 2026.",
+     "Cubi has seen no change in this home's asking price since 15 September 2026."),
+    ("O Cubi não viu mudanças desde 15 de setembro 15, 2026.", "O Cubi não viu mudanças desde 15 de setembro de 2026."),
+    ("desde el 15 de septiembre 15 de 2026", "desde el 15 de septiembre de 2026"),
+    ("seit 15. September 15, 2026", "seit 15. September 2026"),
+])
+def test_a_doubled_day_in_a_date_is_repaired(garbled, fixed):
+    # Tester F12: "since 15 September 15, 2026" on a filmed price-history line.
+    assert guards.fix_doubled_dates(garbled) == (fixed, 1)
+
+
+@pytest.mark.parametrize("text", ["Prices fell between 15 September and 20 September 2026.",
+                                  "since 15 September 2026", "#2 costs €400,000 since 3 May 2026, and 3 more homes"])
+def test_correct_dates_are_left_alone(text):
+    assert guards.fix_doubled_dates(text) == (text, 0)
+
+
+def test_the_date_repair_runs_on_news_answers():
+    answer, rep = guards.apply("No change since 15 September 15, 2026.", "", "en", {"home_news"})
+    assert answer == "No change since 15 September 2026." and rep["dates_fixed"] == 1

@@ -127,6 +127,33 @@ def _home(label: str, p: dict, cross: bool = False) -> str:
     return f"{label} ({place(p, cross)}): " + ", ".join(bits)
 
 
+# Why a city had no match, from the connector's pool: {"candidates": 4, "dropped":
+# {"bedrooms": 0, "area": 0, "undocumented": 4}}. The line used to read "in_city"
+# (absent live, so "0 candidates") and always blame bedrooms and size, when Cubi
+# had the homes but too little stated about them to compare (tester F2).
+_DROPPED = {
+    "bedrooms": "{n} with a different number of bedrooms",
+    "area": "{n} with a living area more than 15% off",
+    "undocumented": "{n} whose listings don't state enough features or environment readings to compare "
+                    "(a gap in the data, not in the homes)",
+}
+
+
+def no_match_line(city: str | None, pool: dict) -> str:
+    n = pool.get("candidates", pool.get("in_city"))
+    dropped = pool.get("dropped") or {}
+    reasons = [_DROPPED[k].format(n=v) for k, v in dropped.items() if k in _DROPPED and v]
+    if n == 0:
+        found = f"Cubi has no candidate homes of this type in {city}."
+    elif n is None:
+        found = f"No home in {city} met the rules."
+    else:
+        found = f"Cubi had {n} candidate home{'s' if n != 1 else ''} in {city}" + (
+            ": " + "; ".join(reasons) + "." if reasons else ", none meeting the rules.")
+    return (f"No matching home was found in {city}. {found} Say why in these terms, with no other "
+            f"reason, and do not suggest a looser match.")
+
+
 def tool_text(result: dict, cards: list[dict], seed_label: str, match_labels: list[str] | None = None) -> str:
     """What the loop model reads: the prices, the differences computed here, and the rules."""
     seed, city = result["seed"], result.get("city")
@@ -135,9 +162,7 @@ def tool_text(result: dict, cards: list[dict], seed_label: str, match_labels: li
     lines = [f"[find_similar_elsewhere {json.dumps({'listing_id': seed.get('id'), 'city': city}, ensure_ascii=False)}]",
              _home(f"This home, {seed_label}", seed, cross)]
     if not matches:
-        pool = result.get("pool") or {}
-        lines.append(f"No documented match in {city}: {pool.get('in_city', 0)} candidates there, none with the same "
-                     f"bedrooms and a living area within 15%. Say so; do not suggest a looser match.")
+        lines.append(no_match_line(city, result.get("pool") or {}))
     for i, m in enumerate(matches, 1):
         label = match_labels[i - 1] if match_labels and i <= len(match_labels) else f"#{i}"
         lines.append(_home(f"{'Home' if match_labels else 'Match'} {label}", m, cross))
@@ -145,6 +170,9 @@ def tool_text(result: dict, cards: list[dict], seed_label: str, match_labels: li
                             f"the {place(m, cross)} {'home' if match_labels else 'match'} ({label})")
         lines.append(f"  Differences (copy one or two of these sentences as written, translated if needed): "
                      + (" ".join(diffs) if diffs else "none recorded."))
+    if not matches:
+        lines.append("Write one or two sentences: that, with the reason, then offer another city.")
+        return "\n".join(lines)
     lines.append(
         "The app shows every row as a table, with the matches as numbered cards. Write two or three sentences: "
         "the asking prices side by side, then one or two of the Differences sentences, keeping which home "

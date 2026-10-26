@@ -13,5 +13,5 @@ description: Show homes like one listing the user is looking at, in another city
 - Only state figures the result gives.
 - These are asking prices. Never call a difference a saving, a bargain, a premium or a valuation.
 - "not stated" means the listing doesn't say; "unknown" means there is no reading. Never turn either into "it has no …".
-- If there is no match, say that no listing with the same bedrooms and a similar size was found there, and offer another city. Don't suggest a looser match.
+- If there is no match, say so with the reason the tool gives (how many homes Cubi had there and why none matched: bedrooms, size, or listings that state too little to compare), and offer another city. Don't suggest a looser match.
 - Don't pick a winner or say which home to buy.

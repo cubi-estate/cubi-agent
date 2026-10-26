@@ -56,6 +56,10 @@ _PATTERNS = {
     # What money buys across places — an analytic question, not a search. Phrased
     # narrowly on purpose: "Porto or Valencia, up to 400k" is a home search.
     "compare-budget": r"what (does|do|can|would|will) .{0,60}\bbuys?\b|how far does .{0,40}\bgo\b|"
+                      # how the pivot's translation phrases it (tester F11): "What can be bought
+                      # for 400,000 euros…", "What do you get for…", "what does 400k get you"
+                      r"what (can|could|would|will|is) (be|one|you|i|we) (bought|purchased?)\b|"
+                      r"what (do|does|can|could|would|will) (you|one|i|we|someone) get for\b(?!.*#\s*\d)|\bgets? you\b.{0,40}\b(in|across)\b|"
                       r"\bafford\b|share of (homes|flats|apartments|listings)|"
                       r"o que (se )?compr[ao]|quanto (se )?compr[ao]|qu[eé] (se )?(puede )?compr[ao]|"
                       r"was bekomm|was kauft man|wat koop je|wat krijg je|"
@@ -68,6 +72,7 @@ _PATTERNS = {
 _PATTERNS["similar-elsewhere"] = (
     r"\bsimilar\b|\b(homes?|flats?|apartments?|something|anything|one|ones)\s+like\b|like (this|that|it|#)|"
     r"parecid|semelhante|similares?\b|ähnlich|vergleichbar|vergelijkbar|zoals (#|deze|die)|"
+    r"\bcomo (?:a|o|el|la) (?:#|n[º°o]\.?\s*\d)|"  # "casas como a #1 em Bragança" (searched instead)
     r"comme (celui|celle|ça|le n|la n)|semblable|pareil|"
     # two cards side by side ("Compare #1 and #4 feature by feature")
     r"feature by feature|side by side|caracter[ií]stica (a|por) caracter[ií]stica|point par point|"
