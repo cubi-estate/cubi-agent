@@ -46,8 +46,8 @@ def test_the_wishes_run_as_requirements_when_enough_homes_have_them(tmp_path):
     res, header = _run(agent._free_search(Q, Q, None))
     assert calls == ["Houses to rent in the mountains, anywhere in Europe, with a mountain view and a fireplace, furnished"]
     assert len(listings.parse(res["text"])) == 4
-    assert 'every home here meets "ideally with a mountain view and a fireplace, furnished"' in header
-    assert "would show more" in header
+    assert "All of these have what you wished for — with a mountain view and a fireplace, furnished (N on Cubi)" in header
+    assert "there would be more homes" in header
 
 
 def test_too_few_with_all_wishes_falls_back_to_the_wish_search(tmp_path):

@@ -548,9 +548,12 @@ class Agent:
             res, header = yield from self._free_once(must, request, f, fallback=False)
             cards = [] if res["is_error"] else listings.parse(res["text"])
             if len(cards) >= MIN_WISHED:
-                return res, (header + f"[the user's wishes were searched as requirements: every home here meets "
-                                      f"\"{self.wish}\". Say so in one sentence; the user said 'ideally', so add "
-                                      f"that a search without them would show more homes]\n")
+                rest = re.sub(normalize.SOFT + r"[ ,:]*", "", self.wish, flags=re.I).strip(" ,.")
+                return res, (header + f"[the user's wishes were searched as requirements. Open with this, in the "
+                                      f"user's language, with Cubi's count from the summary line: \"All of these "
+                                      f"have what you wished for — {rest} (N on Cubi). Without those requirements "
+                                      f"there would be more homes.\" Do not call them wishes or say they were not "
+                                      f"filtered: they were]\n")
             why = "did not finish" if res["is_error"] else f"only {len(cards)} home(s) have all of them"
             yield {"type": "action", "text": f"As requirements: {why} — searching with them as wishes instead"}
         return (yield from self._free_once(query, request, f))
