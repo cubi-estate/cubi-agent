@@ -236,6 +236,23 @@ def _sentence(f: SearchFilter) -> str:
     return q
 
 
+# "What's new in Nazaré, Leiria": a place the user names after a preposition, at the
+# end of the message. Live 2026-10-26 that question got the price history of the
+# last card (in Sotogrande) and Spanish news. A capital letter starts the place, so
+# "what's new in the area" names none.
+NAMED_PLACE = re.compile(r"\b(?:in|em|en|à|a|dans|bij)\s+([A-ZÀ-ÝŠŽ][^?!.]*?)\s*[?!.]*$")
+PRICE_WORDS = re.compile(r"price|dropp|reduc|cheaper|pre[cç]o|baixou|precio|bajad|prix|baiss|preis|gesunken|"
+                         r"prijs|gedaald|#\s*\d", re.I)
+
+
+def named_place(message: str) -> str:
+    """The place a news question names ("Nazaré, Leiria"), or ""."""
+    m = NAMED_PLACE.search(message.strip())
+    if not m:
+        return ""
+    return re.split(r"\s+(?:and|e|y|et|und|en)\s+|\s*#", m.group(1))[0].strip(" ,")
+
+
 def _error_code(text: str) -> str:
     """The connector's in-band error code ("search_incomplete", "query_timeout"…), or ""."""
     head = text.lstrip()
@@ -813,23 +830,36 @@ class Agent:
         """The home's observed price changes (Cubi) and recent news about its city
         (Tavily, cited). X is linked, not read: no search API without a paid key."""
         ref, how = self._resolve_listing("")
-        if ref is None:
+        named = named_place(self._message)
+        # A card number or a price word makes it about a home; a place alone makes it
+        # about the place, and no home's price is looked up.
+        about_home = how.startswith("card") or bool(PRICE_WORDS.search(self._message)) or not named
+        if about_home and ref is None:
             yield {"type": "action", "text": "Price history: which home? (no card number or known id)"}
             yield "error: no home is on screen or named. Ask the user which card number they mean."
             return
-        self.focus = ref
-        self.done.add(suggest.key("news", ref))
-        n = ordinals.ordinal(how, 99) if how.startswith("card") else None
-        label = f"#{n}" if n else "this home"
-        yield {"type": "action", "text": f"Checking the price history — {how}"}
+        lines: list[str] = []
         hist = None
-        try:
-            res = self.mcp.call_tool("get_price_history", {"listing_id": ref})
-            hist = None if res["is_error"] else json.loads(res["text"])
-        except (MCPError, json.JSONDecodeError):
-            hist = None
-        lines = []
-        if not hist:
+        if about_home:
+            self.focus = ref
+            self.done.add(suggest.key("news", ref))
+            n = ordinals.ordinal(how, 99) if how.startswith("card") else None
+            label = f"#{n}" if n else "this home"
+            yield {"type": "action", "text": f"Checking the price history — {how}"}
+            try:
+                res = self.mcp.call_tool("get_price_history", {"listing_id": ref})
+                hist = None if res["is_error"] else json.loads(res["text"])
+            except (MCPError, json.JSONDecodeError):
+                hist = None
+        else:
+            ref, n = None, None
+            yield {"type": "action", "text": f"What's new in {named}: about the place, not a home"}
+            lines.append(f"[no home was asked about: the question is about {named} only. Say nothing about any "
+                         f"home or its price; answer in two sentences at most — what's new, with its source "
+                         f"numbers, and posts on X if any are given]")
+        if not about_home:
+            pass
+        elif not hist:
             yield {"type": "action", "text": "Price history: not available right now"}
             lines.append("[price history] Not available right now: say so; do not guess any price change.")
         else:
@@ -867,8 +897,12 @@ class Agent:
         searched = list(self.filter.location) if self.filter and self.filter.location else []
         city = suggest.news_place(card, searched) or (hist or {}).get("city") or ""
         country = (hist or {}).get("country") or ""
+        place = f"{city}, {country}" if country else city
+        if named and not (city and suggest._same_place(named.split(",")[0], city)):
+            # The place the user named wins over the card's: "what's new in Nazaré"
+            # asked after a Sotogrande search is about Nazaré.
+            city, place = named.split(",")[0].strip(), named
         if city:
-            place = f"{city}, {country}" if country else city
             yield {"type": "action", "text": f"Searching recent news about {city} (Tavily, last {tavily_tool.NEWS_DAYS} days)"}
             try:
                 text, st = tavily_tool.latest_news(place, first_id=len(self.sources) + 1)

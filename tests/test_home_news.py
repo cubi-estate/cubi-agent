@@ -201,3 +201,44 @@ def test_the_news_tool_text_ends_asking_for_a_short_summary():
     assert "at most three sentences" in BRIEF_NEWS and "60 words" in BRIEF_NEWS
     skill = (Path(__file__).resolve().parents[1] / "skills" / "home-news" / "SKILL.md").read_text()
     assert "at most three sentences" in skill and "No greeting" in skill
+
+
+def _collect(gen):
+    out = []
+    try:
+        while True:
+            out.append(next(gen))
+    except StopIteration:
+        pass
+    return out
+
+
+def test_a_place_question_is_about_the_place_not_the_last_card(tmp_path, monkeypatch):
+    """Live 2026-10-26: "What's new in Nazare, Leiria" after a Sotogrande search gave that
+    home's price history and Spanish news."""
+    from agent.loop import named_place
+    assert named_place("What's new in Nazaré, Leiria") == "Nazaré, Leiria"
+    assert named_place("Has #2's price dropped, and what's new in Lisbon?") == "Lisbon"
+    assert named_place("Quoi de neuf à Lyon ?") == "Lyon" and named_place("Was gibt es Neues in Lissabon?") == "Lissabon"
+    assert named_place("what's new in the area") == "" and named_place("Has #2's price dropped?") == ""
+    agent, calls, seen = _agent(tmp_path, monkeypatch, HIST, "ok")
+    agent.focus = "remax:2"
+    agent._message = "What's new in Nazaré, Leiria"
+    events = _collect(agent._home_news())
+    assert not any(name == "get_price_history" for name, _ in calls)
+    assert seen == ["Nazaré, Leiria"] and agent.price_history is None
+    text = [e for e in events if isinstance(e, str)][-1]
+    assert "about Nazaré, Leiria only" in text and "price history for" not in text
+    assert any(isinstance(e, dict) and "about the place, not a home" in e["text"] for e in events)
+
+
+def test_a_card_question_keeps_the_price_and_takes_the_named_place(tmp_path, monkeypatch):
+    agent, calls, seen = _agent(tmp_path, monkeypatch, HIST, "ok")
+    agent._message = "Has #1's price dropped, and what's new in Nazaré?"
+    _collect(agent._home_news())
+    assert any(name == "get_price_history" for name, _ in calls) and agent.price_history["card"] == 1
+    assert seen == ["Nazaré"]
+    agent, calls, seen = _agent(tmp_path, monkeypatch, HIST, "ok")
+    agent._message = "Has #2's price dropped, and what's new in Lisboa?"
+    _collect(agent._home_news())
+    assert seen == ["Lisboa, Portugal"]   # the card's own place: unchanged path, country kept

@@ -13,6 +13,8 @@ Answer in the user's language as a short summary — at most three sentences, ab
 2. What's new, in one sentence: the one or two news points that matter most to someone buying there, each followed by the number of its source, like [S2]. If no news was found, say so in a few words.
 3. Posts on X, in one sentence, only when posts are given: what they mention, cited like [X1].
 
+When the result says the question is about a place only ("What's new in Nazaré?" with no card named), there is no price sentence: two sentences at most, the news and the posts, about that place.
+
 No greeting, no offer of further help, no list.
 
 ## Rules
