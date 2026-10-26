@@ -198,7 +198,7 @@
       box.append(p);
     };
     row("Filters:", facts);
-    row("Wishes:", prefs, "(sent along; the chat can turn one into a filter)");
+    row("Wishes:", prefs, "(tried as requirements first; kept as wishes if too few homes have them all)");
     row("Skipped:", skipped);
     row("Still open:", open);
     row("Heads-up:", notes);

@@ -46,6 +46,11 @@ MAX_SEARCH_PLACES = 3  # a multi-place search runs once per place, up to this ma
 # search per big market, side by side: a country-wide search finishes in seconds.
 BIG_MARKETS = ("Spain", "Italy", "Portugal", "Germany")
 INCOMPLETE = ("search_incomplete", "query_timeout")
+# A wish ("ideally with a mountain view") only ranks on Cubi, and over a Europe-wide
+# pool the first page showed no home with it ("No mountain viewable houses at all?",
+# live 2026-10-26). The wish is tried as a requirement first; the search runs as a
+# wish only when fewer than this many homes have it all.
+MIN_WISHED = 3
 LANG_NAMES = {"en": "English", "pt": "European Portuguese", "es": "Spanish", "fr": "French", "de": "German",
               "nl": "Dutch"}
 TOOL_TEXT_CAP = 12000
@@ -520,6 +525,36 @@ class Agent:
                 "result as given here; a place with no matches had none under these filters.")
         return {"is_error": False, "text": listings.render_cards(head, merged)}, ""
 
+    def _free_once(self, query: str, request: str, f: SearchFilter | None,
+                   fallback: bool = True) -> Generator[dict, None, tuple[dict, str]]:
+        """One free-text search, Europe-wide ones falling back to the big markets."""
+        if self.anywhere and self.split and fallback:
+            # A refinement of a Europe-wide search that already had to run per
+            # market: as broad as before, so straight to the markets.
+            return (yield from self._per_market(request, f))
+        res = self._screened("search_properties", {"query": query, "lang": self.data_lang, "limit": self.limit})
+        header = "[searched with search_properties (free text)]\n"
+        if res["is_error"] and self.anywhere and fallback and _error_code(res["text"]) in INCOMPLETE:
+            res, header = yield from self._per_market(request, f)
+        return res, header
+
+    def _free_search(self, query: str, request: str, f: SearchFilter | None) -> Generator[dict, None, tuple[dict, str]]:
+        """The wishes as requirements first ("with a mountain view", 128 homes), as
+        wishes only if too few homes have them all (see MIN_WISHED)."""
+        soft = re.search(normalize.SOFT, query, re.I)
+        if self.wish and soft:
+            must = re.sub(normalize.SOFT + r"[ ,:]*", "", query, flags=re.I)
+            yield {"type": "action", "text": f"Trying the wishes as requirements first — {self.wish}"}
+            res, header = yield from self._free_once(must, request, f, fallback=False)
+            cards = [] if res["is_error"] else listings.parse(res["text"])
+            if len(cards) >= MIN_WISHED:
+                return res, (header + f"[the user's wishes were searched as requirements: every home here meets "
+                                      f"\"{self.wish}\". Say so in one sentence; the user said 'ideally', so add "
+                                      f"that a search without them would show more homes]\n")
+            why = "did not finish" if res["is_error"] else f"only {len(cards)} home(s) have all of them"
+            yield {"type": "action", "text": f"As requirements: {why} — searching with them as wishes instead"}
+        return (yield from self._free_once(query, request, f))
+
     def _per_market(self, request: str, f: SearchFilter | None) -> Generator[dict, None, tuple[dict, str]]:
         """A Europe-wide free-text search that did not finish in the connector's time,
         run as one search per big market at once and merged: the user asked for every
@@ -627,15 +662,7 @@ class Agent:
                                              "something like 'near the beach') — using Cubi's free-text search "
                                              "(runs Cubi's own server-side language model)"}
             query = self._free_query(request, ex.filter, before)
-            if self.anywhere and self.split:
-                # A refinement of a Europe-wide search that already had to run per
-                # market: as broad as before, so straight to the markets.
-                res, header = yield from self._per_market(request, ex.filter)
-            else:
-                res = self._screened("search_properties", {"query": query, "lang": self.data_lang, "limit": self.limit})
-                header = "[searched with search_properties (free text)]\n"
-                if res["is_error"] and self.anywhere and _error_code(res["text"]) in INCOMPLETE:
-                    res, header = yield from self._per_market(request, ex.filter)
+            res, header = yield from self._free_search(query, request, ex.filter)
         if not res["is_error"]:
             self.has_results = True
             self.cards = listings.parse(res["text"])
