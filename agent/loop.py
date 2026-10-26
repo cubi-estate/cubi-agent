@@ -29,6 +29,7 @@ from urllib.parse import unquote
 
 import httpx
 
+from . import detail as detailmod
 from . import extract as extractmod
 from . import guards, inventory, lang as langmod, listings, llm, normalize, ordinals, pivot, similar as similarmod, steps, skills as skillsmod, suggest, tavily_tool, x_tool
 from .fixtures import connect, listing_ref
@@ -327,6 +328,17 @@ class Agent:
         self.price_history: dict | None = None  # this turn's price timeline, for the page
         self.x_url: str | None = None  # this turn's link to X's live search for the home's city
         self.x_posts: list[dict] = []  # this turn's posts from X, when X_BEARER_TOKEN is set
+        self.details: dict[str, dict] = {}  # listing panes read this conversation, by id
+
+    # ---- the listing pane ---------------------------------------------------
+    def detail(self, ref: str) -> dict:
+        """One home in full for the page's pane (agent/detail.py): read once per
+        conversation, in the language the user writes in."""
+        key = ref.lower()
+        if key not in self.details:
+            self.details[key] = detailmod.read(self.mcp, self.cli, ref, data_lang=self.data_lang,
+                                               lang=self.user_lang, lang_name=self.user_lang_name)
+        return self.details[key]
 
     # ---- tools -------------------------------------------------------------
     def _timed(self, stage: str, t0: float) -> None:

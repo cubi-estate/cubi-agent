@@ -25,6 +25,7 @@ import time
 from collections import OrderedDict, defaultdict, deque
 from pathlib import Path
 from typing import Iterator
+from urllib.parse import unquote
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -236,6 +237,24 @@ async def chat(body: ChatIn, request: Request):
     return StreamingResponse(iterate_in_threadpool(_turn(sid, sess, message)),
                              media_type="application/x-ndjson",
                              headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+
+@app.get("/api/listing/{ref:path}")
+async def listing_detail(ref: str, request: Request, session_id: str | None = None):
+    """The pane for one card: only a listing this conversation has shown (so the
+    route is not an open window onto the connector), counted like a turn."""
+    ref = unquote(ref).strip()
+    sid, sess = sessions.get(session_id)
+    if not ref or len(ref) > 200 or ref.lower() not in sess.agent.seen_refs:
+        return JSONResponse({"ok": False, "error": "unknown_listing", "session_id": sid}, status_code=404)
+    code = limits.check(_ip(request))
+    if code:
+        return JSONResponse({"ok": False, "error": code, "text": ERRORS[code], "session_id": sid}, status_code=429)
+    t0 = time.monotonic()
+    data = await run_in_threadpool(sess.agent.detail, ref)
+    sess.last = time.monotonic()
+    log.info("detail ok=%s seconds=%.1f", data.get("ok"), time.monotonic() - t0)
+    return JSONResponse({"session_id": sid, "lang": sess.agent.user_lang, **data}, headers={"Cache-Control": "no-store"})
 
 
 @app.post("/api/reset")

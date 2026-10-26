@@ -264,3 +264,47 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   .wz-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .wz-tile strong { font-size: 14px; }
 }
+
+/* The listing pane: one home in full, opened by tapping its card. A column on the
+   right on wide screens (the chat keeps its width); the whole screen on a phone. */
+.card.tappable { cursor: pointer; transition: border-color .12s; }
+.card.tappable:hover { border-color: var(--accent); }
+#detail {
+  position: fixed; top: 0; right: 0; height: 100%; width: min(460px, 100%); overflow-y: auto; z-index: 6;
+  background: var(--panel); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgba(0, 0, 0, .08);
+  padding: 0 18px 28px; overscroll-behavior: contain; padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}
+@media (min-width: 1180px) { body.detail-open { padding-right: 460px; } }
+#detail .dhead { position: sticky; top: 0; background: var(--panel); padding: 14px 0 8px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+#detail .dclose { float: right; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
+#detail .dprice { font-size: 20px; font-weight: 700; }
+#detail .dprice .n { font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+#detail .dtitle { font-weight: 600; }
+#detail .dwhere, #detail .dfacts, #detail .dnote, #detail .dclimate { font-size: 13.5px; color: var(--muted); }
+#detail .dname { font-size: 16px; margin: 6px 0 2px; overflow-wrap: anywhere; }
+#detail .dloading { color: var(--muted); display: flex; align-items: center; gap: 8px; margin: 14px 0; }
+#detail .dphotos { display: flex; gap: 8px; overflow-x: auto; margin: 10px 0; scroll-snap-type: x mandatory; }
+#detail .dphotos img { height: 190px; max-width: 90%; border-radius: 10px; flex: none; scroll-snap-align: start; object-fit: cover; background: var(--bg); }
+#detail .dlinks { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+#detail .dlinks a { font-size: 14px; text-decoration: none; border-radius: 999px; padding: 6px 12px; }
+#detail .dlinks .open { background: var(--accent); color: var(--accent-ink); }
+#detail .dlinks .ask { border: 1px solid var(--line); color: var(--ink); }
+#detail h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 18px 0 6px; }
+#detail h3 .dsub { text-transform: none; letter-spacing: 0; font-weight: 400; }
+#detail .dtldr { margin: 0; font-size: 15px; }
+#detail ul { margin: 0; padding-left: 20px; }
+#detail li { margin: 3px 0; }
+#detail .dgood li::marker { color: var(--accent); }
+#detail .dwarn li::marker { color: var(--warn); }
+#detail .denv { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 13.5px; }
+#detail .denv .yes { color: var(--accent); }
+#detail .denv .no { color: var(--warn); }
+#detail .denv .dval { color: var(--muted); text-align: right; }
+#detail .dclimate { margin: 8px 0 0; }
+#detail .ddesc { font-size: 14px; white-space: pre-line; overflow-wrap: anywhere; margin: 0; }
+#detail .dfeat { margin-top: 14px; font-size: 13.5px; }
+#detail .dfeat summary { cursor: pointer; font-weight: 600; }
+#detail .dsec { margin: 8px 0; }
+#detail .dsec b { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+#detail .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+#detail .tags span { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; }

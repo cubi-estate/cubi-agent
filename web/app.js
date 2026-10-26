@@ -124,8 +124,123 @@ function card(c, t) {
       ${open ? `<a class="open" href="${esc(open)}" target="_blank" rel="noopener">${esc(t.open)}</a>` : ""}
       ${ask ? `<a class="ask" href="${esc(ask)}" target="_blank" rel="noopener">${esc(t.ask)}</a>` : ""}
     </div>`;
+  if (c.id) {
+    el.classList.add("tappable");
+    el.title = (D[document.documentElement.lang] || D.en).tap;
+    el.addEventListener("click", e => { if (!e.target.closest("a")) openDetail(c); });
+  }
   return el;
 }
+
+// ---- the listing pane: one home in full, on tap -----------------------------
+const D = {
+  en: { tap: "Tap for details", close: "Close", reading: "Reading the listing…", notavail: "The listing could not be read right now.",
+        photos: "Photos", nophotos: "Photos are on the listing page.", tldr: "In short", good: "Highlights", warn: "Check before deciding",
+        area: "Neighbourhood & environment", desc: "Description", translated: "translated", original: "the agency's own text", features: "Features",
+        open: "Open listing", ask: "Ask Cubi", contact: "Contact via Cubi", walk: "min on foot", drive: "min by car", perm2: "per m²",
+        note: "Asking price, not a valuation. The brief is written from the listing's own text and Cubi's area data." },
+  pt: { tap: "Toque para ver detalhes", close: "Fechar", reading: "A ler o anúncio…", notavail: "Não foi possível ler o anúncio agora.",
+        photos: "Fotos", nophotos: "As fotos estão na página do anúncio.", tldr: "Em resumo", good: "Pontos fortes", warn: "A verificar antes de decidir",
+        area: "Bairro e ambiente", desc: "Descrição", translated: "traduzida", original: "texto da agência", features: "Características",
+        open: "Ver anúncio", ask: "Perguntar à Cubi", contact: "Contactar via Cubi", walk: "min a pé", drive: "min de carro", perm2: "por m²",
+        note: "Preço pedido, não uma avaliação. O resumo vem do texto do anúncio e dos dados de área da Cubi." },
+  es: { tap: "Toca para ver detalles", close: "Cerrar", reading: "Leyendo el anuncio…", notavail: "No se pudo leer el anuncio ahora.",
+        photos: "Fotos", nophotos: "Las fotos están en la página del anuncio.", tldr: "En resumen", good: "Puntos fuertes", warn: "Comprobar antes de decidir",
+        area: "Barrio y entorno", desc: "Descripción", translated: "traducida", original: "texto de la agencia", features: "Características",
+        open: "Ver anuncio", ask: "Preguntar a Cubi", contact: "Contactar vía Cubi", walk: "min a pie", drive: "min en coche", perm2: "por m²",
+        note: "Precio de venta pedido, no una tasación. El resumen sale del texto del anuncio y de los datos de zona de Cubi." },
+  fr: { tap: "Touchez pour les détails", close: "Fermer", reading: "Lecture de l'annonce…", notavail: "L'annonce n'a pas pu être lue pour le moment.",
+        photos: "Photos", nophotos: "Les photos sont sur la page de l'annonce.", tldr: "En bref", good: "Points forts", warn: "À vérifier avant de décider",
+        area: "Quartier et environnement", desc: "Description", translated: "traduite", original: "texte de l'agence", features: "Caractéristiques",
+        open: "Voir l'annonce", ask: "Demander à Cubi", contact: "Contacter via Cubi", walk: "min à pied", drive: "min en voiture", perm2: "par m²",
+        note: "Prix demandé, pas une estimation. Le résumé vient du texte de l'annonce et des données de zone de Cubi." },
+  de: { tap: "Antippen für Details", close: "Schließen", reading: "Inserat wird gelesen…", notavail: "Das Inserat konnte gerade nicht gelesen werden.",
+        photos: "Fotos", nophotos: "Fotos gibt es auf der Inseratseite.", tldr: "Kurz gesagt", good: "Pluspunkte", warn: "Vor der Entscheidung prüfen",
+        area: "Umgebung", desc: "Beschreibung", translated: "übersetzt", original: "Text des Maklers", features: "Ausstattung",
+        open: "Inserat öffnen", ask: "Cubi fragen", contact: "Über Cubi kontaktieren", walk: "Min. zu Fuß", drive: "Min. mit dem Auto", perm2: "pro m²",
+        note: "Angebotspreis, keine Bewertung. Die Kurzfassung stammt aus dem Inseratstext und Cubis Umgebungsdaten." },
+  nl: { tap: "Tik voor details", close: "Sluiten", reading: "Advertentie wordt gelezen…", notavail: "De advertentie kon nu niet worden gelezen.",
+        photos: "Foto's", nophotos: "Foto's staan op de advertentiepagina.", tldr: "In het kort", good: "Pluspunten", warn: "Controleer voor u beslist",
+        area: "Buurt en omgeving", desc: "Beschrijving", translated: "vertaald", original: "tekst van de makelaar", features: "Kenmerken",
+        open: "Advertentie openen", ask: "Vraag Cubi", contact: "Contact via Cubi", walk: "min lopen", drive: "min rijden", perm2: "per m²",
+        note: "Vraagprijs, geen taxatie. De samenvatting komt uit de advertentietekst en Cubi's omgevingsdata." },
+};
+const ENV = { quiet: "Quiet (road and rail noise)", clean_air: "Clean air (PM2.5)", leafy: "Leafy", coastal: "Coastal",
+              flood_safe: "Flood-safe", wildfire_safer: "Lower wildfire weather", seismic_safer: "Lower seismic risk", stable_ground: "Stable ground" };
+const MIN = { "walk_time.metro_station": "Metro", "walk_time.railway_station": "Railway station", "walk_time.supermarket": "Supermarket",
+              "walk_time.school": "School", "walk_time.park": "Park", "walk_time.restaurant": "Restaurant",
+              "drive_time.coast": "Coast", "drive_time.airport": "Airport" };
+const pane = document.getElementById("detail");
+
+function closeDetail() { pane.hidden = true; pane.replaceChildren(); document.body.classList.remove("detail-open"); }
+
+async function openDetail(c) {
+  const lang = document.documentElement.lang || "en", d = D[lang] || D.en;
+  pane.hidden = false; document.body.classList.add("detail-open");
+  pane.innerHTML = `
+    <div class="dhead">
+      <button class="dclose" type="button" aria-label="${esc(d.close)}">×</button>
+      <div class="dprice">${esc(c.price_text || "—")} <span class="n">#${esc(c.n)}</span></div>
+      <div class="dtitle">${esc(c.type || "Home")}</div>
+      <div class="dwhere">${esc(places(c.location))}</div>
+    </div>
+    <p class="dloading"><span class="spinner" aria-hidden="true"></span> ${esc(d.reading)}</p>`;
+  pane.querySelector(".dclose").addEventListener("click", closeDetail);
+  pane.scrollTop = 0;
+  let data = null;
+  try {
+    const r = await fetch(`/api/listing/${encodeURIComponent(c.id)}?session_id=${encodeURIComponent(sessionId || "")}`);
+    data = await r.json();
+  } catch { data = null; }
+  if (pane.hidden) return;   // closed while reading
+  if (!data || !data.ok) { pane.querySelector(".dloading").textContent = (data && data.text) || d.notavail; return; }
+  renderDetail(c, data, d);
+}
+
+function renderDetail(c, x, d) {
+  const facts = [];
+  if (x.bedrooms != null) facts.push(`${Math.round(x.bedrooms)} ${(T[document.documentElement.lang] || T.en).bd}`);
+  if (x.bathrooms != null) facts.push(`${Math.round(x.bathrooms)} ${(T[document.documentElement.lang] || T.en).ba}`);
+  if (x.living_area != null) facts.push(`${Math.round(x.living_area)} m²`);
+  if (x.plot_area != null) facts.push(`${Math.round(x.plot_area)} m² plot`);
+  if (x.eur_per_m2) facts.push(`€${Math.round(x.eur_per_m2).toLocaleString()} ${d.perm2}`);
+  const open = safeUrl(x.url || c.url), ask = safeUrl(x.ask_url || c.ask_url), contact = safeUrl(x.contact_url);
+  const li = items => items.map(s => `<li>${esc(s)}</li>`).join("");
+  const photos = (x.images || []).filter(u => safeUrl(u)).slice(0, 10);
+  const env = (x.environment || []).filter(e => e.state === "yes" || e.state === "no");
+  const mins = Object.entries(x.minutes || {}).filter(([k]) => MIN[k]);
+  const cl = x.climate || {};
+  const climate = [cl.sunshine_hours ? `${Math.round(cl.sunshine_hours)} h sun/yr` : "", cl.summer_max_c != null ? `summer max ${Math.round(cl.summer_max_c)} °C` : "",
+                   cl.winter_min_c != null ? `winter min ${Math.round(cl.winter_min_c)} °C` : "", cl.sea_temp_summer_c ? `sea ${Math.round(cl.sea_temp_summer_c)} °C in summer` : ""].filter(Boolean);
+  const sections = Object.entries(x.sections || {});
+  pane.querySelector(".dloading").remove();
+  pane.insertAdjacentHTML("beforeend", `
+    ${x.title ? `<h2 class="dname">${esc(x.title)}</h2>` : ""}
+    ${facts.length ? `<div class="dfacts">${esc(facts.join(" · "))}</div>` : ""}
+    ${photos.length ? `<div class="dphotos">${photos.map(u => `<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer">`).join("")}</div>`
+                    : `<p class="dnote">${esc(d.nophotos)}</p>`}
+    <div class="dlinks">
+      ${open ? `<a class="open" href="${esc(open)}" target="_blank" rel="noopener">${esc(d.open)}</a>` : ""}
+      ${ask ? `<a class="ask" href="${esc(ask)}" target="_blank" rel="noopener">${esc(d.ask)}</a>` : ""}
+      ${contact ? `<a class="ask" href="${esc(contact)}" target="_blank" rel="noopener">${esc(d.contact)}</a>` : ""}
+    </div>
+    ${x.tldr ? `<h3>${esc(d.tldr)}</h3><p class="dtldr">${esc(x.tldr)}</p>` : ""}
+    ${(x.highlights || []).length ? `<h3>${esc(d.good)}</h3><ul class="dgood">${li(x.highlights)}</ul>` : ""}
+    ${(x.watch_outs || []).length ? `<h3>${esc(d.warn)}</h3><ul class="dwarn">${li(x.watch_outs)}</ul>` : ""}
+    ${env.length || mins.length || climate.length ? `<h3>${esc(d.area)}</h3>
+      <div class="denv">
+        ${env.map(e => `<span class="${e.state === "yes" ? "yes" : "no"}">${e.state === "yes" ? "✓" : "✗"} ${esc(ENV[e.key] || e.key)}</span><span class="dval">${e.value != null ? esc(`${e.value} ${e.unit || ""}`) : ""}</span>`).join("")}
+        ${mins.map(([k, v]) => `<span>${esc(MIN[k])}</span><span class="dval">${esc(`${Math.round(v)} ${k.startsWith("drive") ? d.drive : d.walk}`)}</span>`).join("")}
+      </div>
+      ${climate.length ? `<p class="dclimate">${esc(climate.join(" · "))}</p>` : ""}` : ""}
+    ${x.description ? `<h3>${esc(d.desc)} <span class="dsub">(${esc(x.translated ? d.translated : d.original)})</span></h3><p class="ddesc">${esc(x.description)}</p>` : ""}
+    ${sections.length ? `<details class="dfeat"><summary>${esc(d.features)}</summary>${sections.map(([name, tags]) =>
+        `<div class="dsec"><b>${esc(name)}</b><div class="tags">${tags.map(t => `<span>${esc(t)}</span>`).join("")}</div></div>`).join("")}</details>` : ""}
+    <p class="dnote">${esc(d.note)}</p>`);
+}
+
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !pane.hidden) closeDetail(); });
+document.getElementById("new").addEventListener("click", closeDetail);
 
 function euro(n, lang) {
   return "€" + Math.round(Number(n) || 0).toLocaleString(lang || "en").replace(/,/g, "\u202f");
