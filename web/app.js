@@ -263,8 +263,6 @@ function leaflet() {
   });
   return leafletReady;
 }
-const POI = [["shop", "supermarket", "🛒", 1200], ["amenity", "school", "🏫", 1500], ["leisure", "park", "🌳", 1500],
-             ["railway", "station", "🚉", 2500], ["amenity", "restaurant", "🍽️", 800], ["amenity", "pharmacy", "💊", 1200]];
 // Nominatim answers with the kind of place it found: a settlement means the listing
 // named no street ("Anjo da Guarda, Fundão" resolved to the farm itself, 2026-10-26).
 const AREA = new Set(["country", "state", "region", "province", "county", "municipality", "city", "town", "village",
