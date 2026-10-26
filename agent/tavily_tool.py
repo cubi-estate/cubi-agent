@@ -249,24 +249,42 @@ def news_queries(town: str, country: str = "") -> list[str]:
 # Valencia, Immigrant Invest, Zillow): sales copy, not reporting. Idealista's
 # news section is journalism and is kept (its domain matches none of these).
 _SELLER_DOMAIN = re.compile(r"propert|realt|real-?estate|inmobiliari|imobiliari|immo|invest|homes?\.|"
-                            r"zillow|resideline|rightmove|sothebys|barnes|engelvoelkers|remax|kw\.com", re.I)
+                            r"zillow|resideline|rightmove|sothebys|barnes|engelvoelkers|remax|kw\.com|"
+                            # Short-let listings and market-data pages ("Grandma Tina's House", an
+                            # AirROI table) came back as Nazaré's news (live 2026-10-26).
+                            r"airbnb|airroi|airdna|booking\.|vrbo|holidu|tripadvisor|expedia", re.I)
+
+
+def place_parts(place: str) -> tuple[str, str, str]:
+    """"Nazaré, Leiria, Portugal" → (town, region, country); "Nazaré, Leiria" → region
+    only (Leiria is no country); "Lisboa, Portugal" → country only."""
+    from . import normalize
+    parts = [x.strip() for x in place.split(",") if x.strip()]
+    town = parts[0] if parts else ""
+    rest = parts[1:]
+    country = rest[-1] if rest and (len(rest) > 1 or normalize.is_country(rest[-1])) else ""
+    region = next((x for x in rest if x != country), "")
+    return town, region, country
 
 
 def latest_news(place: str, http: httpx.Client | None = None, first_id: int = 1) -> tuple[str, dict]:
-    """Recent housing news about one place: Tavily's news topic, last NEWS_DAYS
-    days. Articles that name the town come first; if fewer than two, articles
-    about the country follow, labelled as such so they aren't told as city news.
+    """Recent housing news about one place ("town[, region][, country]"): Tavily's
+    news topic, last NEWS_DAYS days. Articles that name the town come first; if
+    fewer than two, the region is searched and its articles follow, then the
+    country's — each labelled as such so they aren't told as town news (a small
+    town like Nazaré has no housing reporting of its own, live 2026-10-26).
     Same numbered-source shape as research_area, so link_citations links them.
-    Only the place name is sent."""
+    Only the place names are sent."""
     http = http or httpx.Client(timeout=20.0)
-    town, _, country = (x.strip() for x in place.partition(","))
+    town, region, country = place_parts(place)
     names = {town, english_name(town)}
-    queries = news_queries(town, country)
+    queries = news_queries(town, country or region)
     t0 = time.monotonic()
     with ThreadPoolExecutor(max_workers=len(queries)) as pool:
         found = list(pool.map(lambda q: _search(q, http, topic="news", days=NEWS_DAYS), queries))
-    city, national, seen = [], [], set()
-    for results in found:
+    city, regional, national, seen = [], [], [], set()
+
+    def sort(results: list[dict]) -> None:
         for res in results:
             url = res.get("url", "")
             if not url or url in seen or _SELLER_DOMAIN.search(_domain(url)):
@@ -274,8 +292,17 @@ def latest_news(place: str, http: httpx.Client | None = None, first_id: int = 1)
             seen.add(url)
             if any(_mentions(res, n) for n in names):
                 city.append(res)
+            elif region and _mentions(res, region):
+                regional.append(res)
             elif country and _mentions(res, country):
                 national.append(res)
+
+    for results in found:
+        sort(results)
+    if len(city) < 2 and region:
+        # The town has too little of its own: one more search, about its region.
+        queries.append(f"{english_name(region)}{', ' + country if country else ''} housing market")
+        sort(_search(queries[-1], http, topic="news", days=NEWS_DAYS))
     sources: dict = {}
     out = [f"## Recent housing news (last {NEWS_DAYS} days)"]
 
@@ -289,7 +316,10 @@ def latest_news(place: str, http: httpx.Client | None = None, first_id: int = 1)
     for res in city[:4]:
         add(res, "")
     if len(city) < 2:
-        for res in national[: 3 - len(city)]:
+        for res in regional[: 3 - len(city)]:
+            add(res, f"(about the {region} region, not {town} specifically) ")
+    if len(sources) < 2:
+        for res in national[: 3 - len(sources)]:
             add(res, f"(about {country} as a whole, not {town} specifically) ")
     if not sources:
         out.append(f"(no housing news about {town} found in the last {NEWS_DAYS} days)")

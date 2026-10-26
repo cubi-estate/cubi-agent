@@ -242,3 +242,44 @@ def test_a_card_question_keeps_the_price_and_takes_the_named_place(tmp_path, mon
     agent._message = "Has #2's price dropped, and what's new in Lisboa?"
     _collect(agent._home_news())
     assert seen == ["Lisboa, Portugal"]   # the card's own place: unchanged path, country kept
+
+
+def _hit(url, title, text):
+    return {"url": url, "title": title, "content": text, "published_date": "2026-10-20"}
+
+
+def test_a_small_town_falls_back_to_its_regions_news(monkeypatch):
+    """Nazaré's own "news" was an Airbnb listing and a market-data table (live
+    2026-10-26); real reporting exists for the Leiria region."""
+    assert tavily_tool.place_parts("Nazaré, Leiria") == ("Nazaré", "Leiria", "")
+    assert tavily_tool.place_parts("Nazaré, Leiria, Portugal") == ("Nazaré", "Leiria", "Portugal")
+    assert tavily_tool.place_parts("Lisboa, Portugal") == ("Lisboa", "", "Portugal")
+    asked = []
+
+    def search(query, http, topic="general", days=None):
+        asked.append(query)
+        if query.startswith("Leiria"):
+            return [_hit("https://jornaldeleiria.pt/a", "Rents in Leiria district up", "Leiria rents rose"),
+                    _hit("https://publico.pt/b", "Leiria housing plan", "the Leiria region plans homes")]
+        return [_hit("https://www.airbnb.com.mt/rooms/1", "Grandma Tina's House - Nazaré", "Nazaré flat"),
+                _hit("https://www.airroi.com/airbnb-data/portugal", "Best Airbnb markets", "Nazaré revenue"),
+                _hit("https://observador.pt/n", "Nazaré surf season", "Nazaré waves and housing")]
+    monkeypatch.setattr(tavily_tool, "_search", search)
+    text, st = tavily_tool.latest_news("Nazaré, Leiria", http=object())
+    assert st["searches"] == 3 and asked[-1] == "Leiria housing market"
+    assert "airbnb" not in text and "airroi" not in text
+    assert "[S1] Nazaré surf season" in text
+    assert "[S2] (about the Leiria region, not Nazaré specifically) Rents in Leiria district up" in text
+    assert len(st["sources"]) == 3
+
+
+def test_a_city_with_its_own_news_runs_no_regional_search(monkeypatch):
+    asked = []
+
+    def search(query, http, topic="general", days=None):
+        asked.append(query)
+        return [_hit(f"https://news.pt/{len(asked)}a", "Lisboa rents", "Lisboa"),
+                _hit(f"https://news.pt/{len(asked)}b", "Lisboa housing", "Lisboa")]
+    monkeypatch.setattr(tavily_tool, "_search", search)
+    text, st = tavily_tool.latest_news("Lisboa, Lisboa, Portugal", http=object())
+    assert st["searches"] == 2 and "region" not in text and len(st["sources"]) == 4

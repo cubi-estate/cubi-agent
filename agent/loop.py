@@ -349,6 +349,14 @@ class Agent:
         return ("\n\nHomes on screen now (card number → listing id). When the user refers to a card, pass "
                 "its listing id; the app also resolves card numbers itself:\n" + "\n".join(rows))
 
+    def _in_turn_language(self, answer: str) -> tuple[str, int]:
+        """An answer in English on a Dutch turn ("Wat koop je voor €400.000…", tester F21)
+        is translated, despite the [Answer in Dutch.] note: the model slips now and then."""
+        if self.lang == "en" or not answer.strip() or langmod.detect(answer, default=self.lang) != "en":
+            return answer, 0
+        out = pivot.back(self.cli, LANG_NAMES[self.lang], answer, [], self.lang)
+        return (out[0], 1) if out else (answer, 0)
+
     def _no_such_card(self, text: str) -> str:
         """The question for "Is #9 overpriced?" when only six cards are on screen.
         Left to the model, this was where its reasoning leaked into the answer."""
@@ -897,7 +905,12 @@ class Agent:
         searched = list(self.filter.location) if self.filter and self.filter.location else []
         city = suggest.news_place(card, searched) or (hist or {}).get("city") or ""
         country = (hist or {}).get("country") or ""
-        place = f"{city}, {country}" if country else city
+        # The card's region too ("Nazaré, Leiria, Portugal"): a small town's news
+        # search falls back to its region before the country.
+        region = next((w for w in (x.strip() for x in (card.get("location") or "").split(","))
+                       if w and not suggest._same_place(w, city) and not normalize.is_country(w)
+                       and not re.search(r"\d", w)), "")
+        place = ", ".join(x for x in (city, region, country) if x)
         if named and not (city and suggest._same_place(named.split(",")[0], city)):
             # The place the user named wins over the card's: "what's new in Nazaré"
             # asked after a Sotogrande search is about Nazaré.
@@ -1189,6 +1202,7 @@ class Agent:
         answer, report = guards.apply(answer, tool_text, self.lang, used,
                                       [str(c.get("id")) for c in self.shown])
         report["citations_linked"] = cited
+        answer, report["language_fixed"] = self._in_turn_language(answer)
         turn_msgs.append({"role": "assistant", "content": answer})
         self.history += turn_msgs
         self.done.add(suggest.norm(text))
