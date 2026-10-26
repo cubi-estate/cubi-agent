@@ -270,23 +270,19 @@ const POI = [["shop", "supermarket", "🛒", 1200], ["amenity", "school", "🏫"
 const AREA = new Set(["country", "state", "region", "province", "county", "municipality", "city", "town", "village",
                       "hamlet", "suburb", "neighbourhood", "quarter", "city_district", "district", "borough", "postcode", "island", "locality"]);
 
-// The public Overpass servers are often overloaded (502 and 406 from the main one,
-// 2026-10-26): try each in turn, briefly; null when none answers.
-const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
-                  "https://lz4.overpass-api.de/api/interpreter"];
-async function overpass(query) {
-  for (const url of OVERPASS) {
-    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 12000);
-    try {
-      const r = await fetch(url, { method: "POST", body: "data=" + encodeURIComponent(query), signal: ctl.signal,
-                                   headers: { "Content-Type": "application/x-www-form-urlencoded" } });
-      if (!r.ok) continue;
-      const body = await r.json();
-      if (Array.isArray(body.elements)) return body.elements;
-    } catch { /* next server */ } finally { clearTimeout(timer); }
-  }
-  return null;
+// Places nearby: Nominatim's bounded search by category (Overpass's public servers
+// answered 406 and 502 on 2026-10-26; Photon ranks by name, not distance). One
+// request per category, a second apart, as Nominatim's policy asks; pins appear as
+// each category lands. About 2 km around the home.
+const POI = [["supermarket", "🛒"], ["school", "🏫"], ["park", "🌳"], ["station", "🚉"], ["pharmacy", "💊"], ["restaurant", "🍽️"]];
+async function nearby(lat, lon, kind, lang) {
+  const dLat = 0.018, dLon = 0.018 / Math.cos(lat * Math.PI / 180);
+  const box = [lon - dLon, lat + dLat, lon + dLon, lat - dLat].map(v => v.toFixed(5)).join(",");
+  const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=12&bounded=1&viewbox=${box}&q=${encodeURIComponent(kind)}`,
+                        { headers: { "Accept-Language": lang } });
+  return r.ok ? await r.json() : [];
 }
+const pause = ms => new Promise(ok => setTimeout(ok, ms));
 
 async function loadMap(x, c, d) {
   const box = pane.querySelector(".dmap"), note = pane.querySelector(".dmapnote");
@@ -307,19 +303,21 @@ async function loadMap(x, c, d) {
     L.marker([lat, lon], { icon: L.divIcon({ className: "dpin home", html: "🏠", iconSize: [30, 30] }), zIndexOffset: 1000 })
       .addTo(map).bindPopup(esc(c.type || "Home") + (exact ? "" : " · " + esc(d.mapTown)));
     note.textContent = exact ? d.mapExact : d.mapTown;
-    const query = `[out:json][timeout:12];(${POI.map(([k, v, , r]) => `nwr(around:${r},${lat},${lon})[${k}=${v}];`).join("")});out center 80;`;
-    const elements = await overpass(query);
-    if (elements === null) { note.textContent += " · " + d.nopois; return; }
-    let n = 0;
-    for (const e of elements) {
-      const t = e.tags || {}, kind = POI.find(([k, v]) => t[k] === v);
-      const la = e.lat ?? e.center?.lat, lo = e.lon ?? e.center?.lon;
-      if (!kind || la == null) continue;
-      L.marker([la, lo], { icon: L.divIcon({ className: "dpin", html: kind[2], iconSize: [22, 22] }) })
-        .addTo(map).bindPopup(esc(t.name || kind[1]));
-      n++;
+    const where = exact ? d.mapExact : d.mapTown;
+    let n = 0, failed = 0;
+    for (const [kind, icon] of POI) {
+      await pause(1100);
+      if (pane.hidden || !box.isConnected) return;
+      try {
+        for (const p of await nearby(lat, lon, kind, lang)) {
+          L.marker([+p.lat, +p.lon], { icon: L.divIcon({ className: "dpin", html: icon, iconSize: [22, 22] }) })
+            .addTo(map).bindPopup(esc(p.name || String(p.display_name || kind).split(",")[0]));
+          n++;
+        }
+      } catch { failed++; }
+      note.textContent = `${where} · ${n} ${d.pois}`;
     }
-    note.textContent = `${exact ? d.mapExact : d.mapTown} · ${n} ${d.pois}`;
+    if (failed === POI.length) note.textContent = `${where} · ${d.nopois}`;
   } catch {
     box.remove();
     if (note) note.textContent = d.nomap;
