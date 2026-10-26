@@ -57,7 +57,7 @@ the image again under the **same URL** (verified 2026-10-20: build `d885cf4` →
 
 ```bash
 git push origin main                          # CI: tests, then the image (:latest and :<sha>)
-nebius ai endpoint restart aiendpoint-e04mtgmr4t1stq5k81
+nebius ai endpoint restart aiendpoint-e04prr3a90h6mh2frd
 curl -s "$(curl -sLo /dev/null -w "%{url_effective}" https://www.cubi.estate/agent)/api/health"   # "build" = the new commit
 ```
 
@@ -70,12 +70,12 @@ update `CUBI_AGENT_DEMO_URL` in `cubi-estate/property_chat/next.config.ts`, the
 Billed from create to delete, idle included. Stop the endpoint (`nebius ai
 endpoint stop`) when it isn't needed. Judging runs until Dec 15.
 
-## Current deployment (2026-10-20)
+## Current deployment (2026-10-26)
 
 | | |
 |---|---|
-| endpoint | `aiendpoint-e04mtgmr4t1stq5k81` (`cubi-agent`) |
-| URL | https://port8080-myw5s0tbthpk9rt.tunnel.applications.eu-west2.nebius.cloud, behind https://www.cubi.estate/agent |
+| endpoint | `aiendpoint-e04prr3a90h6mh2frd` (`cubi-agent-v2`) |
+| URL | https://port8080-h5mn3waf4p1cyjr.tunnel.applications.eu-west2.nebius.cloud, behind https://www.cubi.estate/agent |
 | project | `default-project-eu-west2` (Paris). eu-north1 has a CPU quota of 0 for this tenant |
 | size | `cpu-d3` / `2vcpu-8gb`, not preemptible |
 | image | `ghcr.io/cubi-estate/cubi-agent:latest`; `/api/health` → `build` names the commit |
@@ -83,7 +83,13 @@ endpoint stop`) when it isn't needed. Judging runs until Dec 15.
 | auth | none (public page); the app's own limits apply |
 
 The first endpoint (`aiendpoint-e04ka37zfce17bcjb7`, pinned to a sha) was deleted
-once the redirect moved.
+once the redirect moved. The second (`aiendpoint-e04mtgmr4t1stq5k81`, `cubi-agent`,
+2026-10-20 → 10-26) stopped accepting restarts on 2026-10-26 — the API answered
+`FailedPrecondition: This Endpoint/Devlab is outdated. Please create a new one` —
+so it was recreated from its own spec (`nebius ai endpoint get --format json`:
+same preset, subnet and `--env-secret SECRET_ID@VERSION_ID`) and the redirect moved.
+If a restart fails that way again, that is the path: create, check `/api/health`,
+move `CUBI_AGENT_DEMO_URL`, delete the old one.
 
 ## Uptime
 
