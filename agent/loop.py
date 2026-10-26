@@ -689,9 +689,10 @@ class Agent:
                     if kept in by_id:
                         by_id[kept]["copies"] = len(dups)
                         said.append(f"#{by_id[kept]['n']} is listed {len(dups) + 1} times on Cubi")
-                header += (f"[{sum(len(d) for d in groups.values())} card(s) were copies of another card — the same "
-                           f"text and price under different ids — and were removed: {'; '.join(said)}. Say so in "
-                           f"one sentence]\n")
+                # Said as given: the model wrote "card #3 appeared three times and was
+                # removed" about the card still on screen (live 2026-10-26).
+                header += (f"[copies of a home were hidden. Say this, in the user's language, and nothing else "
+                           f"about it: \"{'; '.join(said)}; the copies are hidden, the home is shown once.\"]\n")
             if self.cards:
                 self.shown = self.cards
                 self.focus = None  # a new result set: "it" no longer means the old home
