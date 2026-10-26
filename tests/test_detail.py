@@ -88,6 +88,9 @@ def test_the_brief_is_guarded_and_in_the_users_language():
     assert "bargain" not in b["tldr"] and b["tldr"].startswith("A five-bedroom villa")
     assert b["highlights"] == BRIEF["highlights"]
     assert b["watch_outs"][:2] == ["Needs renovation", "Energy class F"] and all("912" not in w for w in b["watch_outs"])
+    assert b["description"] == ""   # English: Cubi's own text stands, whatever the model returned
+    fr = detail.brief(_LLM({**BRIEF, "description": "Villa spacieuse avec vue sur le lac."}), detail.parse(LISTING), {}, "fr", "French")
+    assert fr["description"] == "Villa spacieuse avec vue sur le lac."
     system = cli.calls[0]["messages"][0]["content"]
     assert "in English" in system and "never judge the asking price" in system
     assert "clean_air: yes" in cli.calls[0]["messages"][1]["content"]

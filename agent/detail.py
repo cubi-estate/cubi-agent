@@ -27,6 +27,8 @@ from . import guards, listings, llm, similar as similarmod
 from .mcp_client import MCPError
 
 MAX_DESC = 2500
+# Cubi serves the description in these languages itself; the model translates only for the others.
+CUBI_LANGS = ("en", "pt", "es", "de")
 SKIP = {"description", "continue on cubi", "images", "contact"}
 
 SCHEMA = {
@@ -150,7 +152,9 @@ def brief(cli, listing: dict, prof: dict, lang: str, lang_name: str) -> dict:
     return {"tldr": clean(body.get("tldr") or ""),
             "highlights": [clean(x) for x in (body.get("highlights") or []) if clean(x)][:5],
             "watch_outs": [clean(x) for x in (body.get("watch_outs") or []) if clean(x)][:4],
-            "description": clean(body.get("description") or "")}
+            # The model rewrote an English description "in English" (local 2026-10-26):
+            # a translation counts only where Cubi could not have translated already.
+            "description": clean(body.get("description") or "") if lang not in CUBI_LANGS else ""}
 
 
 def read(mcp, cli, ref: str, *, data_lang: str, lang: str, lang_name: str, timings: list | None = None) -> dict:
