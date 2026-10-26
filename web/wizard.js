@@ -24,6 +24,12 @@
   // and without "ideally with a lake view"), while "near a lake" as a requirement
   // returned 725 lakeside homes. Each landscape's `phrase` is written before the budget.
   const NEW_MIN = 100;  // "new this week" shown from this many; fewer says more about scraping than the market
+  // Every country at once. Cubi's free-text search runs the whole corpus only when the
+  // sentence says so, and asks "where?" otherwise; written at the end, after the budget
+  // (live 2026-10-26: lakeside houses 104, mountain houses 233, sea-view houses 1,000+;
+  // the same words in the middle of the sentence timed out once).
+  const ANY = "Anywhere in Europe";
+  const anywhere = () => pick.country === ANY;
   let opt = null, stats = { countries: {} };
   // budget: a number, "flexible" (no cap, by choice), "unsure" (no cap, still open) or null.
   const pick = { envs: [], region: null, country: null, types: [], goal: null, beds: null, budget: null, nice: [], must: [] };
@@ -53,8 +59,8 @@
     return `${compact(homes)} homes on Cubi` + (fresh >= NEW_MIN ? ` · ${compact(fresh)} new this week` : "");
   }
 
-  function tile({ id, label, blurb, stat, selected, badge, onClick }) {
-    const b = el("button", "wz-tile" + (selected ? " on" : ""));
+  function tile({ id, label, blurb, stat, selected, badge, onClick, cls }) {
+    const b = el("button", "wz-tile" + (selected ? " on" : "") + (cls ? " " + cls : ""));
     b.type = "button";
     b.setAttribute("aria-pressed", selected ? "true" : "false");
     const ph = el("div", "wz-img");
@@ -89,7 +95,7 @@
   const fits = x => {
     const c = country();
     if (x.needs && c && !c.has.includes(x.needs)) return false;
-    if (x.climate && (!c || !x.climate.includes(c.climate))) return false;
+    if (x.climate && c && !x.climate.includes(c.climate)) return false;  // Europe-wide: every climate
     const t = types();
     if (x.types && t.length && !t.some(id => x.types.includes(id))) return false;
     if (x.goals && pick.goal && !x.goals.includes(pick.goal)) return false;
@@ -134,12 +140,14 @@
     else if (beds && beds < 4) noun = `${beds}-bedroom ${noun}`;
     const pre = must.filter(f => f.pre).map(f => f.pre);
     if (pre.length) noun = pre.join(" ") + " " + noun;
-    let q = `${cap(noun)} ${deal() === "rent" ? "to rent" : "for sale"} in ${THE.has(pick.country) ? "the " : ""}${pick.country}`;
+    let q = `${cap(noun)} ${deal() === "rent" ? "to rent" : "for sale"}`;
+    if (!anywhere()) q += ` in ${THE.has(pick.country) ? "the " : ""}${pick.country}`;
     if (goal() && goal().phrase) q += " " + goal().phrase;
     const hard = [...envs().filter(fits).map(e => e.phrase), ...must.filter(f => f.phrase).map(f => f.phrase)];
     if (beds >= 4) hard.unshift("with 4 or more bedrooms");
     if (hard.length) q += " " + phrases(hard);
     if (typeof pick.budget === "number") q += ` up to ${money(pick.budget)}${deal() === "rent" ? " a month" : ""}`;
+    if (anywhere()) q += ", anywhere in Europe";
     const soft = nice.map(f => f.phrase || f.pre).slice(0, MAX_SOFT);
     if (soft.length) q += ", ideally " + phrases(soft);
     return q;
@@ -147,8 +155,9 @@
 
   // The living brief: what will filter, what will only rank, what is still open.
   function brief() {
-    const facts = [], prefs = [], open = [], skipped = [];
-    if (pick.country) facts.push(pick.country); else open.push("country");
+    const facts = [], prefs = [], open = [], skipped = [], notes = [];
+    if (anywhere()) facts.push("every country on Cubi at once");
+    else if (pick.country) facts.push(pick.country); else open.push("country");
     if (pick.goal) facts.push(deal() === "rent" ? "to rent" : "for sale");
     else open.push("buy or rent (for sale until you pick a goal)");  // the default is an assumption, not a filter
     const t = types().map(typeOf).filter(Boolean);
@@ -174,7 +183,9 @@
     if (later.length) open.push("also wanted, ask in the chat: " + list(later));
     if (pick.goal === "invest") prefs.push("an investment — Cubi has asking prices, no yields");
     if (pick.goal === "build") prefs.push("to build on — buildability isn't verified by Cubi");
-    open.push("town or city (narrow it in the chat)");
+    open.push(anywhere() ? "a country or a town (narrow it in the chat)" : "town or city (narrow it in the chat)");
+    if (anywhere()) notes.push("a Europe-wide search takes longer and a very broad one can time out — a feel or a must-have "
+                               + "keeps it sharp. The homes come from different countries; the chat can compare two of them feature by feature");
     const box = el("div", "wz-brief");
     box.append(el("strong", null, "Cubi Agent understands"));
     const row = (name, items, note) => {
@@ -189,6 +200,7 @@
     row("Wishes:", prefs, "(sent along; the chat can turn one into a filter)");
     row("Skipped:", skipped);
     row("Still open:", open);
+    row("Heads-up:", notes);
     return box;
   }
 
@@ -219,6 +231,7 @@
       }));
     } else if (step === 1) {
       title = "Which country?";
+      hint = "One country — or every country on Cubi at once, to compare homes across borders.";
       canContinue = !!pick.country;
       const chips = el("div", "wz-chips wz-regions");
       for (const r of [{ id: null, label: "All" }, ...opt.regions]) {
@@ -227,8 +240,13 @@
         b.addEventListener("click", () => { pick.region = r.id; render(); });
         chips.append(b);
       }
-      root.append(el("h3", "wz-title", title), chips);
-      title = "";
+      root.append(el("h3", "wz-title", title), el("p", "wz-hint", hint), chips);
+      title = ""; hint = "";
+      grid.append(tile({
+        id: "anywhere", label: ANY, cls: "wz-any", selected: anywhere(), stat: countryStats(Object.keys(opt.countries)),
+        blurb: "Every country at once; the homes can be compared across borders",
+        onClick: () => { if (!anywhere()) { pick.nice = []; pick.must = []; } pick.country = ANY; render(); },
+      }));
       const region = opt.regions.find(r => r.id === pick.region);
       const names = (region ? region.countries : Object.keys(opt.countries))
         .sort((a, b) => countryFits(b) - countryFits(a) || (stats.countries[b]?.homes || 0) - (stats.countries[a]?.homes || 0));
@@ -324,10 +342,10 @@
     const go = el("button", "wz-go", step === STEPS.length - 1 ? "Search" : "Search now");
     go.type = "button";
     go.disabled = !pick.country;
-    if (!pick.country) go.title = "Pick a country to search";
+    if (!pick.country) go.title = "Pick a country, or Anywhere in Europe, to search";
     go.addEventListener("click", () => ask(query()));
     actions.append(go);
-    root.append(actions, el("p", "wz-note", (step < 2 ? "Search opens once you pick a country. " : "") +
+    root.append(actions, el("p", "wz-note", (step < 2 ? "Search opens once you pick a country, or all of Europe. " : "") +
       "Images are AI-generated inspiration, not listings."));
   }
 

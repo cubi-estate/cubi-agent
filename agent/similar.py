@@ -29,7 +29,7 @@ CLIMATE = ["sunshine_hours", "sea_temp_summer_c", "summer_max_c", "winter_min_c"
 def _column(p: dict) -> dict:
     """One home as a table column: only the fields the page draws."""
     return {
-        "id": p.get("id"), "city": p.get("city"),
+        "id": p.get("id"), "city": p.get("city"), "country": p.get("country"),
         "price": p.get("price"), "eur_per_m2": p.get("eur_per_m2"), "living_area": p.get("living_area"),
         "bedrooms": p.get("bedrooms"), "bathrooms": p.get("bathrooms"),
         "features": {k: (p.get("features") or {}).get(k, "not_stated") for k in FEATURES},
@@ -107,7 +107,16 @@ def differences(seed: dict, m: dict, seed_name: str = "this home", match_name: s
     return out
 
 
-def _home(label: str, p: dict) -> str:
+def place(p: dict, cross: bool) -> str:
+    """"Gittana" — or "Gittana, Italy" when the homes compared are in different countries."""
+    return f"{p.get('city')}, {p['country']}" if cross and p.get("country") else str(p.get("city"))
+
+
+def cross_country(homes: list[dict]) -> bool:
+    return len({h.get("country") or "" for h in homes}) > 1
+
+
+def _home(label: str, p: dict, cross: bool = False) -> str:
     bits = [_price(p.get("price"))]
     if p.get("eur_per_m2"):
         bits.append(f"€{p['eur_per_m2']:,}/m²")
@@ -115,24 +124,25 @@ def _home(label: str, p: dict) -> str:
         bits.append(f"{p['living_area']:.0f} m²")
     if p.get("bedrooms") is not None:
         bits.append(f"{p['bedrooms']} bedrooms")
-    return f"{label} ({p.get('city')}): " + ", ".join(bits)
+    return f"{label} ({place(p, cross)}): " + ", ".join(bits)
 
 
 def tool_text(result: dict, cards: list[dict], seed_label: str, match_labels: list[str] | None = None) -> str:
     """What the loop model reads: the prices, the differences computed here, and the rules."""
     seed, city = result["seed"], result.get("city")
-    lines = [f"[find_similar_elsewhere {json.dumps({'listing_id': seed.get('id'), 'city': city}, ensure_ascii=False)}]",
-             _home(f"This home, {seed_label}", seed)]
     matches = result.get("matches") or []
+    cross = cross_country([seed, *matches])  # a pair across borders: name the countries too
+    lines = [f"[find_similar_elsewhere {json.dumps({'listing_id': seed.get('id'), 'city': city}, ensure_ascii=False)}]",
+             _home(f"This home, {seed_label}", seed, cross)]
     if not matches:
         pool = result.get("pool") or {}
         lines.append(f"No documented match in {city}: {pool.get('in_city', 0)} candidates there, none with the same "
                      f"bedrooms and a living area within 15%. Say so; do not suggest a looser match.")
     for i, m in enumerate(matches, 1):
         label = match_labels[i - 1] if match_labels and i <= len(match_labels) else f"#{i}"
-        lines.append(_home(f"{'Home' if match_labels else 'Match'} {label}", m))
-        diffs = differences(seed, m, f"the {seed.get('city')} home ({seed_label})",
-                            f"the {m.get('city')} {'home' if match_labels else 'match'} ({label})")
+        lines.append(_home(f"{'Home' if match_labels else 'Match'} {label}", m, cross))
+        diffs = differences(seed, m, f"the {place(seed, cross)} home ({seed_label})",
+                            f"the {place(m, cross)} {'home' if match_labels else 'match'} ({label})")
         lines.append(f"  Differences (copy one or two of these sentences as written, translated if needed): "
                      + (" ".join(diffs) if diffs else "none recorded."))
     lines.append(

@@ -216,9 +216,12 @@ function similarTable(el, s, lang) {
   const L = SIM[lang] || SIM.en, cols = s.columns || [];
   if (!cols.length) return;
   const num = v => (v == null || v === "") ? "" : Math.round(Number(v)).toLocaleString(lang || "en").replace(/,/g, " ");
+  // Homes in different countries (a Europe-wide search): the country goes with the city.
+  const cross = new Set(cols.map(c => c.country || "")).size > 1;
+  const where = c => (c.city || "") + (cross && c.country ? `, ${c.country}` : "");
   const head = cols.map(c => c.role === "seed"
-    ? `<th scope="col">${esc(L.home)}${c.card ? ` <span class="n">#${esc(c.card)}</span>` : ""}<span>${esc(c.city || "")}</span></th>`
-    : `<th scope="col">${esc(L.in(c.city || s.city))} <span class="n">#${esc(c.card)}</span><span>${esc(c.city || "")}</span></th>`).join("");
+    ? `<th scope="col">${esc(L.home)}${c.card ? ` <span class="n">#${esc(c.card)}</span>` : ""}<span>${esc(where(c))}</span></th>`
+    : `<th scope="col">${esc(L.in(c.city || s.city))} <span class="n">#${esc(c.card)}</span><span>${esc(where(c))}</span></th>`).join("");
   const row = (label, cells, cls = "") => `<tr class="${cls}"><th scope="row">${esc(label)}</th>${cells.map(x => `<td>${x}</td>`).join("")}</tr>`;
   const group = label => `<tr class="grp"><th colspan="${cols.length + 1}">${esc(label)}</th></tr>`;
   const any = vals => vals.some(v => v != null && v !== "");

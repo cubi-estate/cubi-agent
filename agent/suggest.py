@@ -99,10 +99,32 @@ def other_city(card: dict | None, places: list[str]) -> str | None:
     return None
 
 
-def leaders(shown: list[dict], places: list[str]) -> tuple[int, int] | None:
-    """Card numbers of the first home on screen in each of the first two places."""
-    if len(places) < 2:
+def country_of(card: dict) -> str:
+    """The country of a card, folded: the last place name that is a country, else the
+    last name ("Italy, Lombardy, Gittana" puts the country first, live 2026-10-26)."""
+    from . import normalize
+    parts = [w.strip() for w in (card.get("location") or "").split(",") if w.strip()]
+    for w in reversed(parts):
+        if normalize.is_country(w):
+            return _fold(w)
+    return _fold(parts[-1]) if parts else ""
+
+
+def across(shown: list[dict]) -> tuple[int, int] | None:
+    """After a Europe-wide search: the first home and the first one in another country."""
+    first = next((c for c in shown if c.get("location") and c.get("n")), None)
+    if not first:
         return None
+    other = next((c for c in shown if c.get("location") and c.get("n")
+                  and country_of(c) != country_of(first)), None)
+    return (first["n"], other["n"]) if other else None
+
+
+def leaders(shown: list[dict], places: list[str]) -> tuple[int, int] | None:
+    """Card numbers of the first home on screen in each of the first two places;
+    with fewer than two places searched, the first two homes in different countries."""
+    if len(places) < 2:
+        return across(shown)
     firsts = []
     for place in places[:2]:
         n = next((c["n"] for c in shown
@@ -131,8 +153,7 @@ def news_place(card: dict, places: list[str]) -> str | None:
 
 def _cross_country(shown: list[dict]) -> bool:
     """True when the cards on screen sit in more than one country."""
-    countries = {_fold((c.get("location") or "").split(",")[-1].strip()) for c in shown if c.get("location")}
-    return len(countries) > 1
+    return len({country_of(c) for c in shown if c.get("location")}) > 1
 
 
 def for_sale(lang: str, place: str) -> str:

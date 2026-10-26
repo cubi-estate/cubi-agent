@@ -228,6 +228,9 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   position: relative; aspect-ratio: 3 / 2; background: linear-gradient(135deg, var(--accent-soft, #d7eeeb), var(--line));
 }
 .wz-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* The "Anywhere in Europe" tile has no photo: a globe on the gradient instead. */
+.wz-any .wz-img { background: linear-gradient(135deg, var(--accent-soft, #d7eeeb), var(--accent)); display: grid; place-items: center; }
+.wz-any .wz-img::before { content: "🌍"; font-size: 44px; line-height: 1; }
 .wz-check {
   position: absolute; top: 8px; right: 8px; min-width: 24px; height: 24px; padding: 0 5px; border-radius: 6px; display: grid; place-items: center;
   background: var(--panel); border: 2px solid var(--line); font-size: 13px; color: var(--accent); font-weight: 700; white-space: nowrap;

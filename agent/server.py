@@ -204,7 +204,7 @@ def _turn(sid: str, sess: _Session, message: str) -> Iterator[bytes]:
                       "suggestions": ev.get("suggestions") or [],
                       "price_history": ev.get("price_history"),
                       "x_url": ev.get("x_url"), "x_posts": ev.get("x_posts") or [],
-                      "filter": _describe(f, ev["lang"]) if f else None,
+                      "filter": _describe(f, ev["lang"], getattr(sess.agent, "anywhere", False)) if f else None,
                       "skill": ev["skill"], "lang": ev["lang"], "latency_s": ev["latency_s"]}
             else:
                 ev = {"type": "action", "text": ev.get("text", "")}

@@ -53,8 +53,21 @@ def _facts_line(line: str, out: dict) -> None:
         # Cubi prices in the listing's own currency: złoty, koruna, forint, leu,
         # lev and Nordic krona too (Polish rents showed "—" on the cards).
         elif re.search(r"\b(eur|usd|gbp|chf|pln|czk|huf|ron|bgn|sek|dkk|nok)\b", low) or "price on request" in low:
-            out["price"] = _number(p)
+            # "495 000 → 395 000 EUR 🔻20%": the asking price is the one after the
+            # arrow (a Lake Orta villa carried its old price, live 2026-10-26).
+            out["price"] = _number(p.split("→")[-1] if "→" in p else p)
             out["price_text"] = p
+
+
+def _dedupe(location: str) -> str:
+    """"Italy, Lombardy, Gittana, Lombardy" → "Italy, Lombardy, Gittana" (the region
+    repeated after the city on Italian cards, live 2026-10-26)."""
+    seen, out = set(), []
+    for part in (x.strip() for x in location.split(",")):
+        if part and part.lower() not in seen:
+            seen.add(part.lower())
+            out.append(part)
+    return ", ".join(out)
 
 
 def parse(text: str) -> list[dict]:
@@ -70,7 +83,7 @@ def parse(text: str) -> list[dict]:
         if cur is None or not line:
             continue
         if line.startswith("Location:"):
-            cur["location"] = line[9:].strip()
+            cur["location"] = _dedupe(line[9:].strip())
         elif line.startswith("URL:"):
             cur["url"] = line[4:].strip()
         elif line.startswith("ID:"):

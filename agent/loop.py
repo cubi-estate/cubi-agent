@@ -131,33 +131,49 @@ BASE_RULES = (
 # Words for the one-line filter summary, per UI language. Types and features
 # are the schema's canonical names; anything missing stays in English.
 _WORDS = {
-    "en": {"sale": "for sale", "rent": "to rent", "bed": "bed", "parking": "parking", "in": "in", "month": "/month"},
+    "en": {"sale": "for sale", "rent": "to rent", "bed": "bed", "parking": "parking", "in": "in", "month": "/month",
+           "anywhere": "anywhere in Europe"},
     "pt": {"sale": "venda", "rent": "arrendamento", "bed": "quartos", "parking": "estacionamento", "in": "em", "month": "/mês",
+           "anywhere": "em toda a Europa",
            "apartment": "apartamento", "house": "moradia", "villa": "moradia", "studio": "estúdio", "land": "terreno",
            "Pool": "piscina", "Terrace": "terraço", "Balcony": "varanda", "Garden": "jardim", "Elevator": "elevador",
            "Sea View": "vista mar", "Renovated": "renovado", "Furnished": "mobilado", "Fixer-Upper": "para recuperar"},
     "es": {"sale": "venta", "rent": "alquiler", "bed": "hab.", "parking": "garaje", "in": "en", "month": "/mes",
+           "anywhere": "en toda Europa",
            "apartment": "piso", "house": "casa", "villa": "chalet", "studio": "estudio", "penthouse": "ático", "land": "terreno",
            "Pool": "piscina", "Terrace": "terraza", "Balcony": "balcón", "Garden": "jardín", "Elevator": "ascensor",
            "Sea View": "vistas al mar", "Renovated": "reformado", "Furnished": "amueblado", "Fixer-Upper": "para reformar"},
     "fr": {"sale": "à vendre", "rent": "à louer", "bed": "ch.", "parking": "parking", "in": "à", "month": "/mois",
+           "anywhere": "partout en Europe",
            "apartment": "appartement", "house": "maison", "land": "terrain", "Pool": "piscine", "Terrace": "terrasse",
            "Balcony": "balcon", "Garden": "jardin", "Elevator": "ascenseur", "Sea View": "vue mer", "Renovated": "rénové", "Furnished": "meublé", "Fixer-Upper": "à rénover"},
     "de": {"sale": "Kauf", "rent": "Miete", "bed": "Schlafzi.", "parking": "Stellplatz", "in": "in", "month": "/Monat",
+           "anywhere": "überall in Europa",
            "apartment": "Wohnung", "house": "Haus", "land": "Grundstück", "Pool": "Pool", "Terrace": "Terrasse",
            "Balcony": "Balkon", "Garden": "Garten", "Elevator": "Aufzug", "Sea View": "Meerblick", "Renovated": "renoviert", "Furnished": "möbliert", "Fixer-Upper": "renovierungsbedürftig"},
     "nl": {"sale": "koop", "rent": "huur", "bed": "slpk", "parking": "parkeerplaats", "in": "in", "month": "/maand",
+           "anywhere": "overal in Europa",
            "apartment": "appartement", "house": "huis", "land": "grond", "Pool": "zwembad", "Terrace": "terras",
            "Balcony": "balkon", "Garden": "tuin", "Elevator": "lift", "Sea View": "zeezicht", "Renovated": "gerenoveerd", "Furnished": "gemeubileerd", "Fixer-Upper": "opknapper"},
     # Russian is pivoted through English (agent/pivot.py); only this line is written natively.
     "ru": {"sale": "продажа", "rent": "аренда", "bed": "спальни", "parking": "парковка", "in": "в", "month": "/мес.",
+           "anywhere": "по всей Европе",
            "apartment": "квартира", "house": "дом", "villa": "вилла", "studio": "студия", "land": "участок",
            "Pool": "бассейн", "Terrace": "терраса", "Balcony": "балкон", "Garden": "сад", "Elevator": "лифт",
            "Sea View": "вид на море", "Renovated": "после ремонта", "Furnished": "с мебелью", "Fixer-Upper": "под ремонт"},
 }
 
 
-def _describe(f: SearchFilter, lang: str = "en") -> str:
+# "anywhere in Europe", "across the whole of Europe", "em toda a Europa"…: the words that
+# make Cubi's free-text search run every country (it asks where otherwise). Matched on
+# suggest.norm(): lower case, no accents.
+ANYWHERE = re.compile(
+    r"\b(anywhere|everywhere|all over|across|throughout|whole of|all of)\b[^.]{0,12}\b(europe|eu)\b"
+    r"|\b(any country|all countries|every country|toda a europa|toda europa|tutta europa|partout en europe"
+    r"|toute l europe|ganz europa|uberall in europa|overal in europa|heel europa)\b")
+
+
+def _describe(f: SearchFilter, lang: str = "en", anywhere: bool = False) -> str:
     w = {**_WORDS["en"], **_WORDS.get(lang, {})}
     tr = lambda x: w.get(x, x)  # noqa: E731
     bits = [tr(f.transaction_type)]
@@ -180,6 +196,8 @@ def _describe(f: SearchFilter, lang: str = "en") -> str:
         bits.append(w["parking"])
     if f.location:
         bits.append(f"{w['in']} " + ", ".join(f.location))
+    elif anywhere:
+        bits.append(w["anywhere"])
     return " · ".join(bits)
 
 
@@ -255,6 +273,7 @@ class Agent:
         self.inventory: dict | None = None  # last budget comparison: {"args", "result"}
         self.bars: dict | None = None  # this turn's budget bars, for the page
         self.similar: dict | None = None  # this turn's side-by-side table, for the page
+        self.anywhere = False  # the last search ran Europe-wide (no place; "anywhere in Europe")
         self.area_places: list[str] = []  # places of the last area research, for suggestions
         self._pair: tuple[int, int] | None = None  # card numbers of a pair comparison in flight
         self.done: set[str] = set()  # what this conversation asked and did, so suggestions don't repeat it
@@ -470,6 +489,7 @@ class Agent:
         self.stats["llm_out"] += ex.usage.get("out", 0)
         if ex.filter is not None and ex.route == "filter":
             self.filter = ex.filter
+            self.anywhere = False
             self.stats["filter_searches"] += 1
             yield {"type": "action", "text": f"Understood: {_describe(ex.filter, self.user_lang)}", "model": ex.model,
                    "latency_s": ex.latency_s}
@@ -517,8 +537,18 @@ class Agent:
         filter, the earlier wishes and the user's own words."""
         soft = re.search(normalize.SOFT, request, re.I)
         names_place = f is not None and any(suggest.norm(p) in suggest.norm(request) for p in f.location)
+        if f is not None and f.location:
+            self.anywhere = False
+        elif ANYWHERE.search(suggest.norm(request)):
+            self.anywhere = True  # Cubi searches every country only when the request says so
         if before is None or f is None or not f.location or names_place:
             self.wish = request[soft.start():].strip(" ,.") if soft else ""
+            if self.anywhere and before is not None and f is not None and not f.location \
+                    and not ANYWHERE.search(suggest.norm(request)):
+                # A refinement of a Europe-wide search ("Only ones with 3 bedrooms"): on its
+                # own Cubi would ask where. Rebuilt from the merged filter, still Europe-wide.
+                query = _sentence(f) + ", anywhere in Europe" + (f", {self.wish}" if self.wish else "")
+                return f"{query}. {request.strip()}"
             return request
         if soft:
             self.wish = request[soft.start():].strip(" ,.")
