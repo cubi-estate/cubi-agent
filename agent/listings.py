@@ -82,11 +82,15 @@ def parse(text: str) -> list[dict]:
             continue
         if cur is None or not line:
             continue
-        if line.startswith("Location:"):
+        # The excerpt is the agency's text and can open with a label of its own
+        # ("Location: Sierra Blanca, … This beautiful villa…", live 2026-10-26).
+        # Location comes before the excerpt, so the first wins; URL and ID come
+        # after it and must look like one.
+        if line.startswith("Location:") and "location" not in cur:
             cur["location"] = _dedupe(line[9:].strip())
-        elif line.startswith("URL:"):
+        elif line.startswith("URL:") and line[4:].strip().startswith("http"):
             cur["url"] = line[4:].strip()
-        elif line.startswith("ID:"):
+        elif line.startswith("ID:") and re.fullmatch(r"\S+:\S+", line[3:].strip()):
             cur["id"] = line[3:].strip()
         elif line.startswith("Last changed:"):
             cur["updated"] = line[13:].strip()
@@ -126,7 +130,7 @@ def header(text: str) -> str:
 
 
 _STREET = re.compile(r"^(rua|r\.|calle|c/|carrer|avenida|av\.|avda|travessa|largo|praca|plaza|via|viale|"
-                     r"rue|avenue|boulevard|chemin|impasse|allee)\b|(strasse|straße|str\.|weg|gasse|platz|"
+                     r"rue|avenue|boulevard|chemin|impasse|allee)\b|(strasse|straße|str\.?|weg|gasse|platz|"
                      r"straat|laan|plein|gracht)$", re.I)
 
 
@@ -136,6 +140,8 @@ def places(location: str) -> list[str]:
     Everything up to the last component holding a digit is the address; street
     words catch addresses written without a number."""
     parts = [x.strip() for x in location.split(",") if x.strip()]
+    # "29601 Marbella" / "2750-642 Cascais": a postcode before the town is not an address.
+    parts = [re.sub(r"^\d{4,5}(?:-\d{3})?\s+(?=[^\d\s])", "", x) for x in parts]
     last_digit = max((i for i, x in enumerate(parts) if re.search(r"\d", x)), default=-1)
     return [x for x in parts[last_digit + 1:] if not _STREET.search(x)]
 
