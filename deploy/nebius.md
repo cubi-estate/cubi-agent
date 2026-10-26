@@ -65,6 +65,20 @@ Only *recreating* the endpoint (a new size or new secrets) changes the URL. Then
 update `CUBI_AGENT_DEMO_URL` in `cubi-estate/property_chat/next.config.ts`, the
 307 behind `https://www.cubi.estate/agent`, and push to `main` (Vercel deploys).
 
+## Platform advisories
+
+Nebius's eMudhra advisory (2026-10-23: eight eMudhra intermediate CAs with
+recoverable private keys, chaining to roots every store trusted) asks Serverless
+Endpoints to be stopped and restarted so the Nebius-managed image is current;
+the restart of 2026-10-26 22:03 did that. The demo's own TLS trust is Python's
+`certifi` (httpx, the OpenAI client): it is not pinned, so every image build
+takes the latest, and the build of 2026-10-26 installed 2026.10.23, which drops
+`emSign ECC Root CA - G3` and `AAA Certificate Services` — tested against the
+incident's hosts (`dv-g3b-*.we-have-a-problem.com`): all rejected, cubi.estate
+fine. Nothing in the container uses the OS trust store (`python:3.12-slim`'s
+`ca-certificates`), and a Serverless Endpoint has no SSH unless created with keys,
+so a trust check runs locally against the same `certifi` build.
+
 ## Cost
 
 Billed from create to delete, idle included. Stop the endpoint (`nebius ai
