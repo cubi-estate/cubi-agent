@@ -81,7 +81,14 @@ the German turn is the structured path (about 3 s), so the two scenes also show 
 numbers, the price line — they change as listings change. On 2026-10-22: Lisbon
 6.3% → 12.2% and Porto 21.0% → 37.4% for 2+ bedroom flats.
 
-Not filmed, still in the app (rehearsal turns 8–9): the price check against similar
+Not filmed, still in the app: the wizard's first country tile, **Anywhere in Europe**,
+runs every country at once (the sentence ends ", anywhere in Europe"; lakeside houses
+up to €400k came back from Italy, Spain and Portugal in 9 s on 2026-10-26), and the
+first button then is "Compare #1 and #3 feature by feature" — two countries side by
+side, the table naming "Gittana, Italy" and "Alcaucín, Spain". Broad Europe-wide
+picks (a sea view, no feel) can take 15 s or time out, so it stays off the filmed path.
+
+Not filmed either (rehearsal turns 8–9): the price check against similar
 homes ("Is #2 overpriced?": the range of asking prices and how many comparable homes
 it rests on; with too few, one plain sentence saying there is no range, never a
 verdict) and similar homes in another city ("Show me homes like #1 in Porto"). Don't add "with parking" anywhere: whether a listing records parking
