@@ -265,7 +265,10 @@ function leaflet() {
 }
 const POI = [["shop", "supermarket", "🛒", 1200], ["amenity", "school", "🏫", 1500], ["leisure", "park", "🌳", 1500],
              ["railway", "station", "🚉", 2500], ["amenity", "restaurant", "🍽️", 800], ["amenity", "pharmacy", "💊", 1200]];
-const EXACT = new Set(["house", "building", "road", "street", "residential", "apartments"]);
+// Nominatim answers with the kind of place it found: a settlement means the listing
+// named no street ("Anjo da Guarda, Fundão" resolved to the farm itself, 2026-10-26).
+const AREA = new Set(["country", "state", "region", "province", "county", "municipality", "city", "town", "village",
+                      "hamlet", "suburb", "neighbourhood", "quarter", "city_district", "district", "borough", "postcode", "island", "locality"]);
 
 async function loadMap(x, c, d) {
   const box = pane.querySelector(".dmap"), note = pane.querySelector(".dmapnote");
@@ -277,7 +280,7 @@ async function loadMap(x, c, d) {
                                     { headers: { "Accept-Language": lang } })).json();
     const place = hits[0];
     if (!place) throw new Error("no place");
-    const lat = +place.lat, lon = +place.lon, exact = EXACT.has(place.addresstype);
+    const lat = +place.lat, lon = +place.lon, exact = !AREA.has(place.addresstype);
     await leaflet();
     if (pane.hidden || !box.isConnected) return;
     const map = L.map(box, { scrollWheelZoom: false }).setView([lat, lon], exact ? 15 : 13);
