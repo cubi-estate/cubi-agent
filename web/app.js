@@ -139,37 +139,37 @@ const D = {
         area: "Neighbourhood & environment", desc: "Description", translated: "translated", original: "the agency's own text", features: "Features",
         open: "Open listing", ask: "Ask Cubi", contact: "Contact via Cubi", walk: "min on foot", drive: "min by car", perm2: "per m²",
         note: "Asking price, not a valuation. The brief is written from the listing's own text and Cubi's area data.",
-        map: "Map", mapExact: "Pinned at the listed address", mapTown: "Town centre: the listing gives no exact address", pois: "places nearby from OpenStreetMap", nomap: "Map not available right now" },
+        map: "Map", mapExact: "Pinned at the listed address", mapTown: "Town centre: the listing gives no exact address", pois: "places nearby from OpenStreetMap", nomap: "Map not available right now", nopois: "places nearby unavailable right now" },
   pt: { tap: "Toque para ver detalhes", close: "Fechar", reading: "A ler o anúncio…", notavail: "Não foi possível ler o anúncio agora.",
         photos: "Fotos", nophotos: "As fotos estão na página do anúncio.", tldr: "Em resumo", good: "Pontos fortes", warn: "A verificar antes de decidir",
         area: "Bairro e ambiente", desc: "Descrição", translated: "traduzida", original: "texto da agência", features: "Características",
         open: "Ver anúncio", ask: "Perguntar à Cubi", contact: "Contactar via Cubi", walk: "min a pé", drive: "min de carro", perm2: "por m²",
         note: "Preço pedido, não uma avaliação. O resumo vem do texto do anúncio e dos dados de área da Cubi.",
-        map: "Mapa", mapExact: "Na morada anunciada", mapTown: "Centro da localidade: o anúncio não dá a morada exata", pois: "lugares próximos do OpenStreetMap", nomap: "Mapa indisponível agora" },
+        map: "Mapa", mapExact: "Na morada anunciada", mapTown: "Centro da localidade: o anúncio não dá a morada exata", pois: "lugares próximos do OpenStreetMap", nomap: "Mapa indisponível agora", nopois: "lugares próximos indisponíveis agora" },
   es: { tap: "Toca para ver detalles", close: "Cerrar", reading: "Leyendo el anuncio…", notavail: "No se pudo leer el anuncio ahora.",
         photos: "Fotos", nophotos: "Las fotos están en la página del anuncio.", tldr: "En resumen", good: "Puntos fuertes", warn: "Comprobar antes de decidir",
         area: "Barrio y entorno", desc: "Descripción", translated: "traducida", original: "texto de la agencia", features: "Características",
         open: "Ver anuncio", ask: "Preguntar a Cubi", contact: "Contactar vía Cubi", walk: "min a pie", drive: "min en coche", perm2: "por m²",
         note: "Precio de venta pedido, no una tasación. El resumen sale del texto del anuncio y de los datos de zona de Cubi.",
-        map: "Mapa", mapExact: "En la dirección anunciada", mapTown: "Centro de la localidad: el anuncio no da la dirección exacta", pois: "lugares cercanos de OpenStreetMap", nomap: "Mapa no disponible ahora" },
+        map: "Mapa", mapExact: "En la dirección anunciada", mapTown: "Centro de la localidad: el anuncio no da la dirección exacta", pois: "lugares cercanos de OpenStreetMap", nomap: "Mapa no disponible ahora", nopois: "lugares cercanos no disponibles ahora" },
   fr: { tap: "Touchez pour les détails", close: "Fermer", reading: "Lecture de l'annonce…", notavail: "L'annonce n'a pas pu être lue pour le moment.",
         photos: "Photos", nophotos: "Les photos sont sur la page de l'annonce.", tldr: "En bref", good: "Points forts", warn: "À vérifier avant de décider",
         area: "Quartier et environnement", desc: "Description", translated: "traduite", original: "texte de l'agence", features: "Caractéristiques",
         open: "Voir l'annonce", ask: "Demander à Cubi", contact: "Contacter via Cubi", walk: "min à pied", drive: "min en voiture", perm2: "par m²",
         note: "Prix demandé, pas une estimation. Le résumé vient du texte de l'annonce et des données de zone de Cubi.",
-        map: "Carte", mapExact: "À l'adresse annoncée", mapTown: "Centre de la localité : l'annonce ne donne pas l'adresse exacte", pois: "lieux à proximité d'OpenStreetMap", nomap: "Carte indisponible pour le moment" },
+        map: "Carte", mapExact: "À l'adresse annoncée", mapTown: "Centre de la localité : l'annonce ne donne pas l'adresse exacte", pois: "lieux à proximité d'OpenStreetMap", nomap: "Carte indisponible pour le moment", nopois: "lieux à proximité indisponibles pour le moment" },
   de: { tap: "Antippen für Details", close: "Schließen", reading: "Inserat wird gelesen…", notavail: "Das Inserat konnte gerade nicht gelesen werden.",
         photos: "Fotos", nophotos: "Fotos gibt es auf der Inseratseite.", tldr: "Kurz gesagt", good: "Pluspunkte", warn: "Vor der Entscheidung prüfen",
         area: "Umgebung", desc: "Beschreibung", translated: "übersetzt", original: "Text des Maklers", features: "Ausstattung",
         open: "Inserat öffnen", ask: "Cubi fragen", contact: "Über Cubi kontaktieren", walk: "Min. zu Fuß", drive: "Min. mit dem Auto", perm2: "pro m²",
         note: "Angebotspreis, keine Bewertung. Die Kurzfassung stammt aus dem Inseratstext und Cubis Umgebungsdaten.",
-        map: "Karte", mapExact: "An der angegebenen Adresse", mapTown: "Ortsmitte: das Inserat nennt keine genaue Adresse", pois: "Orte in der Nähe aus OpenStreetMap", nomap: "Karte gerade nicht verfügbar" },
+        map: "Karte", mapExact: "An der angegebenen Adresse", mapTown: "Ortsmitte: das Inserat nennt keine genaue Adresse", pois: "Orte in der Nähe aus OpenStreetMap", nomap: "Karte gerade nicht verfügbar", nopois: "Orte in der Nähe gerade nicht verfügbar" },
   nl: { tap: "Tik voor details", close: "Sluiten", reading: "Advertentie wordt gelezen…", notavail: "De advertentie kon nu niet worden gelezen.",
         photos: "Foto's", nophotos: "Foto's staan op de advertentiepagina.", tldr: "In het kort", good: "Pluspunten", warn: "Controleer voor u beslist",
         area: "Buurt en omgeving", desc: "Beschrijving", translated: "vertaald", original: "tekst van de makelaar", features: "Kenmerken",
         open: "Advertentie openen", ask: "Vraag Cubi", contact: "Contact via Cubi", walk: "min lopen", drive: "min rijden", perm2: "per m²",
         note: "Vraagprijs, geen taxatie. De samenvatting komt uit de advertentietekst en Cubi's omgevingsdata.",
-        map: "Kaart", mapExact: "Op het opgegeven adres", mapTown: "Centrum van de plaats: de advertentie geeft geen exact adres", pois: "plekken in de buurt uit OpenStreetMap", nomap: "Kaart nu niet beschikbaar" },
+        map: "Kaart", mapExact: "Op het opgegeven adres", mapTown: "Centrum van de plaats: de advertentie geeft geen exact adres", pois: "plekken in de buurt uit OpenStreetMap", nomap: "Kaart nu niet beschikbaar", nopois: "plekken in de buurt nu niet beschikbaar" },
 };
 const ENV = { quiet: "Quiet (road and rail noise)", clean_air: "Clean air (PM2.5)", leafy: "Leafy", coastal: "Coastal",
               flood_safe: "Flood-safe", wildfire_safer: "Lower wildfire weather", seismic_safer: "Lower seismic risk", stable_ground: "Stable ground" };
@@ -270,6 +270,24 @@ const POI = [["shop", "supermarket", "🛒", 1200], ["amenity", "school", "🏫"
 const AREA = new Set(["country", "state", "region", "province", "county", "municipality", "city", "town", "village",
                       "hamlet", "suburb", "neighbourhood", "quarter", "city_district", "district", "borough", "postcode", "island", "locality"]);
 
+// The public Overpass servers are often overloaded (502 and 406 from the main one,
+// 2026-10-26): try each in turn, briefly; null when none answers.
+const OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
+                  "https://lz4.overpass-api.de/api/interpreter"];
+async function overpass(query) {
+  for (const url of OVERPASS) {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 12000);
+    try {
+      const r = await fetch(url, { method: "POST", body: "data=" + encodeURIComponent(query), signal: ctl.signal,
+                                   headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+      if (!r.ok) continue;
+      const body = await r.json();
+      if (Array.isArray(body.elements)) return body.elements;
+    } catch { /* next server */ } finally { clearTimeout(timer); }
+  }
+  return null;
+}
+
 async function loadMap(x, c, d) {
   const box = pane.querySelector(".dmap"), note = pane.querySelector(".dmapnote");
   const q = x.location || c.location || "";
@@ -290,10 +308,10 @@ async function loadMap(x, c, d) {
       .addTo(map).bindPopup(esc(c.type || "Home") + (exact ? "" : " · " + esc(d.mapTown)));
     note.textContent = exact ? d.mapExact : d.mapTown;
     const query = `[out:json][timeout:12];(${POI.map(([k, v, , r]) => `nwr(around:${r},${lat},${lon})[${k}=${v}];`).join("")});out center 80;`;
-    const r = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + encodeURIComponent(query),
-                          headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+    const elements = await overpass(query);
+    if (elements === null) { note.textContent += " · " + d.nopois; return; }
     let n = 0;
-    for (const e of ((await r.json()).elements || [])) {
+    for (const e of elements) {
       const t = e.tags || {}, kind = POI.find(([k, v]) => t[k] === v);
       const la = e.lat ?? e.center?.lat, lo = e.lon ?? e.center?.lon;
       if (!kind || la == null) continue;
