@@ -248,6 +248,9 @@ def _error_code(text: str) -> str:
     return str(body.get("code") or "") if isinstance(body, dict) else ""
 
 
+BRIEF_NEWS = ("\n[Answer as a short summary: at most three sentences, about 60 words — one on the price, one on what's new with its source numbers, one on posts on X if any are given. No greeting, no offer of help.]")
+
+
 def _long_date(iso: str | None) -> str:
     """'2026-05-02' -> '2 May 2026': one unambiguous form for the model to copy."""
     import datetime as _dt
@@ -895,6 +898,9 @@ class Agent:
             else:
                 lines.append("The app also shows a link to the latest posts about the city on X; you have not "
                              "read them, so don't describe them.")
+        # Last, where the model weighs it most: the answer is a summary. Left to the
+        # skill text alone it wrote five sentences with every source (live 2026-10-26).
+        lines.append(BRIEF_NEWS)
         yield "\n".join(lines)
 
     def _two_cards(self, text: str) -> list[dict]:

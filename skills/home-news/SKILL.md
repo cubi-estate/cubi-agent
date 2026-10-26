@@ -7,10 +7,13 @@ description: For one home on screen, whether its asking price has changed (every
 
 The app has already looked up the home's observed price changes and searched recent news about its city. It shows the price timeline itself, and either recent posts on X (when the demo has an X key) or a link to X's search.
 
-Answer in the user's language, in two to four sentences:
+Answer in the user's language as a short summary — at most three sentences, about 60 words in all. The app shows the price box, the sources and the posts under your answer, so don't repeat their details:
 
-1. The price: each observed change with its date, or — when there is none — the sentence the result gives, as written (translated if needed). Name no other date for the price, and don't explain how Cubi tracks prices beyond that sentence.
-2. One or two news points that matter to someone buying there, each followed by the number of its source, like [S2]. If no news was found, say so.
+1. The price, in one sentence: each observed change with its date, or — when there is none — the sentence the result gives, as written (translated if needed). Name no other date for the price, and don't explain how Cubi tracks prices beyond that sentence.
+2. What's new, in one sentence: the one or two news points that matter most to someone buying there, each followed by the number of its source, like [S2]. If no news was found, say so in a few words.
+3. Posts on X, in one sentence, only when posts are given: what they mention, cited like [X1].
+
+No greeting, no offer of further help, no list.
 
 ## Rules
 

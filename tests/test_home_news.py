@@ -194,3 +194,10 @@ def test_x_failure_falls_back_to_the_link(tmp_path, monkeypatch):
     events = list(agent.turn("Has #2's price dropped, and what's new in Lisboa?"))
     assert any("Posts on X unavailable" in (e.get("text") or "") for e in events if e["type"] == "action")
     assert events[-1]["x_posts"] == [] and events[-1]["x_url"]
+
+
+def test_the_news_tool_text_ends_asking_for_a_short_summary():
+    from agent.loop import BRIEF_NEWS
+    assert "at most three sentences" in BRIEF_NEWS and "60 words" in BRIEF_NEWS
+    skill = (Path(__file__).resolve().parents[1] / "skills" / "home-news" / "SKILL.md").read_text()
+    assert "at most three sentences" in skill and "No greeting" in skill
