@@ -17,7 +17,9 @@
   if (!root) return;
   const STEPS = ["Feel", "Country", "Type", "Goal and budget", "Priorities"];
   const THE = new Set(["Netherlands", "United Kingdom", "Czech Republic"]);  // "in the Netherlands"
-  const MAX_PRIORITIES = 8;  // shown at once; condition tiles (renovated, to renovate) come on top
+  // Shown at once; condition tiles (renovated, to renovate) come on top. Eight hid Fireplace
+  // from a lake-house renter twice (live 2026-10-26): it only ranked up for cold climates.
+  const MAX_PRIORITIES = 12;
   const MAX_SOFT = 3;  // wishes written after "ideally"; see the note above
   // A picked landscape is a filter, not a wish: Cubi's free-text search ignores an
   // "ideally …" clause when ranking (Italy, 2026-10-25: the top homes were the same with

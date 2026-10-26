@@ -142,7 +142,7 @@
      "prompt": "A detached house with an attached garage, its door open on an empty tidy space."},
     {"id": "aircon", "label": "Air conditioning", "phrase": "with air conditioning", "climate": ["warm"], "types": ["apartment", "house", "villa", "townhouse"], "blurb": "Cool through the summer", "top": ["warm"],
      "prompt": "A bright modern bedroom with a wall-mounted air-conditioning unit and closed shutters against the sun."},
-    {"id": "fireplace", "label": "Fireplace", "phrase": "with a fireplace", "types": ["apartment", "house", "villa", "townhouse"], "blurb": "Wood fire for winter", "top": ["cold", "mild", "mountains"],
+    {"id": "fireplace", "label": "Fireplace", "phrase": "with a fireplace", "types": ["apartment", "house", "villa", "townhouse"], "blurb": "Wood fire for winter", "top": ["cold", "mild", "mountains", "lake", "countryside", "house", "villa"],
      "prompt": "A cosy living room with a lit wood fireplace, armchairs and a wool rug."},
     {"id": "sauna", "label": "Sauna", "phrase": "with a sauna", "climate": ["cold"], "types": ["apartment", "house", "villa", "townhouse"], "blurb": "A Nordic home staple", "top": ["cold"],
      "prompt": "A wooden home sauna with benches and a stove, a small window onto birch trees."},
