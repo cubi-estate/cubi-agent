@@ -19,6 +19,7 @@ web server can show a short action log (never raw model reasoning).
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import time
@@ -34,6 +35,7 @@ from .fixtures import connect, listing_ref
 from .mcp_client import CubiMCP, MCPError
 from .schema import SearchFilter
 
+log = logging.getLogger("cubi_agent")
 MAX_STEPS = 5
 CITE_AGAIN = ("Rewrite that answer with the same content, putting the number of the source each point comes "
               "from right after it, like [S2]. Drop any point no source supports. Answer in {lang}.")
@@ -519,15 +521,17 @@ class Agent:
         for country, res in zip(BIG_MARKETS, results):
             if res["is_error"]:
                 failed.append(country)
-                notes.append(f"{country}: did not finish")
+                why = _error_code(res["text"]) or res["text"][:80].strip().replace("\n", " ")
+                notes.append(f"{country}: did not finish ({why})")
                 continue
             res = self._screen(res, per)
             screened = screened or bool(res.get("screened"))
             cards = listings.parse(res["text"])
             notes.append(f"{country}: {len(cards)} shown" + ("" if cards else " (no matches)"))
             merged.extend(cards)
+        log.info("per-market search: %s", "; ".join(notes))
         if len(failed) == len(BIG_MARKETS):
-            yield {"type": "action", "text": "No market search finished either"}
+            yield {"type": "action", "text": "No market search finished either — " + "; ".join(notes)}
             return results[0], ("[neither the Europe-wide search nor the searches per country finished in "
                                 "Cubi's time limit. Say the search could not finish this time and offer to try "
                                 "again, or to try one country; do not ask for a town — the user asked for all "
