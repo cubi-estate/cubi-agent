@@ -138,32 +138,38 @@ const D = {
         photos: "Photos", nophotos: "Photos are on the listing page.", tldr: "In short", good: "Highlights", warn: "Check before deciding",
         area: "Neighbourhood & environment", desc: "Description", translated: "translated", original: "the agency's own text", features: "Features",
         open: "Open listing", ask: "Ask Cubi", contact: "Contact via Cubi", walk: "min on foot", drive: "min by car", perm2: "per m²",
-        note: "Asking price, not a valuation. The brief is written from the listing's own text and Cubi's area data." },
+        note: "Asking price, not a valuation. The brief is written from the listing's own text and Cubi's area data.",
+        map: "Map", mapExact: "Pinned at the listed address", mapTown: "Town centre: the listing gives no exact address", pois: "places nearby from OpenStreetMap", nomap: "Map not available right now" },
   pt: { tap: "Toque para ver detalhes", close: "Fechar", reading: "A ler o anúncio…", notavail: "Não foi possível ler o anúncio agora.",
         photos: "Fotos", nophotos: "As fotos estão na página do anúncio.", tldr: "Em resumo", good: "Pontos fortes", warn: "A verificar antes de decidir",
         area: "Bairro e ambiente", desc: "Descrição", translated: "traduzida", original: "texto da agência", features: "Características",
         open: "Ver anúncio", ask: "Perguntar à Cubi", contact: "Contactar via Cubi", walk: "min a pé", drive: "min de carro", perm2: "por m²",
-        note: "Preço pedido, não uma avaliação. O resumo vem do texto do anúncio e dos dados de área da Cubi." },
+        note: "Preço pedido, não uma avaliação. O resumo vem do texto do anúncio e dos dados de área da Cubi.",
+        map: "Mapa", mapExact: "Na morada anunciada", mapTown: "Centro da localidade: o anúncio não dá a morada exata", pois: "lugares próximos do OpenStreetMap", nomap: "Mapa indisponível agora" },
   es: { tap: "Toca para ver detalles", close: "Cerrar", reading: "Leyendo el anuncio…", notavail: "No se pudo leer el anuncio ahora.",
         photos: "Fotos", nophotos: "Las fotos están en la página del anuncio.", tldr: "En resumen", good: "Puntos fuertes", warn: "Comprobar antes de decidir",
         area: "Barrio y entorno", desc: "Descripción", translated: "traducida", original: "texto de la agencia", features: "Características",
         open: "Ver anuncio", ask: "Preguntar a Cubi", contact: "Contactar vía Cubi", walk: "min a pie", drive: "min en coche", perm2: "por m²",
-        note: "Precio de venta pedido, no una tasación. El resumen sale del texto del anuncio y de los datos de zona de Cubi." },
+        note: "Precio de venta pedido, no una tasación. El resumen sale del texto del anuncio y de los datos de zona de Cubi.",
+        map: "Mapa", mapExact: "En la dirección anunciada", mapTown: "Centro de la localidad: el anuncio no da la dirección exacta", pois: "lugares cercanos de OpenStreetMap", nomap: "Mapa no disponible ahora" },
   fr: { tap: "Touchez pour les détails", close: "Fermer", reading: "Lecture de l'annonce…", notavail: "L'annonce n'a pas pu être lue pour le moment.",
         photos: "Photos", nophotos: "Les photos sont sur la page de l'annonce.", tldr: "En bref", good: "Points forts", warn: "À vérifier avant de décider",
         area: "Quartier et environnement", desc: "Description", translated: "traduite", original: "texte de l'agence", features: "Caractéristiques",
         open: "Voir l'annonce", ask: "Demander à Cubi", contact: "Contacter via Cubi", walk: "min à pied", drive: "min en voiture", perm2: "par m²",
-        note: "Prix demandé, pas une estimation. Le résumé vient du texte de l'annonce et des données de zone de Cubi." },
+        note: "Prix demandé, pas une estimation. Le résumé vient du texte de l'annonce et des données de zone de Cubi.",
+        map: "Carte", mapExact: "À l'adresse annoncée", mapTown: "Centre de la localité : l'annonce ne donne pas l'adresse exacte", pois: "lieux à proximité d'OpenStreetMap", nomap: "Carte indisponible pour le moment" },
   de: { tap: "Antippen für Details", close: "Schließen", reading: "Inserat wird gelesen…", notavail: "Das Inserat konnte gerade nicht gelesen werden.",
         photos: "Fotos", nophotos: "Fotos gibt es auf der Inseratseite.", tldr: "Kurz gesagt", good: "Pluspunkte", warn: "Vor der Entscheidung prüfen",
         area: "Umgebung", desc: "Beschreibung", translated: "übersetzt", original: "Text des Maklers", features: "Ausstattung",
         open: "Inserat öffnen", ask: "Cubi fragen", contact: "Über Cubi kontaktieren", walk: "Min. zu Fuß", drive: "Min. mit dem Auto", perm2: "pro m²",
-        note: "Angebotspreis, keine Bewertung. Die Kurzfassung stammt aus dem Inseratstext und Cubis Umgebungsdaten." },
+        note: "Angebotspreis, keine Bewertung. Die Kurzfassung stammt aus dem Inseratstext und Cubis Umgebungsdaten.",
+        map: "Karte", mapExact: "An der angegebenen Adresse", mapTown: "Ortsmitte: das Inserat nennt keine genaue Adresse", pois: "Orte in der Nähe aus OpenStreetMap", nomap: "Karte gerade nicht verfügbar" },
   nl: { tap: "Tik voor details", close: "Sluiten", reading: "Advertentie wordt gelezen…", notavail: "De advertentie kon nu niet worden gelezen.",
         photos: "Foto's", nophotos: "Foto's staan op de advertentiepagina.", tldr: "In het kort", good: "Pluspunten", warn: "Controleer voor u beslist",
         area: "Buurt en omgeving", desc: "Beschrijving", translated: "vertaald", original: "tekst van de makelaar", features: "Kenmerken",
         open: "Advertentie openen", ask: "Vraag Cubi", contact: "Contact via Cubi", walk: "min lopen", drive: "min rijden", perm2: "per m²",
-        note: "Vraagprijs, geen taxatie. De samenvatting komt uit de advertentietekst en Cubi's omgevingsdata." },
+        note: "Vraagprijs, geen taxatie. De samenvatting komt uit de advertentietekst en Cubi's omgevingsdata.",
+        map: "Kaart", mapExact: "Op het opgegeven adres", mapTown: "Centrum van de plaats: de advertentie geeft geen exact adres", pois: "plekken in de buurt uit OpenStreetMap", nomap: "Kaart nu niet beschikbaar" },
 };
 const ENV = { quiet: "Quiet (road and rail noise)", clean_air: "Clean air (PM2.5)", leafy: "Leafy", coastal: "Coastal",
               flood_safe: "Flood-safe", wildfire_safer: "Lower wildfire weather", seismic_safer: "Lower seismic risk", stable_ground: "Stable ground" };
@@ -233,10 +239,70 @@ function renderDetail(c, x, d) {
         ${mins.map(([k, v]) => `<span>${esc(MIN[k])}</span><span class="dval">${esc(`${Math.round(v)} ${k.startsWith("drive") ? d.drive : d.walk}`)}</span>`).join("")}
       </div>
       ${climate.length ? `<p class="dclimate">${esc(climate.join(" · "))}</p>` : ""}` : ""}
+    <h3>${esc(d.map)}</h3><div class="dmap" aria-label="${esc(d.map)}"></div><p class="dnote dmapnote">${esc(d.reading)}</p>
     ${x.description ? `<h3>${esc(d.desc)} <span class="dsub">(${esc(x.translated ? d.translated : d.original)})</span></h3><p class="ddesc">${esc(x.description)}</p>` : ""}
     ${sections.length ? `<details class="dfeat"><summary>${esc(d.features)}</summary>${sections.map(([name, tags]) =>
         `<div class="dsec"><b>${esc(name)}</b><div class="tags">${tags.map(t => `<span>${esc(t)}</span>`).join("")}</div></div>`).join("")}</details>` : ""}
     <p class="dnote">${esc(d.note)}</p>`);
+  loadMap(x, c, d);
+}
+
+// ---- the map: the listed address geocoded on OpenStreetMap, places nearby as pins --
+// Cubi's connector shares no coordinates, so the address line is geocoded (Nominatim):
+// the street when the listing names one, else the town centre — the caption says which.
+let leafletReady = null;
+function leaflet() {
+  if (!leafletReady) leafletReady = new Promise((ok, fail) => {
+    const css = document.createElement("link");
+    css.rel = "stylesheet"; css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+    document.head.appendChild(css);
+    const js = document.createElement("script");
+    js.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    js.onload = ok; js.onerror = fail;
+    document.head.appendChild(js);
+  });
+  return leafletReady;
+}
+const POI = [["shop", "supermarket", "🛒", 1200], ["amenity", "school", "🏫", 1500], ["leisure", "park", "🌳", 1500],
+             ["railway", "station", "🚉", 2500], ["amenity", "restaurant", "🍽️", 800], ["amenity", "pharmacy", "💊", 1200]];
+const EXACT = new Set(["house", "building", "road", "street", "residential", "apartments"]);
+
+async function loadMap(x, c, d) {
+  const box = pane.querySelector(".dmap"), note = pane.querySelector(".dmapnote");
+  const q = x.location || c.location || "";
+  if (!box || !q) { box?.remove(); note?.remove(); return; }
+  try {
+    const lang = document.documentElement.lang || "en";
+    const hits = await (await fetch("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" + encodeURIComponent(q),
+                                    { headers: { "Accept-Language": lang } })).json();
+    const place = hits[0];
+    if (!place) throw new Error("no place");
+    const lat = +place.lat, lon = +place.lon, exact = EXACT.has(place.addresstype);
+    await leaflet();
+    if (pane.hidden || !box.isConnected) return;
+    const map = L.map(box, { scrollWheelZoom: false }).setView([lat, lon], exact ? 15 : 13);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>' }).addTo(map);
+    L.marker([lat, lon], { icon: L.divIcon({ className: "dpin home", html: "🏠", iconSize: [30, 30] }), zIndexOffset: 1000 })
+      .addTo(map).bindPopup(esc(c.type || "Home") + (exact ? "" : " · " + esc(d.mapTown)));
+    note.textContent = exact ? d.mapExact : d.mapTown;
+    const query = `[out:json][timeout:12];(${POI.map(([k, v, , r]) => `nwr(around:${r},${lat},${lon})[${k}=${v}];`).join("")});out center 80;`;
+    const r = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + encodeURIComponent(query),
+                          headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+    let n = 0;
+    for (const e of ((await r.json()).elements || [])) {
+      const t = e.tags || {}, kind = POI.find(([k, v]) => t[k] === v);
+      const la = e.lat ?? e.center?.lat, lo = e.lon ?? e.center?.lon;
+      if (!kind || la == null) continue;
+      L.marker([la, lo], { icon: L.divIcon({ className: "dpin", html: kind[2], iconSize: [22, 22] }) })
+        .addTo(map).bindPopup(esc(t.name || kind[1]));
+      n++;
+    }
+    note.textContent = `${exact ? d.mapExact : d.mapTown} · ${n} ${d.pois}`;
+  } catch {
+    box.remove();
+    if (note) note.textContent = d.nomap;
+  }
 }
 
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !pane.hidden) closeDetail(); });
