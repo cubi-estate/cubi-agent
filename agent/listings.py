@@ -99,6 +99,22 @@ def parse(text: str) -> list[dict]:
     return cards
 
 
+def detail_tags(text: str) -> list[str]:
+    """Every tag in a get_listing detail: the "- item" lines of its sections (Views,
+    Outdoor, Interior…), not the description or the links. De-duplicated, in order."""
+    tags, seen, section = [], set(), ""
+    for raw in text.splitlines():
+        line = raw.strip()
+        if line.startswith("## "):
+            section = line[3:].strip().lower()
+        elif line.startswith("- ") and section and section not in ("description", "continue on cubi"):
+            tag = line[2:].strip()
+            if tag and tag.lower() not in seen:
+                seen.add(tag.lower())
+                tags.append(tag)
+    return tags
+
+
 def header(text: str) -> str:
     """The summary line(s) before the first card."""
     out = []

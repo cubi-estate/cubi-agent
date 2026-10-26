@@ -673,7 +673,36 @@ class Agent:
                 self.shown = self.cards
                 self.focus = None  # a new result set: "it" no longer means the old home
                 self.seen_refs |= {c["id"].lower() for c in self.cards if c.get("id")}
+                yield from self._lift_hits(self.cards, f"{request} {self.wish}")
         yield header + self._left_out_note() + res["text"]
+
+    def _detail_tags(self, ref: str) -> list[str]:
+        try:
+            res = self.mcp.call_tool("get_listing", {"listing_id": ref, "lang": self.data_lang})
+        except (MCPError, httpx.HTTPError):
+            return []
+        return [] if res["is_error"] else listings.detail_tags(res["text"])
+
+    def _lift_hits(self, cards: list[dict], asked: str) -> Iterator[dict]:
+        """Cubi's card line carries a home's first eight tags, and "Mountain view" or
+        "Lake View" sit further down: the page had nothing to light ("I want to see
+        matching features on the cards", live 2026-10-26). For the concepts the
+        request names, each card's full detail is read, side by side, and its
+        matching tags go on the card first."""
+        todo = [c for c in cards if c.get("id") and normalize.missing(asked, c.get("tags", []))]
+        if not todo:
+            return
+        yield {"type": "action", "text": f"Reading {len(todo)} listing(s) in full for the features asked about"}
+        t0 = time.monotonic()
+        with ThreadPoolExecutor(max_workers=min(8, len(todo))) as pool:
+            found = list(pool.map(lambda c: self._detail_tags(c["id"]), todo))
+        self._timed(f"get_listing × {len(todo)} for feature hits, in parallel", t0)
+        self.stats["detail_reads"] = self.stats.get("detail_reads", 0) + len(todo)
+        for c, tags in zip(todo, found):
+            have = {t.lower() for t in c.get("tags", [])}
+            lifted = [t for t in normalize.hits(asked, tags) if t.lower() not in have][:3]
+            if lifted:
+                c["tags"] = lifted + list(c.get("tags", []))
 
     def _free_query(self, request: str, f: SearchFilter | None, before: SearchFilter | None) -> str:
         """What Cubi's free-text search gets. A refinement of a country-wide search

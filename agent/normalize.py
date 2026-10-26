@@ -69,11 +69,21 @@ CONCEPTS = {
 }
 
 
+def wanted(request: str) -> list[str]:
+    """The concept patterns the request names."""
+    text = _plain(request)
+    return [pat for pat in CONCEPTS.values() if _has(pat, text)]
+
+
 def hits(request: str, tags: list[str]) -> list[str]:
     """The tags that belong to a concept the request names."""
-    text = _plain(request)
-    wanted = [pat for pat in CONCEPTS.values() if _has(pat, text)]
-    return [t for t in tags if any(_has(pat, _plain(t)) for pat in wanted)]
+    want = wanted(request)
+    return [t for t in tags if any(_has(pat, _plain(t)) for pat in want)]
+
+
+def missing(request: str, tags: list[str]) -> list[str]:
+    """The named concepts none of these tags cover."""
+    return [pat for pat in wanted(request) if not any(_has(pat, _plain(t)) for t in tags)]
 
 # Specific types the user named → they win over a generic apartment/house.
 TYPES = {
