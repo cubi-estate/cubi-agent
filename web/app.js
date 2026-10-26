@@ -302,17 +302,21 @@ async function loadMap(x, c, d) {
       .addTo(map).bindPopup(esc(c.type || "Home") + (exact ? "" : " · " + esc(d.mapTown)));
     note.textContent = exact ? d.mapExact : d.mapTown;
     const where = exact ? d.mapExact : d.mapTown;
+    const pins = L.featureGroup([L.marker([lat, lon])]);   // the home and every place: the view fits them
     let n = 0, failed = 0;
     for (const [kind, icon] of POI) {
       await pause(1100);
       if (pane.hidden || !box.isConnected) return;
       try {
         for (const p of await nearby(lat, lon, kind, lang)) {
-          L.marker([+p.lat, +p.lon], { icon: L.divIcon({ className: "dpin", html: icon, iconSize: [22, 22] }) })
+          const m = L.marker([+p.lat, +p.lon], { icon: L.divIcon({ className: "dpin", html: icon, iconSize: [22, 22] }) })
             .addTo(map).bindPopup(esc(p.name || String(p.display_name || kind).split(",")[0]));
+          pins.addLayer(m);
           n++;
         }
       } catch { failed++; }
+      // Zoom 15 showed a third of the pins (Carnide, live 2026-10-26): fit them, home included.
+      if (n) map.fitBounds(pins.getBounds().pad(0.08), { maxZoom: 15, animate: false });
       note.textContent = `${where} · ${n} ${d.pois}`;
     }
     if (failed === POI.length) note.textContent = `${where} · ${d.nopois}`;
