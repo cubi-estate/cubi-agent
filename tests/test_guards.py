@@ -134,3 +134,14 @@ def test_an_all_have_clause_goes_and_the_count_stays():
     assert n == 1 and out == "I found five 2-bed apartments in Lisbon priced under €400k. Want details on any of them?"
     whole = "All of them have a private pool. Want details?"
     assert guards.drop_all_have_claims(whole) == ("Want details?", 1)
+
+
+def test_a_setting_and_size_all_have_clause_goes():
+    """Live 2026-10-27: "…ideally with a large plot" — the answer claimed every card had one."""
+    a = ("More than 1,000 properties matched, showing six examples here—all include notes about being in "
+         "tranquil settings and having good-sized parcels. You can refine further by choosing a country.")
+    out, n = guards.drop_all_have_claims(a)
+    assert n == 1 and out.startswith("More than 1,000 properties matched, showing six examples here.")
+    assert "tranquil" not in out and out.endswith("choosing a country.")
+    keep = "All six are plots of land in Portugal."
+    assert guards.drop_all_have_claims(keep) == (keep, 0)

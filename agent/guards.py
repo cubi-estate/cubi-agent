@@ -391,7 +391,12 @@ _WISH = (r"(pool|piscina|piscine|schwimmbad|zwembad|sea[- ]view|views?|vista|vue
          r"terrasse|terras|balcon|balc[oó]n|balkon|lift|elevator|elevador|ascensor|ascenseur|aufzug|garden|jardim|"
          r"jard[ií]n|garten|tuin|garage|garagem|parking|parque|stellplatz|parkeer|air[- ]condition|\bac\b|"
          r"ar condicionado|aire acondicionado|climati|klima|airco|sauna|fireplace|lareira|chimenea|chemin[ée]e|"
-         r"kamin|open haard|renovat|reformad|r[ée]nov|saniert|furnish\w*|mobilad|amueblad|meubl|m[öo]bliert|gemeubileerd)")
+         r"kamin|open haard|renovat|reformad|r[ée]nov|saniert|furnish\w*|mobilad|amueblad|meubl|m[öo]bliert|gemeubileerd|"
+         # Setting and size wishes ("…ideally with a large plot, in quiet countryside"):
+         # "showing six examples—all include notes about tranquil settings and
+         # good-sized parcels" (live 2026-10-27) was a claim nothing checked.
+         r"quiet|tranquil\w*|peaceful|secluded|countryside|sossegad\w*|calme|ruhig\w*|rustig\w*|"
+         r"good[- ]sized|spacious|large plots?|big plots?|parcels?)")
 _ALL_WISH = re.compile(_ALL + r"[^.!?]{0,80}" + _WISH + r"|" + _WISH + r"[^.!?]{0,40}\b(in all|for all|em todos|en todos|"
                        r"dans tous|bei allen|bij alle)\b", re.I)
 
