@@ -433,6 +433,41 @@ def drop_false_over_budget(answer: str, tool_text: str) -> tuple[str, int]:
 _THINK_BLOCK = re.compile(r"(?s)<think>.*?(?:</think>|$)")
 
 
+# A home in a list item: a price, a size or a bedroom count. The cards below the
+# answer already show each home; the model sometimes lists all six again (the
+# Lyon "for sale" button, tester F22; the injection turn, F8).
+_HOME_FACT = re.compile(r"[€$£]\s?\d|\d\s?(?:€|eur\b|euros?\b|chf\b|pln\b|z[łl]|kr\b)|\d\s?m[²2]|"
+                        r"\b\d+\s?(?:bd|bed\w*|quartos?|dormitorios?|chambres?|schlafzimmer|slaapkamers?|"
+                        r"camere|sypialni\w*|soverom|спал\w*)\b|\bT\d\b", re.I)
+MIN_LISTED = 3
+
+
+def drop_listed_homes(answer: str) -> tuple[str, int]:
+    """Drop a list of three or more homes, and the line that leads into it
+    ("Here are the six homes:"). Kept whole if nothing else would be left."""
+    blocks = _items(answer)
+    homes = [i for i, b in enumerate(blocks) if ITEM_RE.match(b[0]) and _HOME_FACT.search(" ".join(b))]
+    if len(homes) < MIN_LISTED:
+        return answer, 0
+    drop = set(homes)
+    for i in homes:  # the lead-in, past blank lines
+        j = i - 1
+        while j >= 0 and not blocks[j][0].strip():
+            j -= 1
+        if j >= 0 and j not in drop and blocks[j][0].rstrip().endswith(":"):
+            # "I found 6 homes. Here they are:": only the last sentence leads in
+            head = re.split(r"(?<=[.!?])\s+(?=\S[^.!?]*:\s*$)", blocks[j][0].rstrip(), maxsplit=1)
+            if len(head) == 2:
+                blocks[j] = [head[0]]
+            else:
+                drop.add(j)
+    kept = "\n".join(line for i, b in enumerate(blocks) if i not in drop for line in b)
+    kept = re.sub(r"\n{3,}", "\n\n", kept).strip()
+    if len(re.sub(r"\W", "", kept)) < 20:
+        return answer, 0
+    return kept, len(homes)
+
+
 def strip_reasoning(answer: str) -> tuple[str, int]:
     """The model's notes must never reach the user. With thinking off it still
     wrote them, ending in a bare "</think>" before the real answer (live, 'Is #9
@@ -462,7 +497,9 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
     if "get_contact_options" in used_tools:
         answer, sent = drop_sent_claims(answer, lang)
     wishes = over = 0
+    listed = 0
     if "search_homes" in used_tools:
+        answer, listed = drop_listed_homes(answer)
         answer, wishes = drop_all_have_claims(answer)
         answer, over = drop_false_over_budget(answer, tool_text)
     absence = 0
@@ -486,4 +523,4 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
                     "absence_wording_fixed": absence, "source_filler_dropped": filler,
                     "all_have_claims_dropped": wishes, "over_budget_dropped": over, "reasoning_stripped": reasoning, "ids_scrubbed": ids,
-                    "band_stated": band_added, "dates_fixed": dates}
+                    "band_stated": band_added, "dates_fixed": dates, "listed_homes_dropped": listed}

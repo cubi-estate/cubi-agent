@@ -201,6 +201,8 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   .sub { display: none; }
   .cards { grid-template-columns: 1fr; }
   .bubble.user { max-width: 92%; }
+  /* Two lines on a phone: one line cut "Please don't enter personal details" (tester F5). */
+  .notice summary { white-space: normal; }
 }
 
 /* Home wizard (wizard.js): five quick picks that build a search message and a brief. */

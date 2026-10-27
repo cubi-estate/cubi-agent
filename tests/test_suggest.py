@@ -125,3 +125,13 @@ def test_news_is_about_the_searched_city_not_a_parish():
 def test_news_place_is_the_city_of_an_arrondissement():
     card = {"n": 1, "location": "Lyon 8th Arrondissement, France, Auvergne-Rhône-Alpes"}
     assert suggest.news_place(card, ["Lyon"]) == "Lyon"
+
+
+def test_after_an_area_comparison_three_buttons():
+    """Tester F13 (27 Oct): after "Compare schools and public transport in Porto
+    and Valencia" only "Homes in Porto or Valencia up to …" was offered — the
+    budget comparison is not offered across countries, and nothing else was."""
+    shown = [{"n": 1, "location": "Porto, Porto District, Portugal"}, {"n": 4, "location": "Valencia, Spain"}]
+    qs = suggest.next_questions("compare-areas", "en", places=["Porto", "Valencia"], max_price=400000, shown=shown)
+    assert qs == ["Homes in Porto or Valencia up to €400,000", "Compare #1 and #4 feature by feature",
+                  "Has #1's price dropped, and what's new in Porto?"]

@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from agent.mcp_client import MCPError, parse_rpc_body, to_openai_tool  # noqa: E402
-from agent.schema import SearchFilter, strict_json_schema  # noqa: E402
+from agent.schema import HOMES, SearchFilter, strict_json_schema  # noqa: E402
 from scripts.day1_probe import score  # noqa: E402
 
 
@@ -38,7 +38,10 @@ def test_rent_sets_monthly_period_and_drops_empty_fields():
     args = _filter(location=["Lisboa"], transaction_type="rent", max_price=1500, lang="pt").to_filter_args()
     assert args["price_period"] == "month"
     assert args["location"] == ["Lisboa"]
-    assert "type" not in args and "min_price" not in args
+    assert "min_price" not in args
+    # no type named: homes, not parking spaces (Lyon, 27 Oct); a named type is kept
+    assert args["type"] == list(HOMES) and "land" not in args["type"]
+    assert _filter(location=["Lisboa"], type=["land"]).to_filter_args()["type"] == ["land"]
 
 
 def test_score_aliases_and_accents():

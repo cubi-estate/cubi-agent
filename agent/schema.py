@@ -14,6 +14,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 PropertyType = Literal[
     "apartment", "house", "villa", "townhouse", "penthouse", "studio", "land", "duplex", "farmhouse"
 ]
+# Sent when the user names no type: untyped, "Homes for sale in Lyon" came back as
+# eight parking spaces at €22-35k (27 Oct) and Porto's had a plot of land.
+HOMES = ["apartment", "house", "villa", "townhouse", "penthouse", "studio", "duplex", "farmhouse"]
 
 
 class SearchFilter(BaseModel):
@@ -68,6 +71,7 @@ class SearchFilter(BaseModel):
             value = getattr(self, key)
             if value:
                 args[key] = value
+        args.setdefault("type", list(HOMES))
         for key in ("min_price", "max_price", "min_bedrooms", "max_bedrooms", "min_living_area"):
             value = getattr(self, key)
             if value is not None:

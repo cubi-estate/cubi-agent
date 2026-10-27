@@ -396,6 +396,53 @@ def test_tool_failure_is_reported_as_failure(tmp_path):
     assert "do not guess" in out[-1]
 
 
+def _slow_once(agent_, first: str, then: str):
+    sent = []
+    def call(name, args):
+        sent.append(name)
+        return {"text": first if len(sent) == 1 else then, "is_error": len(sent) == 1 and first.startswith("{")}
+    agent_.mcp.call_tool = call
+    return sent
+
+
+def test_cold_city_timeout_is_retried_once(tmp_path):
+    """Tester F18 (27 Oct): the first price check or similar-homes call for a
+    city times out at Cubi's budget; the second answers in about a second."""
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=SimpleNamespace())
+    agent_.shown = listings.parse(CARDS)
+    agent_.seen_refs = {"test_pt:1", "test_pt:2"}
+    agent_.lang, agent_._message = "en", "is #2 overpriced?"
+    band = '{"listing_id": "test_pt:2", "kind": "asking_price_comparison", "band": null}'
+    sent = _slow_once(agent_, '{"is_error": true, "code": "query_timeout", "message": "retry once"}', band)
+    out = list(agent_._run_tool("compare_asking_prices", {"listing_id": "test_pt:2"}))
+    assert sent == ["compare_asking_prices"] * 2
+    assert any(isinstance(e, dict) and "trying once more" in e["text"] for e in out)
+    assert not any(isinstance(e, str) and e.startswith("error:") for e in out)
+
+    # Slow but not an error: "no band" with the search unfinished read as "too few
+    # comparables" when Cubi had 15-20 (tester F18, 27 Oct).
+    unfinished = '{"listing_id": "test_pt:2", "band": null, "reason": "search_incomplete", "retryable": true}'
+    sent = _slow_once(agent_, unfinished, band)
+    list(agent_._run_tool("compare_asking_prices", {"listing_id": "test_pt:2"}))
+    assert sent == ["compare_asking_prices"] * 2
+
+    sent = _slow_once(agent_, "Cubi backend returned HTTP 500.", '{"ok": false, "error": "same_city"}')
+    out = list(agent_._run_tool("find_similar_elsewhere", {"listing_id": "test_pt:1", "city": "Porto"}))
+    assert sent == ["find_similar_elsewhere"] * 2 and "already in that city" in out[-1]
+
+
+def test_answers_and_rate_limits_are_not_retried(tmp_path):
+    agent_ = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=SimpleNamespace())
+    agent_.shown = listings.parse(CARDS)
+    agent_.seen_refs = {"test_pt:1", "test_pt:2"}
+    agent_.lang, agent_._message = "en", "homes like #1 in Porto"
+    for first in ('{"ok": false, "error": "same_city"}', "Listing not found. Use a listing URL or id",
+                  "Too many tool calls this minute; wait and retry"):
+        sent = _slow_once(agent_, first, "unused")
+        list(agent_._run_tool("find_similar_elsewhere", {"listing_id": "test_pt:1", "city": "Porto"}))
+        assert sent == ["find_similar_elsewhere"], first
+
+
 def test_multi_place_search_runs_once_per_place(tmp_path):
     """Live 2026-10-21: Porto + Valencia in one filter came back all Valencia, and the
     model said Porto had nothing. Each place now gets its own search."""

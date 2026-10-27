@@ -96,3 +96,32 @@ def test_over_budget_claims_stay_when_a_card_really_is_above_the_cap():
     a = "Found 74. #1 is above the limit. Ask away."
     assert guards.drop_false_over_budget(a, above) == (a, 0)
     assert guards.drop_false_over_budget(a, "no cap stated here") == (a, 0)
+
+
+LYON = ("J'ai trouvé 6 logements à vendre à Lyon. Voici les six biens :\n\n"
+        "1. Appartement T3, 68 m², 2 chambres — 289 000 €\n"
+        "2. Appartement T2, 45 m² — 215 000 €\n"
+        "3. Maison, 120 m², 4 chambres — 640 000 €\n"
+        "4. Studio, 22 m² — 129 000 €\n\n"
+        "Dites-moi si vous voulez plus de détails sur l'un d'eux.")
+
+
+def test_a_list_of_the_homes_on_the_cards_is_dropped():
+    """Tester F22/F8: the cards already show the six homes; the text listed them again."""
+    out, n = guards.drop_listed_homes(LYON)
+    assert n == 4 and "289 000" not in out and "Voici" not in out
+    assert out.startswith("J'ai trouvé 6 logements") and out.endswith("l'un d'eux.")
+    _, rep = guards.apply(LYON, "", "fr", {"search_homes"})
+    assert rep["listed_homes_dropped"] == 4
+
+
+def test_short_lists_and_lists_without_homes_stay():
+    two = "Two stand out:\n\n1. #1 at €289,000\n2. #4 at €129,000\n\nWant details?"
+    assert guards.drop_listed_homes(two) == (two, 0)
+    tips = "You could:\n- add a town\n- raise the budget\n- allow 1 bedroom less"
+    assert guards.drop_listed_homes(tips) == (tips, 0)
+
+
+def test_an_answer_that_is_only_the_list_is_kept():
+    only = "\n".join(LYON.splitlines()[2:6])
+    assert guards.drop_listed_homes(only) == (only, 0)

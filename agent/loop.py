@@ -259,6 +259,24 @@ def named_place(message: str) -> str:
     return re.split(r"\s+(?:and|e|y|et|und|en)\s+|\s*#", m.group(1))[0].strip(" ,")
 
 
+RETRY_ONCE = ("compare_asking_prices", similarmod.TOOL)
+_BACKEND_DOWN = ("cubi backend returned http 5", "cubi backend unreachable", "cubi backend returned invalid json")
+
+
+def _transient(text: str) -> bool:
+    """A failure a second call can fix: the connector's timeout codes, a 5xx
+    from Cubi's backend, or a reply Cubi marks retryable. Not a rate limit, a quota, or an answer such as
+    "same_city" or "listing not found"."""
+    head = text.lstrip().lower()
+    if _error_code(text) in INCOMPLETE or head.startswith(_BACKEND_DOWN):
+        return True
+    try:  # a price check whose comparables search didn't finish: no band, "retryable"
+        body = json.loads(text) if head.startswith("{") else {}
+    except json.JSONDecodeError:
+        return False
+    return isinstance(body, dict) and (body.get("retryable") is True or body.get("reason") in INCOMPLETE)
+
+
 def _error_code(text: str) -> str:
     """The connector's in-band error code ("search_incomplete", "query_timeout"…), or ""."""
     head = text.lstrip()
@@ -684,15 +702,13 @@ class Agent:
             if groups:
                 res = {**res, "text": text}
                 by_id = {c.get("id"): c for c in self.cards}
-                said = []
+                # The card says it ("Listed 3 times on Cubi; the copies are hidden"); the
+                # answer doesn't. Told to say it, the model got it wrong ("card #3 appeared
+                # three times and was removed", live 2026-10-26) and in Norwegian and Polish
+                # made it the whole answer (tester F25, 27 Oct).
                 for kept, dups in groups.items():
                     if kept in by_id:
                         by_id[kept]["copies"] = len(dups)
-                        said.append(f"#{by_id[kept]['n']} is listed {len(dups) + 1} times on Cubi")
-                # Said as given: the model wrote "card #3 appeared three times and was
-                # removed" about the card still on screen (live 2026-10-26).
-                header += (f"[copies of a home were hidden. Say this, in the user's language, and nothing else "
-                           f"about it: \"{'; '.join(said)}; the copies are hidden, the home is shown once.\"]\n")
             if self.cards:
                 self.shown = self.cards
                 self.focus = None  # a new result set: "it" no longer means the old home
@@ -862,6 +878,12 @@ class Agent:
         # turn's lang from history (an English question got a Dutch contact reply).
         args["lang"] = self.data_lang
         res = self.mcp.call_tool(name, args)
+        if name in RETRY_ONCE and _transient(res["text"]):
+            # A city Cubi's database hasn't read lately times out once (price check
+            # at its 25 s budget, similar homes at 10 s) and answers in about 1 s
+            # on the next call (tester F18, 27 Oct). The connector says "retry once".
+            yield {"type": "action", "text": f"{label}: Cubi was slow, trying once more"}
+            res = self.mcp.call_tool(name, args)
         if res["is_error"]:
             # Said plainly, or the model explains the failure itself ("probably too few
             # comparables") — a reason nobody measured.

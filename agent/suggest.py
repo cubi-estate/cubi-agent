@@ -50,7 +50,7 @@ AFTER = {
     "check-asking-price": ["news", "similar", "contact", "leaders", "areas", "budget"],
     "contact-agent": ["similar", "budget", "areas", "news", "leaders", "price"],
     "home-news": ["similar", "contact", "price", "leaders", "budget", "areas"],
-    "compare-areas": ["budget", "search"],
+    "compare-areas": ["budget", "search", "leaders", "news", "price", "similar"],
     "compare-budget": ["more", "leaders", "areas", "news", "similar"],
     "similar-elsewhere": ["news", "price", "contact", "budget", "areas"],
 }
