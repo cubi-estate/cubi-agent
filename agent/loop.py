@@ -206,7 +206,9 @@ def _describe(f: SearchFilter, lang: str = "en", anywhere: bool = False) -> str:
     elif f.min_price:
         bits.append(f"≥ €{f.min_price:,.0f}{month}")
     if f.features:
-        bits.append(" + ".join(tr(x) for x in f.features))
+        # A lone concept key stays in the filter (normalize reads its underscore)
+        # but is said as a name: "mountain_view" -> "Mountain View" (live 2026-10-27).
+        bits.append(" + ".join(tr(x.replace("_", " ").title() if "_" in x else x) for x in f.features))
     if f.has_parking:
         bits.append(w["parking"])
     if f.location:

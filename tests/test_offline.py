@@ -98,3 +98,11 @@ def test_a_feature_named_twice_as_name_and_key_is_kept_once():
     assert _filter(features=["sea_view", "Sea View"]).features == ["Sea View"]
     assert _filter(features=["Pool", "pool", "Sea-View", "Sea View"]).features == ["Pool", "Sea-View"]
     assert _filter(features=["sea_view"]).features == ["sea_view"]  # a lone key: normalize decides
+
+
+def test_a_lone_feature_key_is_said_as_a_name():
+    """Live 2026-10-27: the search line read "to rent · house · mountain_view"."""
+    from agent.loop import _describe
+    line = _describe(_filter(features=["mountain_view"], type=["house"], transaction_type="rent"), "en", anywhere=True)
+    assert "Mountain View" in line and "mountain_view" not in line
+    assert "vistas al mar" in _describe(_filter(features=["sea_view"]), "es")
