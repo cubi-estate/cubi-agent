@@ -139,6 +139,18 @@ _DROPPED = {
 }
 
 
+MIN_AGREEMENT = 4  # the backend's bar; its reply states it under rules.min_agreement
+
+
+def documented(p: dict) -> int:
+    """Stated features plus environment readings with a known state."""
+    feats = p.get("features") or {}
+    env = p.get("environment") or {}
+    return (sum(1 for v in feats.values() if v == "stated") if isinstance(feats, dict) else 0) + \
+        (sum(1 for v in env.values() if isinstance(v, dict) and v.get("state") not in (None, "unknown"))
+         if isinstance(env, dict) else 0)
+
+
 def no_match_line(city: str | None, pool: dict) -> str:
     n = pool.get("candidates", pool.get("in_city"))
     dropped = pool.get("dropped") or {}
@@ -162,6 +174,18 @@ def tool_text(result: dict, cards: list[dict], seed_label: str, match_labels: li
     lines = [f"[find_similar_elsewhere {json.dumps({'listing_id': seed.get('id'), 'city': city}, ensure_ascii=False)}]",
              _home(f"This home, {seed_label}", seed, cross)]
     if not matches:
+        need = (result.get("rules") or {}).get("min_agreement") or MIN_AGREEMENT
+        known = documented(seed)
+        if known < need:
+            # The home asked about states too little: no city could match it. Blaming
+            # the city's homes ("150 candidates, none with enough data") was wrong
+            # (Lisbon card → Porto, 27 Oct: the seed stated 0 features, 1 reading).
+            lines.append(f"No matching home was found in {city}: the listing of {seed_label} itself states "
+                         f"{known} of the features and environment readings Cubi compares, and a match needs "
+                         f"at least {need} in common, so no city could match it. Say that, with no other "
+                         f"reason, and offer a price check on {seed_label} or homes like another card.")
+            lines.append("Write one or two sentences.")
+            return "\n".join(lines)
         lines.append(no_match_line(city, result.get("pool") or {}))
     for i, m in enumerate(matches, 1):
         label = match_labels[i - 1] if match_labels and i <= len(match_labels) else f"#{i}"

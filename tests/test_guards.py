@@ -125,3 +125,12 @@ def test_short_lists_and_lists_without_homes_stay():
 def test_an_answer_that_is_only_the_list_is_kept():
     only = "\n".join(LYON.splitlines()[2:6])
     assert guards.drop_listed_homes(only) == (only, 0)
+
+
+def test_an_all_have_clause_goes_and_the_count_stays():
+    a = ("I found five 2-bed apartments in Lisbon priced under €400k—all located in the Beato area and needing "
+         "renovation, with prices from €170k to €250k. Want details on any of them?")
+    out, n = guards.drop_all_have_claims(a)
+    assert n == 1 and out == "I found five 2-bed apartments in Lisbon priced under €400k. Want details on any of them?"
+    whole = "All of them have a private pool. Want details?"
+    assert guards.drop_all_have_claims(whole) == ("Want details?", 1)

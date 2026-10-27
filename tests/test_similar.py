@@ -250,3 +250,16 @@ def test_correct_dates_are_left_alone(text):
 def test_the_date_repair_runs_on_news_answers():
     answer, rep = guards.apply("No change since 15 September 15, 2026.", "", "en", {"home_news"})
     assert answer == "No change since 15 September 2026." and rep["dates_fixed"] == 1
+
+
+def test_a_home_that_states_too_little_is_the_reason():
+    """Live 27 Oct: a Lisbon card stating no features and one reading got "Cubi had
+    150 candidate homes in Porto, none with enough data" — the card was the gap."""
+    r = _result(0)
+    r["pool"] = {"candidates": 150, "dropped": {"bedrooms": 0, "area": 0, "undocumented": 150}}
+    r["rules"] = {"min_agreement": 4}
+    r["seed"]["features"] = {k: "not_stated" for k in similar.FEATURES}
+    r["seed"]["environment"] = {"stable_ground": {"state": "yes"}, "quiet": {"state": "unknown"}}
+    text = similar.tool_text(r, [], "#1")
+    assert "#1 itself states 1 of" in text and "150 candidate" not in text and "no city could match" in text
+    assert similar.documented(_result(0)["seed"]) >= 4  # the fixture's seed still gets the pool reason

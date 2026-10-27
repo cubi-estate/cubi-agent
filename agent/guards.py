@@ -396,8 +396,28 @@ _ALL_WISH = re.compile(_ALL + r"[^.!?]{0,80}" + _WISH + r"|" + _WISH + r"[^.!?]{
                        r"dans tous|bei allen|bij alle)\b", re.I)
 
 
+# "I found five flats in Lisbon—all in Beato and needing renovation": the claim is
+# a clause; dropping the sentence lost the count with it, and a pivoted answer
+# opened mid-thought ("Wszystkie są…", tester F25 runs, 27 Oct).
+_CLAUSE_CUT = re.compile(r"\s*(?:[—–;:]|,|\s-\s)\s*(?=" + _ALL + r")", re.I)
+
+
 def drop_all_have_claims(answer: str) -> tuple[str, int]:
-    return _drop_sentences(answer, _ALL_WISH)
+    n, lines = 0, []
+    for line in answer.split("\n"):
+        kept = []
+        for x in re.split(r"(?<=[.!?])\s+", line):
+            m = _ALL_WISH.search(x)
+            if not m:
+                kept.append(x)
+                continue
+            n += 1
+            cuts = [c for c in _CLAUSE_CUT.finditer(x) if 20 <= c.start() <= m.start()]
+            if cuts and not _ALL_WISH.search(x[:cuts[-1].start()]):
+                kept.append(x[:cuts[-1].start()].rstrip(" ,;:—–-") + ".")
+        if kept or not line.strip():
+            lines.append(" ".join(kept))
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip(), n
 
 
 # "Many exceed the budget … #2 … though above the limit": the model compared złoty

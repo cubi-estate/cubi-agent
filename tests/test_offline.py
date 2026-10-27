@@ -89,3 +89,12 @@ def test_a_type_or_feature_listed_twice_counts_once():
                      min_living_area=None, has_parking=None, features=["Balcony", "balcony", "Pool"],
                      lang="en", needs_free_text_search=False)
     assert f.type == ["apartment"] and f.features == ["Balcony", "Pool"]
+
+
+def test_a_feature_named_twice_as_name_and_key_is_kept_once():
+    """Live 2026-10-27: the search line read "Sea View + sea_view"."""
+    f = _filter(features=["Sea View", "sea_view"])
+    assert f.features == ["Sea View"]
+    assert _filter(features=["sea_view", "Sea View"]).features == ["Sea View"]
+    assert _filter(features=["Pool", "pool", "Sea-View", "Sea View"]).features == ["Pool", "Sea-View"]
+    assert _filter(features=["sea_view"]).features == ["sea_view"]  # a lone key: normalize decides

@@ -55,13 +55,16 @@ class SearchFilter(BaseModel):
     @classmethod
     def _once_each(cls, values: list[str]) -> list[str]:
         # The model sometimes lists a type twice ("apartment/apartment" in the search
-        # line, live 2026-10-25); one is enough for the filter and the line.
-        seen, out = set(), []
+        # line, live 2026-10-25), or a feature as its name and its concept key
+        # (['Sea View', 'sea_view'] -> "Sea View + sea_view", live 2026-10-27); one is
+        # enough for the filter and the line, and the readable spelling wins. A lone
+        # key is left as it is: normalize reads the underscore as a coined token.
+        out: dict[str, str] = {}
         for v in values:
-            if v.lower() not in seen:
-                seen.add(v.lower())
-                out.append(v)
-        return out
+            key = " ".join(v.replace("_", " ").replace("-", " ").split()).lower()
+            if key not in out or ("_" in out[key] and "_" not in v):
+                out[key] = v
+        return list(out.values())
 
     def to_filter_args(self, limit: int = 8) -> dict:
         args: dict = {"lang": self.lang, "limit": limit, "transaction_type": self.transaction_type}
