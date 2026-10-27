@@ -145,3 +145,13 @@ def test_a_setting_and_size_all_have_clause_goes():
     assert "tranquil" not in out and out.endswith("choosing a country.")
     keep = "All six are plots of land in Portugal."
     assert guards.drop_all_have_claims(keep) == (keep, 0)
+
+
+def test_tool_names_are_scrubbed():
+    """2026-10-27: "…using the search_properties tool, but no listings were found"."""
+    a = 'I ran a free-text search for "homes for sale" using the search_properties tool, but no listings were found.'
+    out, n = guards.scrub_tool_names(a)
+    assert n == 1 and "search_properties" not in out and out == 'I ran a free-text search for "homes for sale", but no listings were found.'
+    out, n = guards.scrub_tool_names("The filter_listings call returned six homes.")
+    assert out == "Cubi's search call returned six homes." and n == 1
+    assert guards.scrub_tool_names("Six homes in Porto.") == ("Six homes in Porto.", 0)

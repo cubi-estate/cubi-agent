@@ -568,6 +568,13 @@ class Agent:
         header = "[searched with search_properties (free text)]\n"
         if res["is_error"] and self.anywhere and fallback and _error_code(res["text"]) in INCOMPLETE:
             res, header = yield from self._per_market(request, f)
+        elif (not res["is_error"] and self.anywhere and fallback and not listings.parse(res["text"])
+              and res["text"].lstrip().lower().startswith("no properties matched")):
+            # "Homes for sale, anywhere in Europe" (2026-10-27): Cubi asked where
+            # instead of searching, and the connector prefixed its question with
+            # "No properties matched" — read as a zero. The user asked for every
+            # country, so search the big markets side by side.
+            res, header = yield from self._per_market(request, f, why="asked_where")
         return res, header
 
     def _free_search(self, query: str, request: str, f: SearchFilter | None) -> Generator[dict, None, tuple[dict, str]]:
@@ -590,7 +597,8 @@ class Agent:
             yield {"type": "action", "text": f"As requirements: {why} — searching with them as wishes instead"}
         return (yield from self._free_once(query, request, f))
 
-    def _per_market(self, request: str, f: SearchFilter | None) -> Generator[dict, None, tuple[dict, str]]:
+    def _per_market(self, request: str, f: SearchFilter | None,
+                    why: str = "timeout") -> Generator[dict, None, tuple[dict, str]]:
         """A Europe-wide free-text search that did not finish in the connector's time,
         run as one search per big market at once and merged: the user asked for every
         country, not for a town, and a country-wide search finishes in seconds."""
@@ -603,8 +611,9 @@ class Agent:
             return _sentence(f.model_copy(update={"location": [country]})) + wish
 
         names = ", ".join(BIG_MARKETS[:-1]) + f" and {BIG_MARKETS[-1]}"
-        yield {"type": "action", "text": f"The Europe-wide search did not finish in Cubi's time limit — searching "
-                                         f"{names} side by side instead"}
+        lead = ("Cubi asked where to look instead of searching all of Europe" if why == "asked_where"
+                else "The Europe-wide search did not finish in Cubi's time limit")
+        yield {"type": "action", "text": f"{lead} — searching {names} side by side instead"}
         self.split = True
         self.stats["fallback_searches"] += len(BIG_MARKETS)
         self.stats["market_searches"] = self.stats.get("market_searches", 0) + len(BIG_MARKETS)

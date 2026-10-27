@@ -504,11 +504,27 @@ def strip_reasoning(answer: str) -> tuple[str, int]:
     return out, int(out != answer.strip())
 
 
+# "I ran a free-text search … using the search_properties tool, but no listings
+# were found" (2026-10-27): a tool name is plumbing, not something a buyer can use.
+_TOOLS = (r"search_properties|filter_listings|find_similar_elsewhere|compare_asking_prices|get_listing|"
+          r"get_contact_options|get_price_history|compare_inventory|search_homes|home_news|research_area")
+_TOOL_PHRASE = re.compile(rf"\s*,?\s*\b(?:using|with|via|through|by calling|by using)\s+(?:the\s+|Cubi's\s+)?`?(?:{_TOOLS})`?"
+                          rf"(?:\s+(?:tool|function|endpoint))?\b", re.I)
+_TOOL_BARE = re.compile(rf"(?:the\s+)?`?\b(?:{_TOOLS})\b`?(?:\s+(?:tool|function|endpoint))?", re.I)
+
+
+def scrub_tool_names(answer: str) -> tuple[str, int]:
+    out, n1 = _TOOL_PHRASE.subn("", answer)
+    out, n2 = _TOOL_BARE.subn("Cubi's search", out)
+    return out, n1 + n2
+
+
 def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
           cards: list[str] = ()) -> tuple[str, dict]:
     answer, reasoning = strip_reasoning(answer)
     answer = _STRAY_HASH.sub(r"\1", answer)
     answer, ids = scrub_ids(answer, list(cards))
+    answer, tools = scrub_tool_names(answer)
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
     answer, scrubbed = scrub_contacts(answer)
     verdicts = sent = band_added = 0
@@ -548,4 +564,4 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
                     "absence_wording_fixed": absence, "source_filler_dropped": filler,
                     "all_have_claims_dropped": wishes, "over_budget_dropped": over, "reasoning_stripped": reasoning, "ids_scrubbed": ids,
-                    "band_stated": band_added, "dates_fixed": dates, "listed_homes_dropped": listed}
+                    "band_stated": band_added, "dates_fixed": dates, "tool_names_scrubbed": tools, "listed_homes_dropped": listed}
