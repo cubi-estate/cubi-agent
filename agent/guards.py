@@ -520,9 +520,15 @@ def scrub_tool_names(answer: str) -> tuple[str, int]:
 
 
 def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
-          cards: list[str] = ()) -> tuple[str, dict]:
+          cards: list[str] = (), replies: list | None = None) -> tuple[str, dict]:
     answer, reasoning = strip_reasoning(answer)
     answer = _STRAY_HASH.sub(r"\1", answer)
+    # Before the id / tool-name scrubs: no "no listings" claim unless Cubi really
+    # returned zero this turn; raw markers out (agent/reply_guard.py, 2026-10-27).
+    rg_report = {}
+    if replies is not None:
+        from .reply_guard import guard_answer
+        answer, rg_report = guard_answer(answer, replies, lang)
     answer, ids = scrub_ids(answer, list(cards))
     answer, tools = scrub_tool_names(answer)
     answer, removed, dropped = verify_urls(answer, tool_text, lang)
@@ -564,4 +570,4 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
                     "verdicts_dropped": verdicts, "sent_claims_dropped": sent, "percentages_dropped": pct,
                     "absence_wording_fixed": absence, "source_filler_dropped": filler,
                     "all_have_claims_dropped": wishes, "over_budget_dropped": over, "reasoning_stripped": reasoning, "ids_scrubbed": ids,
-                    "band_stated": band_added, "dates_fixed": dates, "tool_names_scrubbed": tools, "listed_homes_dropped": listed}
+                    "band_stated": band_added, "dates_fixed": dates, "tool_names_scrubbed": tools, "listed_homes_dropped": listed, **rg_report}

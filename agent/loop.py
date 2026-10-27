@@ -30,6 +30,7 @@ from urllib.parse import unquote
 import httpx
 
 from . import detail as detailmod
+from . import reply_guard
 from . import extract as extractmod
 from . import guards, inventory, lang as langmod, listings, llm, normalize, ordinals, pivot, similar as similarmod, steps, skills as skillsmod, suggest, tavily_tool, x_tool
 from .fixtures import connect, listing_ref
@@ -316,6 +317,7 @@ class Agent:
         self.skills = skillsmod.load()
         self.limit = limit
         self.history: list[dict] = []
+        self.replies: list[reply_guard.Reply] = []
         self.filter: SearchFilter | None = None
         self.has_results = False
         self.lang = "en"  # the language this turn runs in: one of the six (English when pivoted)
@@ -465,10 +467,20 @@ class Agent:
         what was left out is counted in self.left_out for the header and the buttons."""
         on = self._screening()
         if not any(on.values()):
-            return self.mcp.call_tool(tool, args)
+            res = self.mcp.call_tool(tool, args)
+            self._classify(res)
+            return res
         want = args.get("limit") or self.limit
         res = self.mcp.call_tool(tool, {**args, "limit": max(want, OVERFETCH if tool == "filter_listings" else 10)})
+        self._classify(res)
         return self._screen(res, want)
+
+    def _classify(self, res: dict) -> reply_guard.Reply:
+        """What Cubi's raw reply was (results / zero / clarify / …), before our own
+        screening, kept for the turn's outgoing guard (agent/reply_guard.py)."""
+        rep = reply_guard.classify(res)
+        self.replies.append(rep)
+        return rep
 
     def _screen(self, res: dict, want: int) -> dict:
         """The screening step of _screened on a result already fetched (with extra)."""
@@ -568,12 +580,12 @@ class Agent:
         header = "[searched with search_properties (free text)]\n"
         if res["is_error"] and self.anywhere and fallback and _error_code(res["text"]) in INCOMPLETE:
             res, header = yield from self._per_market(request, f)
-        elif (not res["is_error"] and self.anywhere and fallback and not listings.parse(res["text"])
-              and res["text"].lstrip().lower().startswith("no properties matched")):
+        elif not res["is_error"] and self.anywhere and fallback and self.replies \
+                and self.replies[-1].kind == reply_guard.CLARIFY:
             # "Homes for sale, anywhere in Europe" (2026-10-27): Cubi asked where
-            # instead of searching, and the connector prefixed its question with
-            # "No properties matched" — read as a zero. The user asked for every
-            # country, so search the big markets side by side.
+            # instead of searching (reply_guard: clarify, keyed on the reply's
+            # shape, not on the "No properties matched" prefix it used to carry).
+            # The user asked for every country, so search the big markets.
             res, header = yield from self._per_market(request, f, why="asked_where")
         return res, header
 
@@ -622,6 +634,8 @@ class Agent:
         t0 = time.monotonic()
         with ThreadPoolExecutor(max_workers=len(BIG_MARKETS)) as pool:
             results = list(pool.map(lambda a: self.mcp.call_tool("search_properties", a), calls))
+        for res in results:
+            self._classify(res)
         self._timed(f"search_properties × {len(BIG_MARKETS)} markets, in parallel", t0)
         merged: list[dict] = []
         notes, failed, screened = [], [], False
@@ -1189,6 +1203,7 @@ class Agent:
         messages = [{"role": "system", "content": system}, *self.history, {"role": "user", "content": text}]
         turn_msgs: list[dict] = [{"role": "user", "content": text}]
         tool_text, used = "", set()
+        self.replies = []   # this turn's classified Cubi search replies (reply_guard)
         extra = None if LOOP_THINKING else llm.NO_THINK
 
         def run_call(name: str, args: dict, call_id: str) -> Iterator[dict]:
@@ -1316,7 +1331,7 @@ class Agent:
             answer, cited = tavily_tool.link_citations(answer, self.sources, self.lang)
             tool_text += "\n".join(src["url"] for src in self.sources.values())
         answer, report = guards.apply(answer, tool_text, self.lang, used,
-                                      [str(c.get("id")) for c in self.shown])
+                                      [str(c.get("id")) for c in self.shown], replies=self.replies)
         report["citations_linked"] = cited
         answer, report["language_fixed"] = self._in_turn_language(answer)
         turn_msgs.append({"role": "assistant", "content": answer})

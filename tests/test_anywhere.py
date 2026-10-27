@@ -146,3 +146,29 @@ def test_when_no_market_finishes_the_model_is_told_not_to_ask_for_a_town(tmp_pat
     assert res["is_error"] and "do not ask for a town" in header
     assert len(calls) == len(BIG_MARKETS)
     assert sorted(a["query"] for _, a in calls) == sorted(f"Houses to rent, anywhere in Europe — only in {c}" for c in BIG_MARKETS)
+
+
+ASKED_WHERE = ("No properties matched. Suggest the user broaden the budget, change location, or relax feature "
+               "requirements.\n---\nEurope is a big place! Which country or region would you like to search?")
+
+
+def test_a_europe_wide_search_cubi_answers_with_a_question_runs_per_market(tmp_path):
+    """Live 2026-10-27 (docs/incidents.md): "Homes for sale, anywhere in Europe" → Cubi
+    asked where, and the agent said there were no listings. Keyed on the reply being a
+    question (reply_guard: clarify), so it holds once the connector drops the
+    "No properties matched" prefix."""
+    for asked in (ASKED_WHERE, ASKED_WHERE.split("---\n", 1)[1]):
+        agent, calls = _agent(tmp_path, lambda a, asked=asked: CARD_ES if " in Spain" in a["query"]
+                              else CARD_IT if " in Italy" in a["query"] else asked)
+        agent.replies = []
+        res, header = _run(agent._free_once("Homes for sale anywhere in Europe", "Homes for sale, anywhere in Europe", None))
+        assert len(calls) == 1 + len(BIG_MARKETS), asked
+        assert [c["n"] for c in listings.parse(res["text"])] == [1, 2]
+
+
+def test_a_genuine_zero_is_not_retried_per_market(tmp_path):
+    zero = "Your search: Europe · villa · budget up to 10,000 EUR — no matches found."
+    agent, calls = _agent(tmp_path, lambda a: zero)
+    agent.replies = []
+    res, _ = _run(agent._free_once("Villas under 10k anywhere in Europe", "Villas under 10k anywhere in Europe", None))
+    assert len(calls) == 1 and res["text"] == zero
