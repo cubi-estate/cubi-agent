@@ -13,27 +13,27 @@ let sessionId = null;
 let busy = false;
 
 const T = {
-  en: { open: "Open listing", ask: "Ask Cubi", updated: "Updated", bd: "bd", ba: "ba",
+  en: { plot: "plot", noplot: "plot not reported", open: "Open listing", ask: "Ask Cubi", updated: "Updated", bd: "bd", ba: "ba",
         price: n => `Is #${n}'s price in line with similar homes?`, contact: n => `How do I contact the agent for #${n}?`,
         steps: (n, s) => `${n} step${n === 1 ? "" : "s"} · ${s}s`, searched: "Search", none: "No homes matched.",
         within: c => `Asking price up to ${c}`, of: (a, b) => `${a} of ${b} listings`, was: (p, c) => `${p}% at ${c}`, note: "Share of each city's listed homes of this kind on Cubi, by asking price — not sale prices. Counts show Cubi's coverage, not market size.", na: "not available right now", more: c => `And up to ${c}?` },
-  pt: { open: "Ver anúncio", ask: "Perguntar à Cubi", updated: "Atualizado", bd: "qt", ba: "wc",
+  pt: { plot: "terreno", noplot: "terreno não indicado", open: "Ver anúncio", ask: "Perguntar à Cubi", updated: "Atualizado", bd: "qt", ba: "wc",
         price: n => `O preço do #${n} está em linha com casas semelhantes?`, contact: n => `Como contacto o agente do #${n}?`,
         steps: (n, s) => `${n} passo${n === 1 ? "" : "s"} · ${s}s`, searched: "Pesquisa", none: "Nenhuma casa encontrada.",
         within: c => `Preço pedido até ${c}`, of: (a, b) => `${a} de ${b} anúncios`, was: (p, c) => `${p}% até ${c}`, note: "Percentagem dos anúncios deste tipo na Cubi em cada cidade, por preço pedido — não preços de venda. As contagens refletem a cobertura da Cubi, não o tamanho do mercado.", na: "indisponível de momento", more: c => `E até ${c}?` },
-  es: { open: "Ver anuncio", ask: "Preguntar a Cubi", updated: "Actualizado", bd: "hab", ba: "baños",
+  es: { plot: "parcela", noplot: "parcela no indicada", open: "Ver anuncio", ask: "Preguntar a Cubi", updated: "Actualizado", bd: "hab", ba: "baños",
         price: n => `¿El precio del #${n} está en línea con viviendas similares?`, contact: n => `¿Cómo contacto con el agente del #${n}?`,
         steps: (n, s) => `${n} paso${n === 1 ? "" : "s"} · ${s}s`, searched: "Búsqueda", none: "Ninguna vivienda encontrada.",
         within: c => `Precio de oferta hasta ${c}`, of: (a, b) => `${a} de ${b} anuncios`, was: (p, c) => `${p}% hasta ${c}`, note: "Porcentaje de los anuncios de este tipo en Cubi en cada ciudad, por precio de oferta — no precios de venta. Los recuentos reflejan la cobertura de Cubi, no el tamaño del mercado.", na: "no disponible ahora", more: c => `¿Y hasta ${c}?` },
-  fr: { open: "Voir l'annonce", ask: "Demander à Cubi", updated: "Mis à jour", bd: "ch", ba: "sdb",
+  fr: { plot: "terrain", noplot: "terrain non indiqué", open: "Voir l'annonce", ask: "Demander à Cubi", updated: "Mis à jour", bd: "ch", ba: "sdb",
         price: n => `Le prix du n°${n} est-il cohérent avec des biens similaires ?`, contact: n => `Comment contacter l'agent du n°${n} ?`,
         steps: (n, s) => `${n} étape${n === 1 ? "" : "s"} · ${s}s`, searched: "Recherche", none: "Aucun bien trouvé.",
         within: c => `Prix demandé jusqu'à ${c}`, of: (a, b) => `${a} sur ${b} annonces`, was: (p, c) => `${p} % jusqu'à ${c}`, note: "Part des annonces de ce type sur Cubi dans chaque ville, selon le prix demandé — pas les prix de vente. Les nombres reflètent la couverture de Cubi, pas la taille du marché.", na: "indisponible pour le moment", more: c => `Et jusqu'à ${c} ?` },
-  de: { open: "Inserat öffnen", ask: "Cubi fragen", updated: "Aktualisiert", bd: "Schlafz.", ba: "Bad",
+  de: { plot: "Grundstück", noplot: "Grundstück k. A.", open: "Inserat öffnen", ask: "Cubi fragen", updated: "Aktualisiert", bd: "Schlafz.", ba: "Bad",
         price: n => `Liegt der Preis von #${n} im Rahmen ähnlicher Objekte?`, contact: n => `Wie erreiche ich den Makler von #${n}?`,
         steps: (n, s) => `${n} Schritt${n === 1 ? "" : "e"} · ${s}s`, searched: "Suche", none: "Keine passenden Objekte.",
         within: c => `Angebotspreis bis ${c}`, of: (a, b) => `${a} von ${b} Inseraten`, was: (p, c) => `${p} % bis ${c}`, note: "Anteil der Inserate dieser Art auf Cubi je Stadt, nach Angebotspreis — keine Verkaufspreise. Die Anzahlen zeigen Cubis Abdeckung, nicht die Marktgröße.", na: "gerade nicht verfügbar", more: c => `Und bis ${c}?` },
-  nl: { open: "Advertentie openen", ask: "Vraag het Cubi", updated: "Bijgewerkt", bd: "slpk", ba: "badk",
+  nl: { plot: "perceel", noplot: "perceel niet vermeld", open: "Advertentie openen", ask: "Vraag het Cubi", updated: "Bijgewerkt", bd: "slpk", ba: "badk",
         price: n => `Ligt de prijs van #${n} in lijn met vergelijkbare woningen?`, contact: n => `Hoe bereik ik de makelaar van #${n}?`,
         steps: (n, s) => `${n} stap${n === 1 ? "" : "pen"} · ${s}s`, searched: "Zoekopdracht", none: "Geen woningen gevonden.",
         within: c => `Vraagprijs tot ${c}`, of: (a, b) => `${a} van ${b} advertenties`, was: (p, c) => `${p}% tot ${c}`, note: "Aandeel van de advertenties van dit type op Cubi per stad, naar vraagprijs — geen verkoopprijzen. De aantallen tonen Cubi's dekking, niet de omvang van de markt.", na: "nu niet beschikbaar", more: c => `En tot ${c}?` },
@@ -112,6 +112,8 @@ function card(c, t) {
   if (c.bedrooms != null) facts.push(`${Math.round(c.bedrooms)} ${t.bd}`);
   if (c.bathrooms != null) facts.push(`${Math.round(c.bathrooms)} ${t.ba}`);
   if (c.living_area != null) facts.push(`${Math.round(c.living_area)} m²`);
+  if (c.plot_area != null) facts.push(`${Math.round(c.plot_area).toLocaleString()} m² ${t.plot}`);
+  else if (c.plot_unknown) facts.push(t.noplot);
   const open = safeUrl(c.url), ask = safeUrl(c.ask_url);
   el.innerHTML = `
     <div class="row1"><span class="price">${esc(c.price_text || "—")}</span><span class="n">#${esc(c.n)}</span></div>

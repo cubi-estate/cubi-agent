@@ -114,6 +114,40 @@ SOFT = (r"\b(ideally|preferably|nice to have|would be nice|if possible|idealment
         r"preferiblemente|idealement|de preference|idealerweise|am liebsten|liefst|bij voorkeur)\b")
 
 
+# "A large plot" names no size, and Cubi's search cannot rank on the bare word
+# ("the large plot preference couldn't be applied", live 2026-10-28). With a
+# number Cubi filters on the plot ("plot 1,000+ m2"). 1,000 m2 is the oracle's
+# band for a large villa plot on the Spanish and Algarve coasts, coastal Italy
+# and France (2026-10-28); in Cubi 43% of the villas that report a plot have one.
+LARGE_PLOT_M2 = 1000
+LARGE_PLOT = (r"\b(?:a |an )?(?:large|big|huge|generous|good[- ]sized|spacious|lots of|plenty of)\s+"
+              r"(?:plot|plot of land|land|grounds|parcel)s?\b"
+              r"|\b(?:grande|amplo|amplio|gran|grand|vaste)s?\s+(?:terreno|parcela|terrain)s?\b"
+              r"|\b(?:terreno|parcela|terrain)s?\s+(?:grande|amplo|amplio|grand|vaste)s?\b"
+              r"|\b(?:gro(?:ss|ß)e[smn]?|weitl[aä]ufige[smn]?)\s+grundst[uü]ck\w*"
+              r"|\bgro(?:te|ot)\s+(?:kavel|perceel|grond)\b")
+
+
+def plot_wish(text: str) -> bool:
+    return bool(re.search(LARGE_PLOT, text or "", re.I))
+
+
+def with_plot_size(text: str) -> str:
+    """"…ideally with a large plot" -> "…ideally with a plot of at least 1,000 m2"."""
+    return re.sub(LARGE_PLOT, f"a plot of at least {LARGE_PLOT_M2:,} m2", text or "", flags=re.I)
+
+
+# "As an investment": nothing in Cubi's filter or ranking means it, and the answer
+# repeated it as if it had been searched (live 2026-10-28).
+INVESTMENT = (r"\b(invest(?:ment|ing|or)?s?|buy[- ]to[- ]let|rental (?:income|yield)|yields?|"
+              r"investimento|rentabilidad|inversi[oó]n|investissement|rendement|rendite|kapitalanlage|"
+              r"belegging|investering)\b")
+
+
+def investment(text: str) -> bool:
+    return bool(re.search(INVESTMENT, text or "", re.I))
+
+
 def same_place(f: SearchFilter, current: SearchFilter) -> bool:
     """The new filter searches where the current one did (or names no place at all)."""
     if not f.location:
@@ -199,6 +233,11 @@ def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) ->
         break
     if data["type"] == ["land"] and (_has(LAND_AS_EXTRA, text) or _has(HOUSE_WORDS, text)):
         data["type"] = []  # model mistook "with land" for a plot
+    elif "land" in data["type"] and len(data["type"]) > 1 and (
+            _has(HOUSE_WORDS, text) or _has(LAND_AS_EXTRA, text) or plot_wish(text)):
+        # "Villas …, ideally with a large plot" came back as villa/land (live
+        # 2026-10-28): the plot is the villa's, not a second type.
+        data["type"] = [t for t in data["type"] if t != "land"]
 
     free = bool(_has(FREE_TEXT, text))
     data["needs_free_text_search"] = free or bool(current and current.needs_free_text_search)

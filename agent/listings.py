@@ -165,6 +165,10 @@ def render_cards(head: str, cards: list[dict]) -> str:
             facts.append(f"{c['bathrooms']:.0f} ba")
         if c.get("living_area") is not None:
             facts.append(f"{c['living_area']:.0f} m2 living")
+        if c.get("plot_area") is not None:
+            facts.append(f"{c['plot_area']:.0f} m2 plot")
+        elif c.get("plot_unknown"):
+            facts.append("plot not reported")
         if c.get("price_text"):
             facts.append(c["price_text"])
         parts.append("   " + " | ".join(f for f in facts if f))

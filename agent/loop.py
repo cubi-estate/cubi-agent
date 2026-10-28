@@ -592,6 +592,8 @@ class Agent:
     def _free_search(self, query: str, request: str, f: SearchFilter | None) -> Generator[dict, None, tuple[dict, str]]:
         """The wishes as requirements first ("with a mountain view", 128 homes), as
         wishes only if too few homes have them all (see MIN_WISHED)."""
+        query = normalize.with_plot_size(query)
+        self.wish = normalize.with_plot_size(self.wish)
         soft = re.search(normalize.SOFT, query, re.I)
         if self.wish and soft:
             must = re.sub(normalize.SOFT + r"[ ,:]*", "", query, flags=re.I)
@@ -696,6 +698,11 @@ class Agent:
                    "latency_s": ex.latency_s}
             args = ex.filter.to_filter_args(limit=self.limit)
             args["lang"] = self.data_lang
+            if normalize.plot_wish(request):
+                # Ranks only ("nice"): 60% of villas report no plot, and a missing
+                # plot is not a small one (oracle review 2026-10-28).
+                args["dimension_filters"] = [{"dimension_key": "area.plot", "op": "gte",
+                                              "value": normalize.LARGE_PLOT_M2, "weight": "nice"}]
             places = list(args.get("location") or [])
             if len(places) > 1:
                 # One search per place: a single multi-place filter returns whichever
@@ -739,7 +746,29 @@ class Agent:
                 self.focus = None  # a new result set: "it" no longer means the old home
                 self.seen_refs |= {c["id"].lower() for c in self.cards if c.get("id")}
                 yield from self._lift_hits(self.cards, f"{request} {self.wish}")
-        yield header + self._left_out_note() + res["text"]
+            if normalize.plot_wish(request) or normalize.plot_wish(self.wish) or "plot of at least" in self.wish:
+                for c in self.cards:
+                    if c.get("plot_area") is None:
+                        c["plot_unknown"] = True   # "plot not reported", never read as small
+        yield header + self._left_out_note() + self._wish_notes(request) + res["text"]
+
+    def _wish_notes(self, request: str) -> str:
+        """What the search could not do with the user's words, said before the
+        model writes as if it had."""
+        notes = ""
+        if normalize.plot_wish(request) or "plot of at least" in self.wish:
+            notes += (f"[the user wants a large plot; it was searched as a plot of at least "
+                      f"{normalize.LARGE_PLOT_M2:,} m2. Say a home has a large plot only if its card shows a "
+                      f"plot of {normalize.LARGE_PLOT_M2:,} m2 or more. A card without a plot size has none "
+                      f"reported: never call it small and never say every home has a large plot]\n")
+        if normalize.investment(request):
+            notes += ("[the user said this is an investment. Nothing in the search used that word: Cubi "
+                      "cannot rank by rental yield and has not checked whether any home may be let to "
+                      "holiday guests, which needs a local licence. Do not say the homes were searched or "
+                      "chosen 'as an investment'. In one sentence say so, then ask which kind they mean: "
+                      "holiday-rental income, long-term rent, resale value, or own use plus letting. You may "
+                      "point at a price reduction shown on a card, as an asking-price change only]\n")
+        return notes
 
     def _detail_tags(self, ref: str) -> list[str]:
         try:
