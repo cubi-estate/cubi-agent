@@ -175,7 +175,7 @@
     else if (pick.budget === "flexible") facts.push("any budget");
     else open.push("budget");
     for (const e of opt.environments.filter(e => pick.envs.includes(e.id))) {
-      if (fits(e)) facts.push(e.id === "coast" ? "a sea view" : e.phrase);
+      if (fits(e)) facts.push(e.phrase);
       else skipped.push(`${e.label.toLowerCase()} — ${e.missing} in ${THE.has(pick.country) ? "the " : ""}${pick.country}`);
     }
     const must = chosen("must");

@@ -74,8 +74,8 @@
                 "prompt": "Colourful medieval merchant houses on a cobbled street in Tallinn's old town, Estonia."}
   },
   "environments": [
-    {"id": "coast", "label": "By the sea", "phrase": "with a sea view", "needs": "coast", "missing": "no coastline",
-     "blurb": "Homes with a sea view — Cubi can't measure the walk to the beach yet",
+    {"id": "coast", "label": "By the sea", "phrase": "near the sea", "needs": "coast", "missing": "no coastline",
+     "blurb": "Homes in coastal towns — pick Sea view below for the view itself",
      "prompt": "A row of houses just behind a sandy beach with a calm sea, a coastal path in front."},
     {"id": "mountains", "label": "Mountains & forests", "phrase": "in the mountains", "needs": "mountains", "missing": "no real mountains", "blurb": "Fresh air, views and winter sports",
      "prompt": "A few houses on a green mountain slope with forest and high peaks behind."},
