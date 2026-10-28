@@ -69,3 +69,10 @@ def test_notes_tell_the_model_what_was_not_searched(tmp_path):
     assert "Do not say the homes were searched or chosen 'as an investment'" in notes
     assert "holiday-rental income, long-term rent, resale value, or own use plus letting" in notes
     assert agent._wish_notes("Villas in Lagos with a pool") == ""
+
+
+def test_the_licence_note_is_added_by_the_app_not_the_model():
+    assert "Do not write about holiday-let licences" in " ".join(
+        Agent(mcp=None, cli=object())._wish_notes(Q).split())
+    for lang, note in normalize.LICENCE_NOTE.items():
+        assert "Cubi" in note and len(note) < 260, lang

@@ -148,6 +148,30 @@ def investment(text: str) -> bool:
     return bool(re.search(INVESTMENT, text or "", re.I))
 
 
+# Added to the answer, not asked of the model: told to mention it, the model left
+# it out (live 2026-10-28). Licensing per the oracle review of 2026-10-28: Spain's
+# national register does not replace regional licences, Portugal's municipalities
+# can refuse new AL registrations, Italy's CIN is not a licence, France needs
+# registration everywhere since 20 May 2026.
+LICENCE_NOTE = {
+    "en": "Holiday letting needs a local licence or registration, and the rules differ by country and town "
+          "(some areas no longer issue new ones). Cubi has not checked this for any of these homes.",
+    "pt": "O alojamento local precisa de licença ou registo local, e as regras mudam de país para país e de "
+          "concelho para concelho (algumas zonas já não aceitam novos registos). A Cubi não verificou isto em "
+          "nenhuma destas casas.",
+    "es": "El alquiler vacacional necesita licencia o registro local, y las normas cambian según el país y el "
+          "municipio (algunas zonas ya no conceden nuevas). Cubi no lo ha comprobado en ninguna de estas viviendas.",
+    "fr": "La location saisonnière exige une autorisation ou un enregistrement local, et les règles varient selon "
+          "le pays et la commune (certaines zones n'en délivrent plus). Cubi ne l'a vérifié pour aucun de ces biens.",
+    "de": "Ferienvermietung braucht eine örtliche Genehmigung oder Registrierung, und die Regeln unterscheiden sich "
+          "je nach Land und Gemeinde (manche Gebiete vergeben keine neuen mehr). Cubi hat das bei keinem dieser "
+          "Objekte geprüft.",
+    "nl": "Vakantieverhuur vraagt een lokale vergunning of registratie, en de regels verschillen per land en "
+          "gemeente (sommige gebieden geven geen nieuwe meer uit). Cubi heeft dit voor geen van deze woningen "
+          "gecontroleerd.",
+}
+
+
 def same_place(f: SearchFilter, current: SearchFilter) -> bool:
     """The new filter searches where the current one did (or names no place at all)."""
     if not f.location:

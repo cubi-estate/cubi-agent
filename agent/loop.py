@@ -767,7 +767,8 @@ class Agent:
                       "holiday guests, which needs a local licence. Do not say the homes were searched or "
                       "chosen 'as an investment'. In one sentence say so, then ask which kind they mean: "
                       "holiday-rental income, long-term rent, resale value, or own use plus letting. You may "
-                      "point at a price reduction shown on a card, as an asking-price change only]\n")
+                      "point at a price reduction shown on a card, as an asking-price change only. Do not write "
+                      "about holiday-let licences: the app adds that line itself]\n")
         return notes
 
     def _detail_tags(self, ref: str) -> list[str]:
@@ -1363,6 +1364,9 @@ class Agent:
                                       [str(c.get("id")) for c in self.shown], replies=self.replies)
         report["citations_linked"] = cited
         answer, report["language_fixed"] = self._in_turn_language(answer)
+        if self.cards and normalize.investment(text) and answer.strip():
+            answer = answer.rstrip() + "\n\n" + normalize.LICENCE_NOTE.get(self.lang, normalize.LICENCE_NOTE["en"])
+            report["licence_note"] = True
         turn_msgs.append({"role": "assistant", "content": answer})
         self.history += turn_msgs
         self.done.add(suggest.norm(text))
