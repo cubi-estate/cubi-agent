@@ -136,7 +136,8 @@ def test_read_merges_everything_and_the_agent_caches_it(tmp_path):
     assert sorted(n for n, _ in calls) == ["find_similar_elsewhere", "find_similar_homes", "get_listing"]
     assert [m["id"] for m in x["similar"]] == ["ev:2", "ev:3"] and x["similar_method"]["embedding"] == "pca"
     assert dict(calls)["find_similar_homes"] == {"listing_id": "ev:1", "lang": "en", "limit": 3}
-    assert agent.detail("EV:1") is x and len(calls) == 3
+    again = agent.detail("EV:1")
+    assert again["id"] == x["id"] and again["similar"] == x["similar"] and len(calls) == 3   # cached: no new reads
 
 
 def test_a_connector_without_the_similar_tool_still_gives_the_pane(tmp_path):
@@ -156,3 +157,99 @@ def test_a_failed_listing_read_is_reported_not_invented(tmp_path):
     agent = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=_LLM(BRIEF))
     agent.mcp.call_tool = lambda name, args: {"is_error": True, "text": "boom", "structured": None}
     assert agent.detail("ev:9") == {"ok": False, "id": "ev:9"}
+
+
+PAIR_MATCH = json.dumps({"ok": True, "mode": "pair", "seed": {"id": "ev:1", "price": 395000, "city": "Perledo", "country": "Italy",
+                                                              "features": {}, "environment": {}, "minutes": {}, "climate": {}},
+                         "matches": [{"id": "ev:2", "price": 450000, "city": "Varenna", "country": "Italy", "features": {},
+                                      "environment": {}, "minutes": {}, "climate": {},
+                                      "card": {"id": "ev:2", "price": 450000, "city": "Varenna", "country": "Italy", "bedrooms": 4,
+                                               "living_area": 240, "object_type": "house/villa", "url": "https://cubi.estate/r/ev%3A2"}}]})
+
+
+class _TurnLLM:
+    """Loop calls get a plain answer; json_schema calls (the pane's brief) get the brief."""
+    def __init__(self, answer):
+        self.answer, self.calls = answer, []
+        self.chat = SimpleNamespace(completions=self)
+
+    def create(self, **kw):
+        self.calls.append(kw)
+        content = json.dumps(BRIEF) if kw.get("response_format") else self.answer
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content, tool_calls=None))],
+                               usage=SimpleNamespace(prompt_tokens=10, completion_tokens=5))
+
+
+def _tapped(tmp_path, answer="#1 is listed at €395,000, #2 at €450,000."):
+    agent = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=_TurnLLM(answer))
+    agent.shown = [{"n": 1, "id": "ev:1", "type": "house/villa", "location": "Gittana, Lombardy, Italy"}]
+    agent.seen_refs = {"ev:1"}
+    agent.has_results = True
+    calls = []
+
+    def call(name, args):
+        calls.append((name, args))
+        if name == "get_listing":
+            text = LISTING
+        elif name == "find_similar_homes":
+            text = SIMILAR
+        elif name == "find_similar_elsewhere" and args.get("compare_with"):
+            text = PAIR_MATCH.replace('"ev:2"', json.dumps(args["compare_with"]))
+        elif name == "find_similar_elsewhere":
+            text = PAIR
+        else:
+            text = json.dumps({"listing_id": args.get("listing_id"), "current_price": 400000, "currency": "EUR",
+                               "on_cubi_since": "2026-06-03", "tracked_since": "2026-05-02", "changes": [], "city": "Varenna"})
+        return {"is_error": False, "text": text, "structured": None}
+    agent.mcp.call_tool = call
+    agent.mcp.openai_tools = lambda names=None: []
+    return agent, calls
+
+
+def test_a_tap_adds_the_homes_questions_and_points_the_chat_at_it(tmp_path):
+    agent, calls = _tapped(tmp_path)
+    x = agent.detail("ev:1")
+    assert agent.focus == "ev:1"
+    qs = x["focus"]["suggestions"]
+    assert x["focus"]["n"] == 1 and qs[0] == "Compare #1 with its similar homes feature by feature"
+    assert "Has #1's price dropped, and have its similar homes' prices dropped?" in qs
+    assert "How do I contact the agent for #1?" in qs and "What's new in Gittana?" in qs
+    assert len(qs) == 5   # no other known city for "homes like #1 in …" on this search
+    assert agent.detail("ev:1")["focus"]["suggestions"] == qs   # a second tap: the same, no new reads
+    assert sum(1 for n, _ in calls if n == "get_listing") == 1
+
+
+def test_compare_with_its_similar_homes_runs_the_pairs_in_code(tmp_path):
+    agent, calls = _tapped(tmp_path)
+    agent.detail("ev:1")
+    events = list(agent.turn("Compare #1 with its similar homes feature by feature"))
+    final = events[-1]
+    assert final["type"] == "answer" and final["skill"] == "similar-elsewhere"
+    pairs = [a for n, a in calls if n == "find_similar_elsewhere" and a.get("compare_with") not in (None, a.get("listing_id"))]
+    assert [a["compare_with"] for a in pairs] == ["ev:2", "ev:3"] and all(a["listing_id"] == "ev:1" for a in pairs)
+    assert [c["id"] for c in final["listings"]] == ["ev:2", "ev:3"] and [c["n"] for c in final["listings"]] == [2, 3]
+    cols = final["similar"]["columns"]
+    assert [c["role"] for c in cols] == ["seed", "match", "match"] and [c["card"] for c in cols] == [1, 2, 3]
+    assert any("Comparing #1 with its 2 similar homes" in e.get("text", "") for e in events if e.get("type") == "action")
+    assert suggest_key("pair", "ev:1+ev:2") in agent.done
+    assert all(not any(t["function"]["name"] == "find_similar_elsewhere" for t in (c.get("tools") or []))
+               for c in agent.cli.calls if not c.get("response_format"))
+
+
+def suggest_key(kind, ids):
+    from agent import suggest
+    return suggest.key(kind, ids)
+
+
+def test_price_drops_of_the_home_and_its_similar_homes(tmp_path, monkeypatch):
+    from agent import tavily_tool
+    agent, calls = _tapped(tmp_path, answer="No change on #1, #2 or #3.")
+    agent.detail("ev:1")
+    monkeypatch.setattr(tavily_tool, "latest_news", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no news this turn")))
+    events = list(agent.turn("Has #1's price dropped, and have its similar homes' prices dropped?"))
+    final = events[-1]
+    assert final["type"] == "answer" and final["skill"] == "home-news"
+    hist = [a["listing_id"] for n, a in calls if n == "get_price_history"]
+    assert hist == ["ev:1", "ev:2", "ev:3"]
+    tool_msgs = [m["content"] for c in agent.cli.calls if not c.get("response_format") for m in c["messages"] if m.get("role") == "tool"]
+    assert any("price history for the similar home in Varenna" in m for m in tool_msgs)

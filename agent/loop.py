@@ -351,6 +351,10 @@ class Agent:
         self.x_url: str | None = None  # this turn's link to X's live search for the home's city
         self.x_posts: list[dict] = []  # this turn's posts from X, when X_BEARER_TOKEN is set
         self.details: dict[str, dict] = {}  # listing panes read this conversation, by id
+        self._focus_sim: dict[str, list[str]] = {}  # a tapped home's similar homes (ids), by id
+        self._focus_chips: dict[str, tuple[str, str]] = {}  # chip key → (kind, listing id) for the tap chips
+        self._simpair: tuple[str, list[str]] | None = None  # this turn: compare a home with its similar homes
+        self._drops: tuple[str, list[str]] | None = None  # this turn: its price history and its similar homes'
 
     # ---- the listing pane ---------------------------------------------------
     def detail(self, ref: str) -> dict:
@@ -360,7 +364,36 @@ class Agent:
         if key not in self.details:
             self.details[key] = detailmod.read(self.mcp, self.cli, ref, data_lang=self.data_lang,
                                                lang=self.user_lang, lang_name=self.user_lang_name)
-        return self.details[key]
+        data = self.details[key]
+        if not data.get("ok"):
+            return data
+        # The tap is the user pointing at this home: "its price" now means this one, and
+        # the chat gets the questions the app can answer about it (agent/suggest.py).
+        self.focus = ref
+        sims = [m["id"] for m in data.get("similar") or [] if m.get("id")]
+        self._focus_sim[key] = sims
+        return {**data, "focus": self._focus_payload(ref, sims)}
+
+    def _focus_payload(self, ref: str, sims: list[str]) -> dict:
+        card = next((c for c in self.shown if (c.get("id") or "").lower() == ref.lower()), None)
+        n = card.get("n") if card else None
+        if not n:
+            return {"n": None, "id": ref, "suggestions": []}
+        places = list(self.filter.location) if self.filter and self.filter.location else []
+        native = pivot.native(self.user_lang)
+        pairs = suggest.focus_questions(self.user_lang if native else "en", n, card, places, bool(sims), self.done)
+        english = [q for _, q in pairs]
+        for kind, q in pairs:
+            if kind in ("simpair", "drops"):
+                self._focus_chips[_chip_key(q)] = (kind, ref)
+        chips = english
+        if english and not native:
+            # The buttons in the user's language; each runs its English original (turn()).
+            out = pivot.back(self.cli, self.user_lang_name, "·", english, self.user_lang)
+            if out:
+                chips = out[1]
+                self._chips.update({_chip_key(c): e for c, e in zip(chips, english)})
+        return {"n": n, "id": ref, "suggestions": chips}
 
     # ---- tools -------------------------------------------------------------
     def _timed(self, stage: str, t0: float) -> None:
@@ -892,6 +925,9 @@ class Agent:
         if name == "home_news":
             yield from self._home_news()
             return
+        if name == "compare_similar_homes":
+            yield from self._compare_similar_homes(str(args.get("listing_id") or ""), list(args.get("similar") or []))
+            return
         if name == "research_area":
             places, topics = list(args.get("places") or []), list(args.get("topics") or [])
             yield {"type": "action", "text": f"Researching {', '.join(places[:tavily_tool.MAX_PLACES])} on the web "
@@ -1058,6 +1094,42 @@ class Agent:
                                  f"({c['pct']:+.1f}%)")
                 if hist.get("total_change_pct") is not None and len(hist["changes"]) > 1:
                     lines.append(f"In total: {hist['total_change_pct']:+.1f}% (from €{hist['first_observed_price']:,.0f}).")
+        drops = bool(about_home and ref and self._drops and self._drops[0].lower() == ref.lower())
+        if drops:
+            # "…and have its similar homes' prices dropped?": the pane's picks, read in
+            # parallel; prices only, no news this turn.
+            sims = self._drops[1][:detailmod.MAX_SIMILAR]
+            self.done.add(suggest.key("drops", ref))
+            if sims:
+                yield {"type": "action", "text": f"Checking the price history of its {len(sims)} similar homes"}
+
+                def hist_of(sid: str) -> dict | None:
+                    try:
+                        r = self.mcp.call_tool("get_price_history", {"listing_id": sid})
+                        return None if r["is_error"] else json.loads(r["text"])
+                    except (MCPError, httpx.HTTPError, json.JSONDecodeError):
+                        return None
+
+                with ThreadPoolExecutor(max_workers=len(sims)) as pool:
+                    sim_hists = list(pool.map(hist_of, sims))
+                for sid, h in zip(sims, sim_hists):
+                    on_screen = next((c for c in self.shown if (c.get("id") or "").lower() == sid.lower()), None)
+                    who = f"#{on_screen['n']}" if on_screen else f"the similar home in {(h or {}).get('city') or 'the same city'}"
+                    if not h:
+                        lines.append(f"[price history for {who}] Not available right now: say so for this one.")
+                        continue
+                    cur = h.get("current_price") or 0
+                    if not h.get("changes"):
+                        lines.append(f"[price history for {who}] Asking price €{cur:,.0f}, no change observed by Cubi.")
+                    else:
+                        ch = "; ".join(f"{_long_date(c['date'])}: €{c['old_price']:,.0f} → €{c['new_price']:,.0f} ({c['pct']:+.1f}%)"
+                                       for c in h["changes"])
+                        lines.append(f"[price history for {who}] Asking price €{cur:,.0f}; changes: {ch}.")
+                lines.append("[Similar homes: the ones Cubi's similarity model picked for this home. Answer about "
+                             "the prices only — this home's, then each similar home's — in at most three sentences; "
+                             "no news was asked for.]")
+            else:
+                lines.append("[No similar homes are known for this home; answer about its own price only.]")
         # The place the user sees on the card (and that the suggestion named) wins
         # over the listing's stored city: live 2026-10-22 a card shown in "Lisboa"
         # was stored as Cascais, and the news search went to the wrong town.
@@ -1075,7 +1147,7 @@ class Agent:
             # The place the user named wins over the card's: "what's new in Nazaré"
             # asked after a Sotogrande search is about Nazaré.
             city, place = named.split(",")[0].strip(), named
-        if city:
+        if city and not drops:
             yield {"type": "action", "text": f"Searching recent news about {city} (Tavily, last {tavily_tool.NEWS_DAYS} days)"}
             try:
                 text, st = tavily_tool.latest_news(place, first_id=len(self.sources) + 1)
@@ -1116,6 +1188,54 @@ class Agent:
         nums = [int(x) for x in re.findall(r"(?:#|\bn[º°o]\.?\s*)(\d{1,2})\b", text.lower())]
         cards = [next((c for c in self.shown if c.get("n") == n and c.get("id")), None) for n in nums[:2]]
         return cards if len(cards) == 2 and all(cards) and cards[0] is not cards[1] else []
+
+    def _compare_similar_homes(self, ref: str, sims: list[str]) -> Iterator[dict | str]:
+        """A home beside each of its similar homes (the pane's picks), feature by
+        feature: one pair read per similar home, in parallel, merged into one table.
+        The similar homes become cards after the ones on screen."""
+        card = next((c for c in self.shown if (c.get("id") or "").lower() == ref.lower()), None)
+        n = card.get("n") if card else None
+        seed_label = f"#{n}" if n else "this home"
+        self.focus = ref
+        sims = sims[:detailmod.MAX_SIMILAR]
+        yield {"type": "action", "text": f"Comparing {seed_label} with its {len(sims)} similar homes feature by feature "
+                                         f"({len(sims)} pair reads in parallel)"}
+
+        def pair(sid: str) -> dict | None:
+            try:
+                res = self.mcp.call_tool(similarmod.TOOL, {"listing_id": ref, "compare_with": sid, "lang": self.data_lang})
+                body = None if res["is_error"] else json.loads(res["text"])
+            except (MCPError, httpx.HTTPError, json.JSONDecodeError):
+                return None
+            ok = isinstance(body, dict) and body.get("ok") and body.get("seed") and body.get("matches")
+            return body if ok else None
+
+        t0 = time.monotonic()
+        with ThreadPoolExecutor(max_workers=len(sims) or 1) as pool:
+            results = [r for r in pool.map(pair, sims) if r]
+        self._timed(f"{len(sims)} pair reads, in parallel", t0)
+        self.stats["pair_reads"] = self.stats.get("pair_reads", 0) + len(sims)
+        if not results:
+            yield {"type": "action", "text": "Similar homes comparison: not available right now"}
+            yield ("error: the comparison could not be run right now. Tell the user and offer to try again; "
+                   "do not guess any figure.")
+            return
+        merged = {"ok": True, "mode": "pair", "seed": results[0]["seed"], "matches": [r["matches"][0] for r in results]}
+        start = max((c.get("n") or 0) for c in self.shown) if self.shown else 0
+        cards = [inventory.card(m.get("card") or {"id": m.get("id")}, start + i) for i, m in enumerate(merged["matches"], 1)]
+        self.cards = cards
+        self.shown = [*self.shown, *cards]
+        self.seen_refs |= {c["id"].lower() for c in cards if c.get("id")}
+        labels = [f"#{c['n']}" for c in cards]
+        self.similar = similarmod.table(merged, seed_card=n, match_cards=[c["n"] for c in cards])
+        for m in merged["matches"]:
+            self.done.add(suggest.key("pair", "+".join(sorted(str(x) for x in (ref, m.get("id"))))))
+        self.done.add(suggest.key("simpair", ref))
+        yield {"type": "action", "text": f"{len(cards)} similar home(s) compared, shown as cards {', '.join(labels)}"}
+        yield (similarmod.tool_text(merged, cards, seed_label, match_labels=labels)
+               + f"\n\n[These homes are the ones Cubi's similarity model picked for {seed_label} in the same market "
+                 f"(it weighs stated features, size, place and asking price), now on screen as cards "
+                 f"{', '.join(labels)}. Call them its similar homes; do not say they were chosen regardless of price.]")
 
     def _similar_result(self, text: str, how: str) -> Iterator[dict | str]:
         """The side-by-side table from find_similar_elsewhere; its matches become the cards."""
@@ -1226,6 +1346,16 @@ class Agent:
         self.x_posts = []
         calls0 = len(self.mcp.calls)
         self.lang = lang
+        # A tap chip about a home and its similar homes: resolved here, in code.
+        self._simpair = self._drops = None
+        kind_ref = self._focus_chips.get(_chip_key(text))
+        if kind_ref:
+            kind, fref = kind_ref
+            sims = self._focus_sim.get(fref.lower(), [])
+            if kind == "simpair" and sims:
+                self._simpair = (fref, sims)
+            elif kind == "drops":
+                self._drops = (fref, sims)
         skill = self.skills[skillsmod.select(text, self.has_results, self.last_skill)]
         self.last_skill = skill.name
         tools = self._tools_for(skill)
@@ -1272,6 +1402,18 @@ class Agent:
             turn_msgs.append(call_msg)
             yield from run_call("search_homes", {"request": text}, "auto_search")
             tools = [t for t in tools if t["function"]["name"] != "search_homes"]
+        elif skill.name == "similar-elsewhere" and self._simpair:
+            # "Compare #3 with its similar homes feature by feature": the pane read
+            # them, so code pairs the home with each of them — no search, no guess.
+            fref, sims = self._simpair
+            args = {"listing_id": fref, "similar": sims}
+            call = {"id": "auto_simpair", "type": "function",
+                    "function": {"name": "compare_similar_homes", "arguments": json.dumps(args)}}
+            call_msg = {"role": "assistant", "content": "", "tool_calls": [call]}
+            messages.append(call_msg)
+            turn_msgs.append(call_msg)
+            yield from run_call("compare_similar_homes", args, "auto_simpair")
+            tools = []
         elif skill.name == "similar-elsewhere" and len(self._two_cards(text)) == 2:
             # "Compare #1 and #4 feature by feature": both cards are on screen,
             # so code resolves them and asks for the pair — no search, no guess.

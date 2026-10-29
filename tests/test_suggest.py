@@ -11,7 +11,8 @@ sys.path.insert(0, str(ROOT))
 from agent import skills, suggest  # noqa: E402
 
 ROUTE = {"news": "home-news", "leaders": "similar-elsewhere", "price": "check-asking-price", "contact": "contact-agent", "similar": "similar-elsewhere",
-         "budget": "compare-budget", "areas": "compare-areas", "search": "find-homes", "forsale": "find-homes"}
+         "budget": "compare-budget", "areas": "compare-areas", "search": "find-homes", "forsale": "find-homes",
+         "simpair": "similar-elsewhere", "drops": "home-news", "placenews": "home-news"}
 FILL = dict(n=2, m=4, city="Porto", a="Lisboa", b="Porto")
 
 
@@ -135,3 +136,26 @@ def test_after_an_area_comparison_three_buttons():
     qs = suggest.next_questions("compare-areas", "en", places=["Porto", "Valencia"], max_price=400000, shown=shown)
     assert qs == ["Homes in Porto or Valencia up to €400,000", "Compare #1 and #4 feature by feature",
                   "Has #1's price dropped, and what's new in Porto?"]
+
+
+CARD = {"n": 3, "id": "rentola_es:1", "location": "Marbella, Andalusia, Spain"}
+
+
+def test_tap_questions_cover_the_home_and_its_similar_homes():
+    qs = suggest.focus_questions("en", 3, CARD, ["Marbella", "Málaga"], similar=True)
+    assert [k for k, _ in qs] == ["simpair", "drops", "price", "similar", "placenews", "contact"]
+    assert dict(qs)["simpair"] == "Compare #3 with its similar homes feature by feature"
+    assert dict(qs)["drops"] == "Has #3's price dropped, and have its similar homes' prices dropped?"
+    assert dict(qs)["placenews"] == "What's new in Marbella?"
+    assert dict(qs)["contact"] == "How do I contact the agent for #3?"
+    assert dict(qs)["similar"] == "Show me homes like #3 in Málaga"
+    for _, q in qs:
+        assert skills.select(q, has_results=True, last_skill="find-homes") in ("similar-elsewhere", "home-news", "check-asking-price", "contact-agent"), q
+
+
+def test_tap_questions_without_similar_homes_and_after_a_price_check():
+    qs = suggest.focus_questions("pt", 3, CARD, ["Marbella"], similar=False, done={suggest.key("price", "rentola_es:1")})
+    kinds = [k for k, _ in qs]
+    assert "simpair" not in kinds and "price" not in kinds
+    assert dict(qs)["drops"] == "O preço da #3 baixou, e que novidades há em Marbella?"   # the plain question stands
+    assert "placenews" not in kinds   # the news question would repeat it

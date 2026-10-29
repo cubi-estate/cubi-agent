@@ -19,29 +19,35 @@ T = {
     "en": {"forsale": "Homes for sale in {a}", "news": "Has #{n}'s price dropped, and what's new in {city}?", "leaders": "Compare #{n} and #{m} feature by feature", "price": "Is #{n}'s price in line with similar homes?", "contact": "How do I contact the agent for #{n}?",
            "similar": "Show me homes like #{n} in {city}", "budget": "What does {p} buy in {a} vs {b}?",
            "more": "And up to {p}?", "areas": "Compare schools and public transport in {a} and {b}",
-           "search": "Homes in {a} or {b} up to {p}"},
+           "search": "Homes in {a} or {b} up to {p}",
+           "simpair": "Compare #{n} with its similar homes feature by feature", "drops": "Has #{n}'s price dropped, and have its similar homes' prices dropped?", "placenews": "What's new in {city}?"},
     "pt": {"forsale": "Casas à venda em {a}", "news": "O preço da #{n} baixou, e que novidades há em {city}?", "leaders": "Compara a #{n} e a #{m} característica a característica", "price": "O preço do #{n} está em linha com casas semelhantes?", "contact": "Como contacto o agente do #{n}?",
            "similar": "Mostra casas parecidas com a #{n} em {city}", "budget": "O que se compra com {p} em {a} e {b}?",
            "more": "E até {p}?", "areas": "Compara escolas e transportes públicos em {a} e {b}",
-           "search": "Casas em {a} ou {b} até {p}"},
+           "search": "Casas em {a} ou {b} até {p}",
+           "simpair": "Compara a #{n} com as casas semelhantes característica a característica", "drops": "O preço da #{n} baixou, e o das casas semelhantes?", "placenews": "Que novidades há em {city}?"},
     "es": {"forsale": "Viviendas en venta en {a}", "news": "¿Ha bajado el precio de la #{n} y qué hay de nuevo en {city}?", "leaders": "Compara la #{n} y la #{m} característica por característica", "price": "¿El precio del #{n} está en línea con viviendas similares?",
            "contact": "¿Cómo contacto con el agente del #{n}?",
            "similar": "Muéstrame viviendas parecidas a la #{n} en {city}", "budget": "¿Qué se compra con {p} en {a} y {b}?",
            "more": "¿Y hasta {p}?", "areas": "Compara colegios y transporte público en {a} y {b}",
-           "search": "Viviendas en {a} o {b} hasta {p}"},
+           "search": "Viviendas en {a} o {b} hasta {p}",
+           "simpair": "Compara la #{n} con las viviendas similares característica por característica", "drops": "¿Ha bajado el precio de la #{n}, y el de las viviendas similares?", "placenews": "¿Qué hay de nuevo en {city}?"},
     "fr": {"forsale": "Logements à vendre à {a}", "news": "Le prix du n°{n} a-t-il baissé, et quoi de neuf à {city} ?", "leaders": "Compare le n°{n} et le n°{m} point par point", "price": "Le prix du n°{n} est-il cohérent avec des biens similaires ?",
            "contact": "Comment contacter l'agent du n°{n} ?",
            "similar": "Montre des biens semblables au n°{n} à {city}", "budget": "Que peut-on acheter avec {p} à {a} et {b} ?",
            "more": "Et jusqu'à {p} ?", "areas": "Compare les écoles et les transports en commun à {a} et {b}",
-           "search": "Logements à {a} ou {b} jusqu'à {p}"},
+           "search": "Logements à {a} ou {b} jusqu'à {p}",
+           "simpair": "Compare le n°{n} avec les biens semblables point par point", "drops": "Le prix du n°{n} a-t-il baissé, et celui des biens semblables ?", "placenews": "Quoi de neuf à {city} ?"},
     "de": {"forsale": "Wohnungen und Häuser zum Kauf in {a}", "news": "Ist der Preis von #{n} gesunken, und was gibt es Neues in {city}?", "leaders": "Vergleiche #{n} und #{m} Merkmal für Merkmal", "price": "Liegt der Preis von #{n} im Rahmen ähnlicher Objekte?", "contact": "Wie erreiche ich den Makler von #{n}?",
            "similar": "Zeig mir ähnliche Wohnungen wie #{n} in {city}", "budget": "Was bekommt man für {p} in {a} und {b}?",
            "more": "Und bis {p}?", "areas": "Vergleiche Schulen und öffentlichen Verkehr in {a} und {b}",
-           "search": "Wohnungen in {a} oder {b} bis {p}"},
+           "search": "Wohnungen in {a} oder {b} bis {p}",
+           "simpair": "Vergleiche #{n} mit den ähnlichen Objekten Merkmal für Merkmal", "drops": "Ist der Preis von #{n} gesunken, und der der ähnlichen Objekte?", "placenews": "Was gibt es Neues in {city}?"},
     "nl": {"forsale": "Woningen te koop in {a}", "news": "Is de prijs van #{n} gedaald, en wat is er nieuw in {city}?", "leaders": "Vergelijk #{n} en #{m} kenmerk voor kenmerk", "price": "Ligt de prijs van #{n} in lijn met vergelijkbare woningen?", "contact": "Hoe bereik ik de makelaar van #{n}?",
            "similar": "Toon vergelijkbare woningen als #{n} in {city}", "budget": "Wat koop je voor {p} in {a} en {b}?",
            "more": "En tot {p}?", "areas": "Vergelijk scholen en openbaar vervoer in {a} en {b}",
-           "search": "Woningen in {a} of {b} tot {p}"},
+           "search": "Woningen in {a} of {b} tot {p}",
+           "simpair": "Vergelijk #{n} met de vergelijkbare woningen kenmerk voor kenmerk", "drops": "Is de prijs van #{n} gedaald, en die van de vergelijkbare woningen?", "placenews": "Wat is er nieuw in {city}?"},
 }
 
 # Which kinds to offer after each skill, in order of preference.
@@ -222,4 +228,48 @@ def next_questions(skill: str, lang: str, *, places: list[str], max_price: float
             out.append(q)
         if len(out) == MAX:
             break
+    return out
+
+
+# After a card is tapped: every question the app can answer about that one home,
+# in the order a buyer tends to ask them. The first two need the home's similar
+# homes (the pane read them); without them the plain price-and-news question stands.
+FOCUS = ["simpair", "drops", "price", "similar", "placenews", "contact"]
+
+
+def focus_questions(lang: str, n: int, card: dict, places: list[str], similar: bool,
+                    done: set[str] | None = None) -> list[tuple[str, str]]:
+    """(kind, question) for a tapped card #n — not capped at MAX: the tap is the
+    user asking what they can do with this home."""
+    done = done or set()
+    t = T.get(lang, T["en"])
+    cid = card.get("id")
+    out: list[tuple[str, str]] = []
+    news_used = False
+    for kind in FOCUS:
+        q, k = None, None
+        if kind == "simpair" and similar:
+            q, k = t["simpair"].format(n=n), key("simpair", cid)
+        elif kind == "drops":
+            if similar:
+                q, k = t["drops"].format(n=n), key("drops", cid)
+            else:
+                town = news_place(card, places)
+                if town:
+                    q, k = t["news"].format(n=n, city=town), key("news", cid)
+                    news_used = True
+        elif kind in ("price", "contact"):
+            q, k = t[kind].format(n=n), key(kind, cid)
+        elif kind == "similar":
+            city = other_city(card, places)
+            if city:
+                q, k = t["similar"].format(n=n, city=city), key("similar", cid, english_city(city))
+        elif kind == "placenews":
+            town = news_place(card, places)
+            if town and not news_used:
+                q, k = t["placenews"].format(city=town), key("placenews", english_city(town))
+        if q and (k in done or norm(q) in done):
+            continue
+        if q and all(q != x for _, x in out):
+            out.append((kind, q))
     return out

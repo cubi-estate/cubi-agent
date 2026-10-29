@@ -204,6 +204,24 @@ async function openDetail(c) {
   if (pane.hidden) return;   // closed while reading
   if (!data || !data.ok) { pane.querySelector(".dloading").textContent = (data && data.text) || d.notavail; return; }
   renderDetail(c, data, d);
+  focusTurn(c, data.focus);
+}
+
+// The tap goes into the chat: the card's number, type, place and listing id as the
+// user's line, then every question the app can answer about this home as buttons
+// (agent/suggest.py focus_questions). Tapping the same card again adds nothing.
+let lastFocus = null;
+function focusTurn(c, focus) {
+  if (!focus || !(focus.suggestions || []).length || lastFocus === c.id) return;
+  lastFocus = c.id;
+  document.querySelectorAll(".followups").forEach(f => f.replaceChildren());
+  const turn = tpl.content.firstElementChild.cloneNode(true);
+  turn.classList.add("focus");
+  turn.querySelector(".bubble.user").textContent = [`#${c.n}`, c.type || "Home", places(c.location), c.id].filter(Boolean).join(" · ");
+  turn.querySelector(".steps").remove();
+  suggestions(turn.querySelector(".followups"), focus.suggestions, true);
+  log.appendChild(turn);
+  scrollDown();
 }
 
 function renderDetail(c, x, d) {
@@ -548,8 +566,8 @@ function priceHistory(el, h, xUrl, lang, posts) {
 }
 
 // Next questions, chosen by the server from the conversation (agent/suggest.py).
-function suggestions(box, list) {
-  for (const text of list.slice(0, 3)) {
+function suggestions(box, list, all = false) {
+  for (const text of (all ? list : list.slice(0, 3))) {
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = text;
@@ -598,7 +616,7 @@ async function reach(send, label) {
 
 async function ask(text) {
   if (busy || !text.trim()) return;
-  busy = true; send.disabled = true;
+  busy = true; send.disabled = true; lastFocus = null;
   document.getElementById("empty")?.remove();
   document.querySelectorAll(".followups").forEach(f => f.replaceChildren());
 
