@@ -56,6 +56,49 @@ music you have the rights to. Upload to YouTube as **Public** and put the link i
 6. **Slides:** open `docs/video/slides.html` in a second window and press F for full
    screen, H to hide the key hint, and → to advance.
 
+## Recording log · Oct 29
+
+Two screen-recorded takes exist (the owner recorded the Chrome window at 1920×1080
+on a 4K display; the agent drove the browser; no overlays). Cut from these, not from
+the frame-captured GIFs in `~/Downloads/cubi-agent-scene*.gif`, which were the draft.
+
+**Take 1, 15:46–15:56 UTC, one continuous chat, in this order** (about four seconds of
+stillness at each boundary):
+
+1. Wizard with **Anywhere in Europe** instead of a country (By the sea → Anywhere in
+   Europe → House, Townhouse → Buy to live, Up to €700,000 → Garden & privacy twice →
+   Search). The Europe-wide search hit Cubi's time limit and the per-market fallback ran
+   — the brief had said it would — and delivered eight homes from Spain, Italy, Portugal
+   and Germany in 45 s. Keep the fallback in the cut or trim it: both are honest.
+2. New chat, the German Porto/Valencia search: six cards, three per city, German
+   buttons, 2.6 s.
+3. Schools and public transport, Porto vs Valencia: twelve sources, 4.5 s.
+4. Budget: 400k Lisbon vs Porto (7.4% / 18%), then the **And up to €500,000?** button
+   (13.8% / 35.9%, markers at the old shares).
+5. **Compare #1 and #4 feature by feature**: asking price, €/m², size, bedrooms and the
+   regional climate. No stated-feature or environment rows came back for these two
+   flats on Oct 29 — read the voice-over accordingly (the 7b take below covers the
+   area data).
+6. Listing pane: tap on card #3 (a 4-bedroom Lisbon flat, €497,000): brief, highlights,
+   *Check before deciding* ("Price on request", "Needs renovation"), climate line, the
+   map pinned at the listed address with 72 places nearby, and in the chat the tap's
+   line "#3 · Apartment · Lisboa, Lisboa · imovirtual_pt:19325958" with four buttons.
+7. The price-and-news button answered **without news** this time (Tavily and X did
+   not run on that turn): discard, use take 2.
+
+**Take 2, 15:57–16:00 UTC, new chat:** the Lisbon example button (six cards), then
+**Has #1's price dropped, and what's new in Lisbon?** — no change since 29 October,
+AP and Yahoo sources, three posts from X (blur their authors' names in the edit), the
+price box — then **Come posso contattare l'agente per il #1?** answered in Italian in
+15 s with the Cubi sign-in link and Italian buttons.
+
+An earlier abandoned take (15:30) chose Portugal in the wizard; its first search timed
+out and a typed retry succeeded. Not needed.
+
+Not yet recorded: **Homes like this one** in the pane and the two similar-homes buttons,
+which wait for the connector release of Oct 30; if filmed, redo shot 7b after the
+morning check.
+
 ## Shots
 
 | # | Time | Picture | Voice-over |
