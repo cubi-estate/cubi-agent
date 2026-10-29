@@ -119,7 +119,7 @@ morning check.
 | 9 | 1:52–2:08 | **Scene 7 · Price and news.** Click the price-and-news button; hold on the three-sentence answer, then scroll past the price box to the sources and the three posts from X (real names: blur the box in the edit) | Has this Lisbon flat's price dropped, and what's new there? Three sentences: Cubi's price log *(read it: "no change since it appeared")*, the housing news with its sources, and what people post on X — the sources and the posts sit underneath, each with a link. |
 | 10 | 2:08–2:20 | **Scene 8 · Italian.** Paste turn 7 (in Italian), hold on the Italian answer, then highlight the sign-in link | Ask in Italian, or any language: Nemotron translates in and out. And contacting the agent goes only through Cubi's consented flow; the demo sends nothing for you. |
 | 11 | 2:20–2:25 | Card 3 (results), 5 s | Thirty-six unseen requests in six languages: every field right. Four times faster than Cubi's own search, on a tenth of the quota. |
-| 12 | 2:25–2:30 | Card 4 (try it), 5 s | Try it at cubi.estate/agent, no account needed. Agent, evals and feedback: open source. |
+| 12 | 2:25–2:30 | Card 4 (try it), 5 s: the demo address and github.com/cubi-estate/cubi-agent, public since Oct 29 under Apache-2.0 | Try it at cubi.estate/agent, no account needed. Agent, evals and feedback: open source. |
 
 The eight screen scenes are the Oct 29 recording order (see the recording log above): scenes 1–6 are in take 1, scenes 7–8 in take 2. The cut runs 2:30: the cards take 18 s (3 + 5 + 5 + 5) and the eight screen scenes 2:12, so the scene timings above are a proportional guide — read each scene's line over its actual length in the edit, and trim the scene-5 table scroll first if a line runs long. The card lines are cut to their seconds: about 8 words for 3 s, 13 for 5 s. In all about 380 words.
 long, trim the table scroll in scene 7 first, then cut scene 9 (it is the only
@@ -196,4 +196,7 @@ too; the card numbers and the sign-in link survive the translation.
   > Nebius × NVIDIA Global AI Hackathon, Best Apps and Agents.
 
 - Visibility **Public**, and "not made for kids".
+- The code link resolves: the repository has been public (Apache-2.0) since Oct 29, so
+  the description, card 4's "open source" line and the Devpost links all point at a
+  page anyone can open. Nothing in the video needs redoing for it.
 - No end screens that link off YouTube.
