@@ -89,6 +89,18 @@ BIG_CITIES = {"portugal": ["Lisboa", "Porto", "Faro"], "spain": ["Madrid", "Barc
               "poland": ["Warszawa", "Kraków", "Gdańsk"], "polska": ["Warszawa", "Kraków", "Gdańsk"],
               "greece": ["Athina", "Thessaloniki"], "bulgaria": ["Sofia", "Varna"], "austria": ["Wien", "Graz"],
               "croatia": ["Zagreb", "Split"], "belgium": ["Brussel", "Antwerpen"]}
+# A card's location line doesn't always end in a country ("Alcoitão, Alcabideche,
+# Cascais, Lisboa", live 2026-10-29); the listing id's source carries the country code.
+_CODE = {"pt": "portugal", "es": "spain", "it": "italy", "de": "germany", "fr": "france", "nl": "netherlands",
+         "pl": "poland", "gr": "greece", "bg": "bulgaria", "at": "austria", "hr": "croatia", "be": "belgium"}
+
+
+def _country_key(card: dict) -> str:
+    country = country_of(card)
+    if country in BIG_CITIES:
+        return country
+    m = re.search(r"_([a-z]{2}):", str(card.get("id") or "").lower())
+    return _CODE.get(m.group(1), "") if m else ""
 
 
 _COUNTRIES = {"portugal", "spain", "espana", "france", "germany", "deutschland", "italy", "italia",
@@ -116,7 +128,7 @@ def other_city(card: dict | None, places: list[str]) -> str | None:
             if not any(_same_place(place, w) for w in where):
                 return place
         return None
-    for city in BIG_CITIES.get(country_of(card), []):
+    for city in BIG_CITIES.get(_country_key(card), []):
         if not any(_same_place(city, w) for w in where):
             return city
     return None

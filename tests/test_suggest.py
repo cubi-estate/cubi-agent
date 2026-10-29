@@ -59,6 +59,12 @@ def test_one_place_offers_nothing_that_needs_two():
                   "Show me homes like #1 in Porto"]
 
 
+def test_the_other_city_comes_from_the_listing_source_when_the_card_names_no_country():
+    card = {"n": 1, "id": "afinest_pt:25505032", "location": "Alcoitão, Alcabideche, Cascais, Lisboa"}
+    assert suggest.other_city(card, ["Cascais"]) == "Porto"          # Lisboa is on the card, Porto is next
+    assert suggest.other_city({"n": 1, "id": "x:1", "location": "Somewhere"}, ["Somewhere"]) is None
+
+
 def test_nothing_on_screen_offers_no_card_questions():
     assert suggest.next_questions("compare-areas", "en", places=["Porto", "Valencia"], max_price=None,
                                   shown=[]) == []
