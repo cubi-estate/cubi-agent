@@ -10,7 +10,7 @@ Four sources, read side by side, then one fast model call:
   - find_similar_homes: up to three homes like it in the same market, picked by
     Cubi's similarity model (a 50-d PCA embedding of each listing's catalogued
     features, nearest neighbours, then a ranker on stated features, size and
-    place — never on price), each with the ranker's own reason;
+    place and asking price), each with the ranker's own reason;
   - Nemotron (nano, thinking off): a brief in the user's language — a TLDR,
     highlights, things to check before deciding, and the description translated
     when it isn't in the user's language. Facts only, from the listing; the
