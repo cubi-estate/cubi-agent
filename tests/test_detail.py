@@ -214,7 +214,7 @@ def test_a_tap_adds_the_homes_questions_and_points_the_chat_at_it(tmp_path):
     assert x["focus"]["n"] == 1 and qs[0] == "Compare #1 with its similar homes feature by feature"
     assert "Has #1's price dropped, and have its similar homes' prices dropped?" in qs
     assert "How do I contact the agent for #1?" in qs and "What's new in Gittana?" in qs
-    assert len(qs) == 5   # no other known city for "homes like #1 in …" on this search
+    assert "Show me homes like #1 in Milano" in qs and len(qs) == 6   # Italy's big market, not the card's own
     assert agent.detail("ev:1")["focus"]["suggestions"] == qs   # a second tap: the same, no new reads
     assert sum(1 for n, _ in calls if n == "get_listing") == 1
 

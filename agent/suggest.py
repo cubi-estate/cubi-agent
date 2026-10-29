@@ -76,7 +76,19 @@ def _fold(s: str) -> str:
 
 
 ALIASES = {"lisbon": "lisboa", "lisbonne": "lisboa", "lissabon": "lisboa", "oporto": "porto",
-           "valència": "valencia", "seville": "sevilla", "munich": "munchen"}
+           "valència": "valencia", "seville": "sevilla", "munich": "munchen", "warsaw": "warszawa",
+           "athens": "athina", "vienna": "wien", "milan": "milano", "rome": "roma", "cracow": "krakow"}
+
+# Where "homes like this one" goes after a one-city search: the country's other big
+# markets, the first that isn't the card's own city (Lisbon → Porto, Marbella → Madrid).
+BIG_CITIES = {"portugal": ["Lisboa", "Porto", "Faro"], "spain": ["Madrid", "Barcelona", "Valencia", "Málaga"],
+              "espana": ["Madrid", "Barcelona", "Valencia", "Málaga"], "italy": ["Milano", "Roma", "Torino"],
+              "italia": ["Milano", "Roma", "Torino"], "germany": ["Berlin", "München", "Hamburg"],
+              "deutschland": ["Berlin", "München", "Hamburg"], "france": ["Paris", "Lyon", "Marseille"],
+              "netherlands": ["Amsterdam", "Rotterdam", "Utrecht"], "nederland": ["Amsterdam", "Rotterdam", "Utrecht"],
+              "poland": ["Warszawa", "Kraków", "Gdańsk"], "polska": ["Warszawa", "Kraków", "Gdańsk"],
+              "greece": ["Athina", "Thessaloniki"], "bulgaria": ["Sofia", "Varna"], "austria": ["Wien", "Graz"],
+              "croatia": ["Zagreb", "Split"], "belgium": ["Brussel", "Antwerpen"]}
 
 
 _COUNTRIES = {"portugal", "spain", "espana", "france", "germany", "deutschland", "italy", "italia",
@@ -96,12 +108,17 @@ def _same_place(a: str, b: str) -> bool:
 
 def other_city(card: dict | None, places: list[str]) -> str | None:
     """A searched place the card is not in — the city a "homes like this" goes to."""
-    if not card or len(places) < 2:
+    if not card:
         return None
     where = [p.strip() for p in (card.get("location") or "").split(",")]
-    for place in places:
-        if not any(_same_place(place, w) for w in where):
-            return place
+    if len(places) >= 2:
+        for place in places:
+            if not any(_same_place(place, w) for w in where):
+                return place
+        return None
+    for city in BIG_CITIES.get(country_of(card), []):
+        if not any(_same_place(city, w) for w in where):
+            return city
     return None
 
 

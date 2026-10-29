@@ -52,9 +52,11 @@ def test_after_a_budget_comparison_the_next_budget_is_offered_first():
 
 
 def test_one_place_offers_nothing_that_needs_two():
+    # One searched place: no pair, no budget comparison; "homes like #1" goes to the
+    # country's other big market (the card is in Lisboa, so Porto).
     qs = suggest.next_questions("find-homes", "en", places=["Porto"], max_price=400000, shown=SHOWN)
     assert qs == ["Has #1's price dropped, and what's new in Lisboa?", "Is #1's price in line with similar homes?",
-                  "How do I contact the agent for #1?"]
+                  "Show me homes like #1 in Porto"]
 
 
 def test_nothing_on_screen_offers_no_card_questions():
