@@ -222,6 +222,8 @@ function renderDetail(c, x, d) {
   const climate = [cl.sunshine_hours ? `${Math.round(cl.sunshine_hours)} h sun/yr` : "", cl.summer_max_c != null ? `summer max ${Math.round(cl.summer_max_c)} °C` : "",
                    cl.winter_min_c != null ? `winter min ${Math.round(cl.winter_min_c)} °C` : "", cl.sea_temp_summer_c ? `sea ${Math.round(cl.sea_temp_summer_c)} °C in summer` : ""].filter(Boolean);
   const sections = Object.entries(x.sections || {});
+  const t = T[document.documentElement.lang] || T.en, s = LIKE[document.documentElement.lang] || LIKE.en;
+  const sims = (x.similar || []).filter(m => m && m.id);
   pane.querySelector(".dloading").remove();
   pane.insertAdjacentHTML("beforeend", `
     ${x.title ? `<h2 class="dname">${esc(x.title)}</h2>` : ""}
@@ -242,12 +244,41 @@ function renderDetail(c, x, d) {
         ${mins.map(([k, v]) => `<span>${esc(MIN[k])}</span><span class="dval">${esc(`${Math.round(v)} ${k.startsWith("drive") ? d.drive : d.walk}`)}</span>`).join("")}
       </div>
       ${climate.length ? `<p class="dclimate">${esc(climate.join(" · "))}</p>` : ""}` : ""}
+    ${sims.length ? `<h3>${esc(s.title)}</h3><div class="dsims">${sims.map(m => `
+      <a class="dsim" href="${esc(safeUrl(m.url) || safeUrl(m.ask_url) || "#")}" target="_blank" rel="noopener">
+        <span class="dsimhead"><b>${esc(m.price_text || s.poa)}</b><span>${esc(simFacts(m, t))}</span></span>
+        ${m.why ? `<span class="dsimwhy">${esc(m.why)}</span>` : ""}
+      </a>`).join("")}</div><p class="dnote">${esc(x.similar_method && x.similar_method.embedding === "pca" ? s.pca : s.model)}</p>` : ""}
     <h3>${esc(d.map)}</h3><div class="dmap" aria-label="${esc(d.map)}"></div><p class="dnote dmapnote">${esc(d.reading)}</p>
     ${x.description ? `<h3>${esc(d.desc)} <span class="dsub">(${esc(x.translated ? d.translated : d.original)})</span></h3><p class="ddesc">${esc(x.description)}</p>` : ""}
     ${sections.length ? `<details class="dfeat"><summary>${esc(d.features)}</summary>${sections.map(([name, tags]) =>
         `<div class="dsec"><b>${esc(name)}</b><div class="tags">${tags.map(t => `<span>${esc(t)}</span>`).join("")}</div></div>`).join("")}</details>` : ""}
     <p class="dnote">${esc(d.note)}</p>`);
   loadMap(x, c, d);
+}
+
+// ---- homes like this one: Cubi's similarity model (concept PCA embedding + ranker) --
+const LIKE = {
+  en: { title: "Homes like this one", poa: "Price on request", pca: "Picked by Cubi's similarity model: each listing's catalogued features as a 50-dimension embedding, nearest neighbours in the same market, then ranked on stated features, size and place. Not on price.",
+        model: "Picked by Cubi's similarity model in the same market, on stated features, size and place. Not on price." },
+  pt: { title: "Casas como esta", poa: "Preço sob consulta", pca: "Escolhidas pelo modelo de semelhança da Cubi: as características catalogadas de cada anúncio num embedding de 50 dimensões, vizinhos mais próximos no mesmo mercado, depois ordenados por características declaradas, área e local. Nunca pelo preço.",
+        model: "Escolhidas pelo modelo de semelhança da Cubi no mesmo mercado, por características declaradas, área e local. Nunca pelo preço." },
+  es: { title: "Casas como esta", poa: "Precio a consultar", pca: "Elegidas por el modelo de similitud de Cubi: las características catalogadas de cada anuncio en un embedding de 50 dimensiones, vecinos más cercanos en el mismo mercado, luego ordenadas por características declaradas, superficie y lugar. Nunca por el precio.",
+        model: "Elegidas por el modelo de similitud de Cubi en el mismo mercado, por características declaradas, superficie y lugar. Nunca por el precio." },
+  fr: { title: "Des biens comme celui-ci", poa: "Prix sur demande", pca: "Choisis par le modèle de similarité de Cubi : les caractéristiques cataloguées de chaque annonce en un embedding de 50 dimensions, plus proches voisins sur le même marché, puis classés selon les caractéristiques déclarées, la surface et le lieu. Jamais selon le prix.",
+        model: "Choisis par le modèle de similarité de Cubi sur le même marché, selon les caractéristiques déclarées, la surface et le lieu. Jamais selon le prix." },
+  de: { title: "Ähnliche Objekte", poa: "Preis auf Anfrage", pca: "Ausgewählt vom Ähnlichkeitsmodell von Cubi: die katalogisierten Merkmale jedes Inserats als 50-dimensionales Embedding, nächste Nachbarn im selben Markt, dann gereiht nach genannten Merkmalen, Fläche und Lage. Nie nach Preis.",
+        model: "Ausgewählt vom Ähnlichkeitsmodell von Cubi im selben Markt, nach genannten Merkmalen, Fläche und Lage. Nie nach Preis." },
+  nl: { title: "Vergelijkbare woningen", poa: "Prijs op aanvraag", pca: "Gekozen door het gelijkenismodel van Cubi: de gecatalogiseerde kenmerken van elke advertentie als een 50-dimensionale embedding, dichtstbijzijnde buren in dezelfde markt, daarna gerangschikt op genoemde kenmerken, oppervlakte en plaats. Nooit op prijs.",
+        model: "Gekozen door het gelijkenismodel van Cubi in dezelfde markt, op genoemde kenmerken, oppervlakte en plaats. Nooit op prijs." },
+};
+function simFacts(m, t) {
+  const bits = [];
+  if (m.type) bits.push(m.type);
+  if (m.bedrooms != null) bits.push(`${Math.round(m.bedrooms)} ${t.bd}`);
+  if (m.living_area != null) bits.push(`${Math.round(m.living_area)} m²`);
+  if (m.place) bits.push(m.place);
+  return bits.join(" · ");
 }
 
 // ---- the map: the listed address geocoded on OpenStreetMap, places nearby as pins --

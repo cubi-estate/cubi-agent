@@ -1,12 +1,16 @@
 """The listing pane: one home in full, read when its card is tapped.
 
-Three sources, read side by side, then one fast model call:
+Four sources, read side by side, then one fast model call:
   - get_listing (the connector): title, facts, the agency's description in the
     user's language where Cubi has it, every tag by section, and the image list
     when the listing payload carries one;
   - find_similar_elsewhere paired with itself: Cubi's profile of the home —
     surroundings (noise, air, flood, wildfire…), minutes on foot to daily
     needs, climate, €/m²;
+  - find_similar_homes: up to three homes like it in the same market, picked by
+    Cubi's similarity model (a 50-d PCA embedding of each listing's catalogued
+    features, nearest neighbours, then a ranker on stated features, size and
+    place — never on price), each with the ranker's own reason;
   - Nemotron (nano, thinking off): a brief in the user's language — a TLDR,
     highlights, things to check before deciding, and the description translated
     when it isn't in the user's language. Facts only, from the listing; the
@@ -112,6 +116,47 @@ def profile(text: str) -> dict:
             "eur_per_m2": seed.get("eur_per_m2")}
 
 
+SIMILAR_TOOL = "find_similar_homes"   # Cubi's own similarity model: concept PCA embedding + hybrid ranker
+MAX_SIMILAR = 3
+SIMILAR_LANGS = CUBI_LANGS + ("fr", "nl", "ru")   # the connector's `why` sentences come in these
+
+
+def _price(c: dict) -> str | None:
+    if not c.get("price"):
+        return None
+    text = f"{int(c['price']):,}".replace(",", " ") + f" {c.get('currency') or 'EUR'}"
+    period = str(c.get("price_period") or "").lower()
+    return text + ("/mo" if "month" in period else f"/{period}" if period else "")
+
+
+def similar_homes(text: str | None) -> dict:
+    """The connector's `find_similar_homes` reply → what the pane draws:
+    {"similar": [{id, title, price_text, type, bedrooms, living_area, place, url, ask_url, why, similarity}],
+     "similar_method": {embedding, ranker, scope}}. Empty when the tool failed or is absent."""
+    empty = {"similar": [], "similar_method": {}}
+    if not text:
+        return empty
+    try:
+        body = json.loads(text)
+        if isinstance(body.get("result"), str):
+            body = json.loads(body["result"])
+    except (json.JSONDecodeError, AttributeError):
+        return empty
+    if not isinstance(body, dict) or not body.get("ok"):
+        return empty
+    out = []
+    for m in (body.get("matches") or [])[:MAX_SIMILAR]:
+        c = m.get("card") or {}
+        if not c.get("id"):
+            continue
+        out.append({"id": c["id"], "title": c.get("title") or "", "price_text": _price(c),
+                    "type": c.get("object_type") or "", "bedrooms": c.get("bedrooms"), "living_area": c.get("living_area"),
+                    "place": ", ".join(x for x in (c.get("city"), c.get("country")) if x),
+                    "url": c.get("url") or "", "ask_url": c.get("ask_cubi_url") or "",
+                    "why": (m.get("why") or "").strip(), "similarity": m.get("similarity")})
+    return {"similar": out, "similar_method": body.get("method") or {}}
+
+
 def _area_text(prof: dict) -> str:
     bits = []
     for e in prof.get("environment") or []:
@@ -175,15 +220,25 @@ def read(mcp, cli, ref: str, *, data_lang: str, lang: str, lang_name: str, timin
             return None
         return None if res["is_error"] else res["text"]
 
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        text_f, prof_f = pool.submit(listing_text), pool.submit(profile_text)
-        text, prof_text = text_f.result(), prof_f.result()
+    def similar_text():
+        # A connector without the tool answers with an error: the pane then shows no matches.
+        try:
+            res = mcp.call_tool(SIMILAR_TOOL, {"listing_id": ref, "lang": lang if lang in SIMILAR_LANGS else "en",
+                                               "limit": MAX_SIMILAR})
+        except (MCPError, httpx.HTTPError):
+            return None
+        return None if res["is_error"] else res["text"]
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        text_f, prof_f, sim_f = pool.submit(listing_text), pool.submit(profile_text), pool.submit(similar_text)
+        text, prof_text, sim_text = text_f.result(), prof_f.result(), sim_f.result()
     if timings is not None:
-        timings.append(("listing detail + profile, in parallel", round(time.monotonic() - t0, 2)))
+        timings.append(("listing detail + profile + similar homes, in parallel", round(time.monotonic() - t0, 2)))
     if not text:
         return {"ok": False, "id": ref}
     listing = parse(text)
     prof = profile(prof_text) if prof_text else {}
+    prof.update(similar_homes(sim_text))
     t1 = time.monotonic()
     summary = brief(cli, listing, prof, lang, lang_name)
     if timings is not None:

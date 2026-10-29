@@ -96,24 +96,60 @@ def test_the_brief_is_guarded_and_in_the_users_language():
     assert "clean_air: yes" in cli.calls[0]["messages"][1]["content"]
 
 
+SIMILAR = json.dumps({"ok": True, "seed_id": "ev:1", "count": 2,
+                      "method": {"embedding": "pca", "ranker": "hybrid", "scope": "in_city"},
+                      "matches": [
+                          {"card": {"id": "ev:2", "title": "Villa in Varenna", "price": 450000, "currency": "EUR", "bedrooms": 4,
+                                    "living_area": 240, "city": "Varenna", "country": "Italy", "object_type": "house/villa",
+                                    "url": "https://cubi.estate/r/ev%3A2", "ask_cubi_url": "https://www.cubi.estate/chat?listing_id=ev%3A2&intent=ask"},
+                           "why": "Same type, lake view, 8% smaller", "similarity": 0.81},
+                          {"card": {"id": "ev:3", "price": 1200, "currency": "EUR", "price_period": "month", "city": "Bellano"},
+                           "why": "", "similarity": 0.7},
+                          {"card": {}, "why": "no id", "similarity": 0.1}]})
+
+
+def test_similar_homes_become_lean_matches_with_the_rankers_reason():
+    s = detail.similar_homes(SIMILAR)
+    assert s["similar_method"]["embedding"] == "pca"
+    assert [m["id"] for m in s["similar"]] == ["ev:2", "ev:3"]            # a match without an id is dropped
+    m = s["similar"][0]
+    assert m["price_text"] == "450 000 EUR" and m["place"] == "Varenna, Italy" and m["why"] == "Same type, lake view, 8% smaller"
+    assert m["url"] == "https://cubi.estate/r/ev%3A2" and m["type"] == "house/villa" and m["bedrooms"] == 4
+    assert s["similar"][1]["price_text"] == "1 200 EUR/mo" and s["similar"][1]["place"] == "Bellano"
+    assert detail.similar_homes("Listing not found.") == {"similar": [], "similar_method": {}}
+    assert detail.similar_homes(json.dumps({"ok": False, "error": "x"}))["similar"] == []
+
+
 def test_read_merges_everything_and_the_agent_caches_it(tmp_path):
     agent = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=_LLM(BRIEF))
     calls = []
 
     def call(name, args):
-        calls.append(name)
-        return {"is_error": False, "text": LISTING if name == "get_listing" else PAIR, "structured": None}
+        calls.append((name, args))
+        text = {"get_listing": LISTING, "find_similar_elsewhere": PAIR, "find_similar_homes": SIMILAR}[name]
+        return {"is_error": False, "text": text, "structured": None}
     agent.mcp.call_tool = call
     x = agent.detail("ev:1")
     assert x["ok"] and x["id"] == "ev:1" and x["images"] and x["eur_per_m2"] == 1519.2
     assert x["description"].startswith("Spacious villa") and x["translated"] is False
-    assert x["highlights"] and x["watch_outs"] and sorted(calls) == ["find_similar_elsewhere", "get_listing"]
-    assert agent.detail("EV:1") is x and len(calls) == 2
-    assert calls and args_ok(agent)
+    assert x["highlights"] and x["watch_outs"]
+    assert sorted(n for n, _ in calls) == ["find_similar_elsewhere", "find_similar_homes", "get_listing"]
+    assert [m["id"] for m in x["similar"]] == ["ev:2", "ev:3"] and x["similar_method"]["embedding"] == "pca"
+    assert dict(calls)["find_similar_homes"] == {"listing_id": "ev:1", "lang": "en", "limit": 3}
+    assert agent.detail("EV:1") is x and len(calls) == 3
 
 
-def args_ok(agent):
-    return True
+def test_a_connector_without_the_similar_tool_still_gives_the_pane(tmp_path):
+    from agent.mcp_client import MCPError
+    agent = Agent(mcp=fixtures.FixtureMCP(tmp_path), cli=_LLM(BRIEF))
+
+    def call(name, args):
+        if name == "find_similar_homes":
+            raise MCPError("tools/call: Unknown tool: find_similar_homes")
+        return {"is_error": False, "text": LISTING if name == "get_listing" else PAIR, "structured": None}
+    agent.mcp.call_tool = call
+    x = agent.detail("ev:1")
+    assert x["ok"] and x["similar"] == [] and x["similar_method"] == {}
 
 
 def test_a_failed_listing_read_is_reported_not_invented(tmp_path):

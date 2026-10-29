@@ -303,6 +303,12 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 #detail .denv .no { color: var(--warn); }
 #detail .denv .dval { color: var(--muted); text-align: right; }
 #detail .dclimate { margin: 8px 0 0; }
+#detail .dsims { display: grid; gap: 6px; }
+#detail .dsim { display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; text-decoration: none; color: var(--ink); font-size: 13.5px; }
+#detail .dsim:hover { border-color: var(--accent); }
+#detail .dsimhead { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+#detail .dsimhead span { color: var(--muted); }
+#detail .dsimwhy { color: var(--muted); font-size: 12.5px; }
 #detail .ddesc { font-size: 14px; white-space: pre-line; overflow-wrap: anywhere; margin: 0; }
 #detail .dfeat { margin-top: 14px; font-size: 13.5px; }
 #detail .dfeat summary { cursor: pointer; font-weight: 600; }
