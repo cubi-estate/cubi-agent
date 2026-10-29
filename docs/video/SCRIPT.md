@@ -24,14 +24,19 @@ music you have the rights to. Upload to YouTube as **Public** and put the link i
    - turn 8 naming its number of comparables, with one "independent valuation" line
      and no "thin" when there are ten or more.
 
-   Also walk the wizard once on the day, in a new chat: **By the sea → Portugal →
-   House and Townhouse → Buy to live, Up to €700,000 → Garden & privacy twice (must-have)
-   → Search.** Expect a brief with "a sea view" and "must have: garden & privacy" under
-   *Filters* (a picked landscape filters — Cubi's free-text search ignores an "ideally"
-   wish when ranking, live 2026-10-25), then about 400 homes in under 10 s, a chip line
-   "for sale · house/townhouse · ≤ €700,000 · Sea View + Garden · in Portugal" and never
-   "all have a garden" (a guard drops that). If the count is small, a listings change
-   has made Garden rare: pick Terrace instead and read the brief aloud as it stands.
+   Also walk the wizard once on the day, in a new chat: **By the sea → Anywhere in
+   Europe → House and Townhouse → Buy to live, Up to €700,000 → Garden & privacy twice
+   (must-have) → Search.** Expect a brief with "every country on Cubi at once … near the
+   sea and must have: garden & privacy" under *Filters* (a picked landscape filters —
+   Cubi's free-text search ignores an "ideally" wish when ranking, live 2026-10-25) and a
+   *Heads-up* line that a Europe-wide search takes longer and falls back to Spain, Italy,
+   Portugal and Germany side by side if it hits Cubi's time limit. Then either homes from
+   several countries in 9–15 s, or — as on the Oct 29 recording — the time limit and the
+   fallback's eight homes in about 45 s, with the chip line "for sale · house/townhouse ·
+   ≤ €700,000 · Garden · anywhere in Europe". Never "all have a garden" (a guard drops
+   that). If the count is small, a listings change has made Garden rare: pick Terrace
+   instead and read the brief aloud as it stands. Picking a single country (Portugal)
+   is the faster variant, about 10 s, but then the homes are from one country only.
 
    Results change as listings change. Note the shares on turns 3–4, the card numbers
    turn 5 compares and what turn 6 says about the price, and fix those voice-over
@@ -105,7 +110,7 @@ morning check.
 |---|---|---|---|
 | 1 | 0:00–0:12 | Card 1 (problem) | Moving from Germany, torn between Porto and Valencia? That's two countries, two languages and a handful of portals that don't talk to each other. |
 | 2 | 0:12–0:25 | Card 2 (how it's built) | Cubi Agent is one conversation over two point three million listings in twenty European countries. NVIDIA Nemotron 3 Super, on Nebius Token Factory, reads the request and writes the answer; the app runs on Nebius AI Cloud. |
-| 3 | 0:25–0:37 | New chat. Tap By the sea → Portugal → House, Townhouse → Buy to live, Up to €700,000 → Garden & privacy twice; hold a beat on the brief, then Search | No typing to start with: pick a feeling, a country, a kind of home, a plan and a budget, and what matters. The brief under the pictures says what filters, what is only a wish and what is still open — and the search is one plain sentence. |
+| 3 | 0:25–0:37 | New chat. Tap By the sea → Anywhere in Europe → House, Townhouse → Buy to live, Up to €700,000 → Garden & privacy twice; hold a beat on the brief, then Search; the homes come from several countries | No typing to start with: pick a feeling, all of Europe or one country, a kind of home, a plan and a budget, and what matters. The brief under the pictures says what filters, what is only a wish and what is still open — and the search is one plain sentence, run across every country Cubi covers. *(Oct 29 recording: the Europe-wide search hit Cubi's time limit and the agent searched Spain, Italy, Portugal and Germany side by side instead, as the brief had warned — eight homes from four countries. If you keep that in the cut, add: "and when a search across the whole continent runs long, it splits it by market and says so.")* |
 | 4 | 0:37–0:59 | Click New chat, paste turn 1, let the steps stream, scroll over the six cards, end on the three buttons | Or ask in German: a flat to buy in Porto or Valencia, up to four hundred thousand, two bedrooms at least. *(pause on the step log)* Nemotron turns that into a structured filter; code checks it, and the agent searches each city separately. Every card comes from Cubi's data, not from the model. |
 | 5 | 0:59–1:21 | Paste turn 2, then scroll to the Sources list | Then the question a mover actually has: what are the schools and public transport like? The agent searches the web with Tavily, one search per city and topic, and writes the two cities side by side. Every point carries a numbered source, linked in code, and where no source covers a topic, it says so. |
 | 6 | 1:21–1:41 | Paste turn 3: bars grow. Click "And up to €500,000?": bars move, markers stay at the old shares | And from Cubi's own data: what does four hundred thousand buy in Lisbon versus Porto? *(read the two shares on screen)* Raise it to five hundred, and the bars move from the old shares. Cubi counted these; the model only wrote the sentence around them. |
@@ -159,8 +164,8 @@ skill files, and that shows they're portable. Only add it if the cut stays under
 ## Messages to paste
 
 ```
-                           ← wizard: By the sea → Portugal → House, Townhouse → Buy to live,
-                             Up to €700,000 → Garden & privacy ×2 → Search; then New chat
+                           ← wizard: By the sea → Anywhere in Europe → House, Townhouse →
+                             Buy to live, Up to €700,000 → Garden & privacy ×2 → Search; then New chat
 Wir ziehen um: Wohnung zum Kauf in Porto oder Valencia, bis 400.000 €, mindestens 2 Schlafzimmer
 Compare schools and public transport in Porto and Valencia
 What does 400k buy in Lisbon vs Porto? 2-bed flats
