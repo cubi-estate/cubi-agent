@@ -182,6 +182,11 @@ too; the card numbers and the sign-in link survive the translation.
 
 ## YouTube
 
+**Published Oct 29, 20:50 UTC, as Public: https://www.youtube.com/watch?v=Xbn-tKv-FDA** (2:34,
+the owner's cut from the Oct 29 takes, 1918×870 HEVC source, "not made for kids",
+copyright check clean). The link is in the Devpost draft's "Demo video URL" field.
+An earlier 8.6 MB test upload of the same cut stays private on the channel.
+
 - **Title:** Cubi Agent: cross-border home search on NVIDIA Nemotron and Nebius
 - **Description:**
 
