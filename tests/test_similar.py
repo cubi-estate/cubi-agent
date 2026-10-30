@@ -263,3 +263,11 @@ def test_a_home_that_states_too_little_is_the_reason():
     text = similar.tool_text(r, [], "#1")
     assert "#1 itself states 1 of" in text and "150 candidate" not in text and "no city could match" in text
     assert similar.documented(_result(0)["seed"]) >= 4  # the fixture's seed still gets the pool reason
+
+
+def test_city_named_reads_the_place_the_request_ends_in():
+    from agent import loop
+    assert loop.city_named("Show me homes like the Colmenar one in Málaga") == "Málaga"
+    assert loop.city_named("Show me homes like #1 in Lake Como?") == "Lake Como"
+    assert loop.city_named("Mostra casas parecidas com a #1 em Porto.") == "Porto"
+    assert loop.city_named("Compare #1 and #2 feature by feature") == ""

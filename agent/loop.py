@@ -80,6 +80,15 @@ ROOM_WISH = re.compile(r"(?<![\d.])(?<!\d )\brooms?\b|flat ?share|house ?share|s
                        r"\bkamers? (in|te)\b|\bstanza (in|singola|doppia)\b", re.I)
 NO_PRICE_WISH = re.compile(r"no (published )?price|price on request|without (a )?price|unpriced|sem pre[cç]o|"
                            r"sin precio|sans prix|non chiffr|ohne preis|zonder prijs", re.I)
+_CITY_NAMED = re.compile(r"\b(?:in|em|en|à|a|nach|te)\s+([^\s,?.!][^,?.!]*?)\s*[?.!]*$", re.I)
+
+
+def city_named(message: str) -> str:
+    """The place a request ends in ("…like the Colmenar one in Málaga?" → "Málaga")."""
+    m = _CITY_NAMED.search(message or "")
+    return m.group(1).strip() if m else ""
+
+
 MIN_PRICE = {"rent": 50, "sale": 1000}  # below this a listed price is a placeholder, not a price
 OVERFETCH = 30
 WIDER = {
@@ -944,6 +953,10 @@ class Agent:
             self.area_places = [p.split(",")[0].strip() for p in places[:tavily_tool.MAX_PLACES]]
             yield (text + "\n\nCite sources by their number, e.g. [S2], right after the claim — never write URLs.")
             return
+        if name == similarmod.TOOL and not args.get("city") and not args.get("compare_with"):
+            # The model left the city out of one call in three on "homes like the Colmenar
+            # one in Málaga" (live 2026-10-30): the user's own words name it.
+            args["city"] = city_named(self._message) or None
         label = {"get_listing": "Opening the listing", "compare_asking_prices": "Comparing asking prices nearby",
                  "get_contact_options": "Looking up contact options",
                  similarmod.TOOL: (f"Comparing two homes feature by feature" if args.get("compare_with")
