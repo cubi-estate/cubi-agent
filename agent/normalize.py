@@ -180,6 +180,7 @@ def same_place(f: SearchFilter, current: SearchFilter) -> bool:
 
 
 ALSO = r"\b(also|too|as well|tambem|tambien|aussi|auch|ook|ainda)\b"
+SAME = r"\b(the same|same|likewise|o mesmo|lo mismo|igual|la meme|pareil|dasselbe|das gleiche|genauso|hetzelfde)\b"
 
 
 def _new_places(places: list[str], before: list[str], text: str) -> list[str]:
@@ -205,17 +206,24 @@ def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) ->
     data = f.model_dump()
     # A refinement keeps the conversation's sale/rent and parking; a search for a
     # different place starts fresh. Live test 2026-10-20: after a Lisbon rental,
-    # "piso … en Valencia hasta 300.000 €" ran as a rental.
+    # "piso … en Valencia hasta 300.000 €" ran as a rental. Naming a first place
+    # after a Europe-wide search is a narrowing, not a move, so the sale/rent
+    # stands (live 2026-10-30: "houses to rent … anywhere in Europe", then
+    # "let's narrow it to Lake Como" searched homes for sale).
+    # "And the same in Andalusia?" keeps it too: the user says so.
+    kept = current.transaction_type if current is not None and (not current.location or _has(SAME, text)) else None
     if current is not None and not same_place(f, current):
         current = None
 
     rent, sale = _has(RENT, text), _has(SALE, text)
     if rent and not sale:
         data["transaction_type"] = "rent"
-    elif sale or current is None:
+    elif sale:
         data["transaction_type"] = "sale"
-    else:
+    elif current is not None:
         data["transaction_type"] = current.transaction_type
+    else:
+        data["transaction_type"] = kept or "sale"
 
     soft = re.search(SOFT, text)
     hard, wish = (text[:soft.start()], text[soft.start():]) if soft else (text, "")

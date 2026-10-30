@@ -361,6 +361,24 @@ def test_new_place_starts_a_fresh_search():
     assert kept.transaction_type == "rent" and kept.has_parking is True
 
 
+def test_a_first_place_after_a_europe_wide_search_keeps_rent():
+    """Live 2026-10-30: "houses to rent … anywhere in Europe", then "let's narrow it
+    to Lake Como" searched homes for sale: a first place is a narrowing, not a move."""
+    current = _f(location=[], transaction_type="rent", has_parking=True)
+    got = normalize.apply(_f(location=["Lake Como"], transaction_type="sale"), "let's narrow it to Lake Como", current)
+    assert got.transaction_type == "rent" and got.location == ["Lake Como"]
+    assert got.has_parking is None  # the rest still starts fresh
+    bought = normalize.apply(_f(location=["Lake Como"], transaction_type="sale"),
+                             "what if I buy instead? Show homes for sale on Lake Como", current)
+    assert bought.transaction_type == "sale"
+    # "the same" in another place keeps rent; a plain move still starts fresh
+    como = _f(location=["Lake Como"], transaction_type="rent")
+    same = normalize.apply(_f(location=["Andalusia"], transaction_type="sale"), "and the same in Andalusia?", como)
+    assert same.transaction_type == "rent"
+    moved = normalize.apply(_f(location=["Andalusia"], transaction_type="rent"), "villas in Andalusia under 800k", como)
+    assert moved.transaction_type == "sale"
+
+
 def test_a_new_town_drops_the_carried_country():
     """Tester F1: after the wizard's Portugal, 'Faro, 2 bedrooms' searched 'Faro, Portugal'."""
     current = _f(location=["Portugal"])
