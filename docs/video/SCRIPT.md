@@ -282,8 +282,8 @@ language, switch to buying, price checks, homes like it in another city or count
 pane with the OpenStreetMap map, schools and transport, price log, news and X, consented
 contact; built on Nemotron 3 Super via Token Factory on Nebius AI Cloud with Tavily,
 OpenStreetMap, X and Cubi's connector; demo and code links; the hackathon line); not
-made for kids. Published by the owner at about 14:50 UTC. The Devpost submission's "Demo video URL"
-now points at it (saved on the Project details step, 14:53 UTC; the embed preview showed the
+made for kids. Published by the owner at about 14:38 UTC. The Devpost submission's "Demo video URL"
+now points at it (saved on the Project details step, 14:40 UTC; the embed preview showed the
 new title). ⚠️ At that moment Devpost still showed the project as **DRAFT, 4/5 steps done,
 "2 more hours to deadline"**: the Submit step is the owner's. The channel lists the Oct 29 video as **Unlisted** now, not
 Public as recorded below.
