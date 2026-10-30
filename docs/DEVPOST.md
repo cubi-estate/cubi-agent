@@ -56,6 +56,9 @@ The agent, the web app, the evals and the skill pack are open source (Apache-2.0
 
 Answers entered on Oct 29. Ratings are proposals for the owner to adjust.
 
+**Submitted by the owner on Oct 30 at about 14:50 UTC**, with the second demo video
+(https://youtu.be/eB7pK-6-w2s, 2:51) and the story above. Live agent build at submission: 76f5c28.
+
 **Which model(s) did you use, and why that size/variant?**
 nvidia/nemotron-3-super-120b-a12b (Nemotron 3 Super) for the tool loop, the strict-schema filter extraction and the short answers: on our held-out set it got 148/148 fields and 36/36 requests right at about 1 s per extraction with thinking off, and it is the largest Nemotron we could run at that latency and price (about $0.13 per 1,000 extractions). nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B for the listing briefs in the pane, where speed matters and the input is one listing; Nano is not used for extraction because it read "até 750€" as 75,000 in Portuguese. We also evaluated Nemotron 3 Ultra 550B and Nemotron 3.5 Lightning: both matched Super on the held-out set, Lightning at half the latency; we would switch to Lightning with a published price and region. Nemotron 3.5 Super VL passed a photo-to-home spike (14/14 inspiration images matched in 1.5 s) and is next.
 
