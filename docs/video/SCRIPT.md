@@ -199,18 +199,20 @@ browser run with Cubi's cache warm.
    map; leave it open.
 9. `Is #1's price in line with similar homes?` — this region: €4.2M inside
    €3.82M–€4.86M of 16 comparables, 2–4 s.
-10. `Show me homes like #1 in Lisboa` — another country: two Lisbon houses at €6.5M,
-    same bedrooms and size, 5 s. (Como, Milano and Paris have none; Roma has two.)
-11. `Compare schools and public transport in Málaga and Lisbon` — Tavily, nine cited
+10. `Compare schools and public transport in Málaga and Lisbon` — Tavily, nine cited
     sources, 5–7 s.
-12. `Has #1's price dropped, and what's new in Málaga?` — the X turn: price log, Tavily
-    news and recent posts on X about housing in Málaga, each linked, 7–10 s.
+11. `Has #1's price dropped, and what's new in Málaga?` — the X turn on the Málaga
+    villa: price log, Tavily news and recent posts on X about housing in Málaga, each
+    linked, 7–10 s. **Before the Lisbon turn**, while #1 is still the villa: once the
+    Lisbon homes are the cards, "#1" is a Lisbon house (the 13:40 take asked about the
+    wrong home's price).
+12. `Show me homes like #1 in Lisboa` — another country: two Lisbon houses at €6.5M,
+    same bedrooms and size, 5 s. (Como, Milano and Paris have none; Roma has two.)
 13. **The ending** `How do I contact the agent for the Málaga villa I opened?` — the
-    three consented options and the sign-in link, 2–3 s. Say "the Málaga villa I
-    opened", not "#1": after turn 10 the cards are the Lisbon homes, so "#1" is a
-    Lisbon house, and Nemotron then writes the Málaga link from memory, which the URL
-    guard removes with a "something was removed" note (seen twice in Chrome; the tool's
-    own link is appended in code since 2c59e1f, but the note stays).
+    three consented options and the sign-in link, 2–4 s. Say "the Málaga villa I
+    opened", not "#1" (a Lisbon house by then). Since 76f5c28 a link the conversation
+    has already shown is no longer removed, so the "something was removed" note of the
+    13:40 take is gone.
 
 ### Voice-over · second recording (for voice generation)
 
@@ -229,9 +231,9 @@ Read each line over its scene; about 420 words, 2:45 at a calm pace. Cards from
 | 7 · Málaga | Homes like the Colmenar cortijo, in Málaga. Cubi's similarity model matches on features, size and surroundings, never on price, and the table puts the asking prices side by side, with drive times and climate underneath. |
 | 8 · the pane | Tap a card and the home opens in full: Nemotron's brief, what to check before deciding, Cubi's area data, three homes like it within five percent on price, and a map from OpenStreetMap with what's nearby. The description stays folded until you ask. |
 | 9 · its price | This one's price: four point two million, inside the range of sixteen comparable homes in Málaga. |
-| 10 · Lisbon | The same home in another country: two houses in Lisbon with the same bedrooms and size, at six and a half million each. |
-| 11 · schools | Schools and public transport, Málaga against Lisbon. The agent searches the web with Tavily, one search per city and topic, and every point carries a numbered source, linked in code. |
-| 12 · X | Has the price dropped, and what's new in Málaga? Cubi's price log, the housing news with its sources, and what people post on X, shown as published, not checked by Cubi. |
+| 10 · schools | Schools and public transport, Málaga against Lisbon. The agent searches the web with Tavily, one search per city and topic, and every point carries a numbered source, linked in code. |
+| 11 · X | Has the price dropped, and what's new in Málaga? Cubi's price log, the housing news with its sources, and what people post on X, shown as published, not checked by Cubi. |
+| 12 · Lisbon | The same home in another country: two houses in Lisbon with the same bedrooms and size, at six and a half million each. |
 | 13 · contact | And to reach the agent: only through Cubi's consented flow. Questions via Cubi, Cubi Connect, or an email request. No phone number, no email on screen. |
 | Card 3 (5 s) | Thirty-six unseen requests in six languages: every field right. Four times faster than Cubi's own search, on a tenth of the quota. |
 | Card 4 (5 s) | Try it at cubi.estate/agent, no account needed. Agent, evals and feedback: open source. |
