@@ -106,3 +106,27 @@ def test_a_lone_feature_key_is_said_as_a_name():
     line = _describe(_filter(features=["mountain_view"], type=["house"], transaction_type="rent"), "en", anywhere=True)
     assert "Mountain View" in line and "mountain_view" not in line
     assert "vistas al mar" in _describe(_filter(features=["sea_view"]), "es")
+
+
+def test_a_dead_connection_gets_one_fresh_attempt(monkeypatch):
+    """Live 2026-10-30: a price check took 47.5 s — the first POST never reached Cubi
+    and the read timeout ran out before the retry answered in 0.8 s."""
+    import httpx
+    from agent import mcp_client
+    mcp = mcp_client.CubiMCP(url="https://example.test/mcp", token="t")
+    calls = []
+    def post(url, json=None):
+        calls.append(json["method"])
+        if len(calls) == 1:
+            raise httpx.ReadTimeout("stalled")
+        return httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {"tools": []}},
+                              headers={"content-type": "application/json"}, request=httpx.Request("POST", url))
+    monkeypatch.setattr(mcp._http, "post", post)
+    assert mcp.list_tools() == [] and calls == ["tools/list", "tools/list"]
+    assert mcp._http.timeout.connect == 5.0 and mcp._http.timeout.read == 30.0
+    def post_twice_dead(url, json=None):
+        raise httpx.ConnectTimeout("down")
+    monkeypatch.setattr(mcp._http, "post", post_twice_dead)
+    mcp._tools = None
+    with pytest.raises(httpx.ConnectTimeout):
+        mcp.list_tools()

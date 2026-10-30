@@ -54,14 +54,23 @@ class CubiMCP:
         token = config.CUBI_MCP_TOKEN if token is None else token
         if token:
             headers["Authorization"] = f"Bearer {token}"
-        self._http = httpx.Client(headers=headers, timeout=timeout)
+        # Separate budgets: a stalled connection fails in 5 s, not after the whole read
+        # budget. Live 2026-10-30: a price check took 47.5 s — the first POST never
+        # reached Cubi's router (a dead keep-alive, most likely), the 45 s read timeout
+        # ran out, and the retry answered in 0.8 s. Cubi's slowest routes budget 22 s.
+        self._http = httpx.Client(headers=headers, timeout=httpx.Timeout(timeout, connect=5.0, read=min(timeout, 30.0)))
         self._ids = itertools.count(1)
         self._tools: list[dict] | None = None
         self.calls: list[dict] = []  # {"tool", "seconds", "units", "is_error"} per tools/call
 
     def _rpc(self, method: str, params: dict | None = None) -> Any:
         payload = {"jsonrpc": "2.0", "id": next(self._ids), "method": method, "params": params or {}}
-        r = self._http.post(self.url, json=payload)
+        try:
+            r = self._http.post(self.url, json=payload)
+        except httpx.TransportError:
+            # Every Cubi tool is read-only, so one fresh attempt is safe: a connection
+            # the pool kept open can be dead on the server side (above).
+            r = self._http.post(self.url, json=payload)
         if r.status_code == 429:
             raise MCPError("Cubi connector rate limit reached; try again shortly")
         r.raise_for_status()
