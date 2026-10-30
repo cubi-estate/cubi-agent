@@ -180,6 +180,7 @@ def same_place(f: SearchFilter, current: SearchFilter) -> bool:
     return {_plain(x).strip() for x in f.location} == {_plain(x).strip() for x in current.location}
 
 
+LAKE = re.compile(r"\b(Lake |Lago (?:di |de |d')?|Lac (?:de |du |d')?|Lagoa (?:de |da )?)([A-ZÀ-Ý][\w\-]+)", re.U)
 CONTINENTS = {"europe", "europa", "eu", "european union", "anywhere", "anywhere in europe", "all of europe", "whole of europe"}
 ALSO = r"\b(also|too|as well|tambem|tambien|aussi|auch|ook|ainda)\b"
 SAME = r"\b(the same|same|likewise|o mesmo|lo mismo|igual|la meme|pareil|dasselbe|das gleiche|genauso|hetzelfde)\b"
@@ -207,6 +208,11 @@ def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) ->
     # (Super left it empty), which made the next turn a move instead of a narrowing and
     # dropped "to rent" (local run 2026-10-30). Cubi knows no place called Europe either.
     f = f.model_copy(update={"location": [p for p in f.location if _plain(p).strip() not in CONTINENTS]})
+    lake = LAKE.search(message)
+    if lake and not any(_plain(lake.group(2)) in _plain(p) for p in f.location):
+        # "on Lake Como" became location ["Lombardia"] on Lightning (2026-10-30): the lake the
+        # user named is the place; Cubi knows "Lake Como".
+        f = f.model_copy(update={"location": [lake.group(0).strip()]})
     if current is not None:
         f = f.model_copy(update={"location": _new_places(f.location, current.location, text)})
     data = f.model_dump()

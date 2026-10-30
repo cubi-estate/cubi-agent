@@ -89,6 +89,12 @@ def city_named(message: str) -> str:
     return m.group(1).strip() if m else ""
 
 
+# Skills whose answer is a short summary over cards the app draws itself. Nemotron 3.5
+# Lightning (2026-10-30) wrote 180–300-word markdown dumps of the cards with links and
+# tables where Super wrote three sentences; the note rides at the end of every tool
+# result, where the model looks last (the language note needed the same place).
+STYLE_NOTE_SKILLS = {"find-homes", "contact-agent", "check-asking-price", "similar-elsewhere"}
+
 MIN_PRICE = {"rent": 50, "sale": 1000}  # below this a listed price is a placeholder, not a price
 OVERFETCH = 30
 WIDER = {
@@ -1400,7 +1406,11 @@ class Agent:
             # Named at the end of every tool result, where the model looks last: a
             # system-prompt rule alone lost to history (an English question after
             # Dutch turns was answered in Dutch, live 2026-10-20).
-            lang_note = f"\n\n[Answer in {LANG_NAMES.get(self.lang, 'English')}.]"
+            lang_note = (f"\n\n[Answer in {LANG_NAMES.get(self.lang, 'English')}. Plain prose, two or three sentences: "
+                         "no markdown, no bold, no tables, no list of the homes and no links — the app shows the cards.]"
+                         if skill.name in STYLE_NOTE_SKILLS else
+                         f"\n\n[Answer in {LANG_NAMES.get(self.lang, 'English')}. Plain prose in short paragraphs: no markdown "
+                         "of any kind — no bold, no headings, no tables, no bullet lists.]")
             messages.append({"role": "tool", "tool_call_id": call_id,
                              "content": result[:TOOL_TEXT_CAP] + lang_note})
             turn_msgs.append({"role": "tool", "tool_call_id": call_id, "content": result[:HISTORY_TOOL_CAP]})

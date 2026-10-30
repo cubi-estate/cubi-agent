@@ -687,3 +687,12 @@ def test_lightning_extras_are_normalised_away():
     assert kept.transaction_type == "rent"  # a first place after a Europe-wide search narrows it
     villa = normalize.apply(_f(location=["Como"], type=["house", "villa"]), "a villa in Como")
     assert villa.type == ["villa"]  # a named type the user wrote stays
+
+
+def test_a_lake_the_user_named_is_the_place():
+    """Lightning (2026-10-30): "homes for sale with a fireplace on Lake Como" → location ["Lombardia"]."""
+    got = normalize.apply(_f(location=["Lombardia"]), "What if I buy instead? Show me homes for sale with a fireplace on Lake Como")
+    assert got.location == ["Lake Como"]
+    assert normalize.apply(_f(location=["Lake Como"]), "homes on Lake Como").location == ["Lake Como"]
+    assert normalize.apply(_f(location=["Lago di Como"]), "case in vendita sul Lago di Como").location == ["Lago di Como"]
+    assert normalize.apply(_f(location=["Porto"]), "a flat in Porto").location == ["Porto"]
