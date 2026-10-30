@@ -674,3 +674,16 @@ def test_a_link_shown_earlier_in_the_conversation_is_not_removed():
     assert kept == answer and removed == []
     gone, removed2, _ = guards.verify_urls(answer, now)
     assert earlier not in gone and removed2 == [earlier]
+
+
+def test_lightning_extras_are_normalised_away():
+    """Nemotron 3.5 Lightning (2026-10-30): "anywhere in Europe" became location ["Europe"] and
+    "Houses" became house, villa, farmhouse; Super wrote neither."""
+    got = normalize.apply(_f(location=["Europe"], type=["house", "villa", "farmhouse"], transaction_type="rent"),
+                          "Houses to rent with a fireplace, in the mountains and near a lake, anywhere in Europe")
+    assert got.location == [] and got.type == ["house"] and got.transaction_type == "rent"
+    kept = normalize.apply(_f(location=["Lombardia"], transaction_type="sale"), "Vamos limitar a pesquisa à Lombardia",
+                           got)
+    assert kept.transaction_type == "rent"  # a first place after a Europe-wide search narrows it
+    villa = normalize.apply(_f(location=["Como"], type=["house", "villa"]), "a villa in Como")
+    assert villa.type == ["villa"]  # a named type the user wrote stays

@@ -104,6 +104,7 @@ FREE_TEXT = (r"\b(near|close to|perto|junto|cerca|pres|nahe|am see|bij|"
 # "with some land", "com muito terreno": land as an extra, not the property type.
 LAND_AS_EXTRA = r"\b(with (some |a lot of |lots of )?land|com (muito )?terreno|con terreno|avec terrain|mit grundstuck|met grond)\b"
 HOUSE_WORDS = r"\b(house|home|casa|moradia|quinta|maison|haus|hauschen|huis|huisje|woning|chalet|villa|farmhouse|property)\b"
+HOUSE_ANY = r"\b(houses?|homes?|casas?|moradias?|quintas?|maisons?|haus|hauser|huis|huizen|woning(en)?|chalets?|farmhouses?|propert(y|ies))\b"
 
 # From here on the user is wishing, not requiring: "…, ideally with a sea view and
 # furnished". The wizard writes its nice-to-haves this way; Cubi's free-text search
@@ -179,6 +180,7 @@ def same_place(f: SearchFilter, current: SearchFilter) -> bool:
     return {_plain(x).strip() for x in f.location} == {_plain(x).strip() for x in current.location}
 
 
+CONTINENTS = {"europe", "europa", "eu", "european union", "anywhere", "anywhere in europe", "all of europe", "whole of europe"}
 ALSO = r"\b(also|too|as well|tambem|tambien|aussi|auch|ook|ainda)\b"
 SAME = r"\b(the same|same|likewise|o mesmo|lo mismo|igual|la meme|pareil|dasselbe|das gleiche|genauso|hetzelfde)\b"
 
@@ -201,6 +203,10 @@ def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) ->
     carries its cue; otherwise the conversation's value stands.
     """
     text = _plain(message)
+    # "anywhere in Europe" is no place: Nemotron 3.5 Lightning writes location ["Europe"]
+    # (Super left it empty), which made the next turn a move instead of a narrowing and
+    # dropped "to rent" (local run 2026-10-30). Cubi knows no place called Europe either.
+    f = f.model_copy(update={"location": [p for p in f.location if _plain(p).strip() not in CONTINENTS]})
     if current is not None:
         f = f.model_copy(update={"location": _new_places(f.location, current.location, text)})
     data = f.model_dump()
@@ -271,6 +277,10 @@ def apply(f: SearchFilter, message: str, current: SearchFilter | None = None) ->
         # 2026-10-28): the plot is the villa's, not a second type.
         data["type"] = [t for t in data["type"] if t != "land"]
 
+    if _has(HOUSE_ANY, text) and "house" in data["type"]:
+        # "Houses to rent …" came back as house, villa, farmhouse on Nemotron 3.5 Lightning
+        # (2026-10-30; Super wrote house alone): a type the user did not name goes.
+        data["type"] = [t for t in data["type"] if t == "house" or _has(TYPES.get(t, r"$^"), text)]
     free = bool(_has(FREE_TEXT, text))
     data["needs_free_text_search"] = free or bool(current and current.needs_free_text_search)
     return SearchFilter.model_validate(data)
