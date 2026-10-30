@@ -274,6 +274,18 @@ too; the card numbers and the sign-in link survive the translation.
 
 ## YouTube
 
+**Second recording, uploaded Oct 30, 14:40 UTC: https://youtu.be/eB7pK-6-w2s** (2:51, from
+`Cubi Agent for Nebius.mp4`, 85 MB, the owner's screencast of the 13-turn flow). Title
+"Cubi Agent: a weekend house by a lake, rent or buy, across Europe — on NVIDIA Nemotron
+and Nebius"; description written from the new flow (rent first, narrow by region in your
+language, switch to buying, price checks, homes like it in another city or country, the
+pane with the OpenStreetMap map, schools and transport, price log, news and X, consented
+contact; built on Nemotron 3 Super via Token Factory on Nebius AI Cloud with Tavily,
+OpenStreetMap, X and Cubi's connector; demo and code links; the hackathon line); not
+made for kids. Left on the Visibility step for the owner: the copyright check was still
+running (about 10 min). The channel lists the Oct 29 video as **Unlisted** now, not
+Public as recorded below.
+
 **Published Oct 29, 20:50 UTC, as Public: https://www.youtube.com/watch?v=Xbn-tKv-FDA** (2:34,
 the owner's cut from the Oct 29 takes, 1918×870 HEVC source, "not made for kids",
 copyright check clean). The link is in the Devpost draft's "Demo video URL" field.
