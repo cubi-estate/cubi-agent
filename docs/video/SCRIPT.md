@@ -168,8 +168,8 @@ skill files, and that shows they're portable. Only add it if the cut stays under
 The owner's story: a weekend house in the mountains by a lake, rented first on the
 whole corpus, then narrowed by region, then the same regions for buying. Tested as
 one session on the patched build (commit 92725ed), live on the endpoint since
-Oct 30 12:08 UTC as build 141ff32, and re-run there: turns 2–4 in 5.1 s, 2.5 s and
-3.6 s. On the earlier build turn 2 silently switched to homes for sale.
+Oct 30 12:08 UTC (build 141ff32; 235f751 since 12:27 UTC adds the two fixes below), and
+re-run there: turns 2–5 in 2–5 s each once Cubi's cache is warm. On the earlier build turn 2 silently switched to homes for sale.
 
 1. `Houses to rent with a fireplace, in the mountains and near a lake, anywhere in
    Europe, ideally with a garden and a mountain view` — free-text, Europe-wide, "over
@@ -191,20 +191,23 @@ Oct 30 12:08 UTC as build 141ff32, and re-run there: turns 2–4 in 5.1 s, 2.5 s
    by Lake Viñuela, #2 a €39,500 house in Jaén.
 6. `Compare #1 and #2 feature by feature` — 1.7 s, asking prices side by side, "doesn't
    say" where the listing is silent.
-7. `Show me homes like the Colmenar one in Málaga` — 2 matches on features and
-   surroundings, never on price (€4.2M and €8.8M against €1.19M), 6 s. Name the home,
-   not its number: Cubi's card order in Andalusia changed between two runs twenty
-   minutes apart (Colmenar was #1, then #4), and if #1 happens to be the Málaga villa
-   the agent asks for another city. Granada and Seville have no match.
+7. `Show me homes like #4 in Málaga` — #4 being the Colmenar villa; check the number on
+   screen first, Cubi's card order in Andalusia changed once between two runs twenty
+   minutes apart (Colmenar was #1, then #4 in every run since 12:10 UTC). 2 matches on
+   features and surroundings, never on price (€4.2M and €8.8M against €1.19M), 3 s,
+   three live runs out of three on build 235f751. The wording "homes like the Colmenar
+   one in Málaga" also works but one run in three Nemotron answers "which city?" without
+   calling the tool. Granada and Seville have no match; if #1 is the Málaga villa itself
+   the agent asks for another city.
 8. **The ending (owner's decision, Oct 30):** `How do I contact the agent for the
    Colmenar home?` — 2.7 s: the three consented options (questions through Cubi,
    Cubi Connect, an email request), one sign-in link to the Cubi chat for that home,
    "no agent phone or email is shared directly". The callback and meeting kinds stay
    off on PROD. Tested three times live on build 141ff32; one earlier run with the
    wording "the Colmenar one" had the link scrubbed by the URL guard, so use "home".
-   Cut on the answer, before the chips: until build 846d401 or later is live, the
-   first chip after this turn read "homes like #1 in Amsterdam" for a Málaga villa
-   published by a Dutch portal (fixed in agent/suggest.py).
+   The chips after it read "homes like #1 in Madrid", the price-drop question and the
+   price check (build 235f751, live since 12:27 UTC; before 846d401 the first chip said
+   "in Amsterdam" for a Málaga villa published by a Dutch portal).
 
 ## Messages to paste
 
