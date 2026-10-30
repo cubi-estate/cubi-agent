@@ -226,6 +226,21 @@ def test_an_english_answer_on_a_dutch_turn_is_translated(monkeypatch):
     assert len(asked) == 1
 
 
+def test_a_dutch_answer_on_an_english_turn_is_translated(monkeypatch):
+    """Live 2026-10-30: "How do I contact the agent for the Colmenar home?" after a Dutch
+    schools comparison was answered in Dutch."""
+    asked = []
+    monkeypatch.setattr(pivot, "back", lambda cli, name, answer, chips, code="": asked.append(name) or ("You can reach …", []))
+    me = SimpleNamespace(lang="en", cli=None)
+    dutch = ("Je kunt de makelaar voor het Colmenar huis bereiken via Cubi op drie manieren: stel vragen aan de "
+             "makelaar via Cubi, gebruik Cubi Connect, of stuur een verzoek per e-mail.")
+    assert Agent._in_turn_language(me, dutch) == ("You can reach …", 1) and asked == ["English"]
+    english = "You can contact the agent for the Colmenar home through Cubi's consented flow: questions via Cubi, Cubi Connect, or an email request."
+    assert Agent._in_turn_language(me, english) == (english, 0)
+    assert Agent._in_turn_language(me, "Asking prices: #1 €695,000, #2 €499,950.") == ("Asking prices: #1 €695,000, #2 €499,950.", 0)
+    assert len(asked) == 1
+
+
 def test_a_failed_translation_keeps_the_answer(monkeypatch):
     monkeypatch.setattr(pivot, "back", lambda *a, **k: None)
     english = "We compared apartments in Lisbon and Porto, and 15% of the listings are within the budget."

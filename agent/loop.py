@@ -432,8 +432,10 @@ class Agent:
 
     def _in_turn_language(self, answer: str) -> tuple[str, int]:
         """An answer in English on a Dutch turn ("Wat koop je voor €400.000…", tester F21)
-        is translated, despite the [Answer in Dutch.] note: the model slips now and then."""
-        if self.lang == "en" or not answer.strip() or langmod.detect(answer, default=self.lang) != "en":
+        is translated, despite the [Answer in Dutch.] note: the model slips now and then.
+        The other way round too: an English question after a Dutch turn was answered in
+        Dutch (live 2026-10-30, the contact question after the schools comparison)."""
+        if not answer.strip() or langmod.detect(answer, default=self.lang) == self.lang:
             return answer, 0
         out = pivot.back(self.cli, LANG_NAMES[self.lang], answer, [], self.lang)
         return (out[0], 1) if out else (answer, 0)
