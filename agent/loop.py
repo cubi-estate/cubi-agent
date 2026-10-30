@@ -80,7 +80,7 @@ ROOM_WISH = re.compile(r"(?<![\d.])(?<!\d )\brooms?\b|flat ?share|house ?share|s
                        r"\bkamers? (in|te)\b|\bstanza (in|singola|doppia)\b", re.I)
 NO_PRICE_WISH = re.compile(r"no (published )?price|price on request|without (a )?price|unpriced|sem pre[cç]o|"
                            r"sin precio|sans prix|non chiffr|ohne preis|zonder prijs", re.I)
-_CITY_NAMED = re.compile(r"\b(?:in|em|en|à|a|nach|te)\s+([^\s,?.!][^,?.!]*?)\s*[?.!]*$", re.I)
+_CITY_NAMED = re.compile(r".*\b(?:in|em|en|à|a|nach|te)\s+([^\s,?.!][^,?.!]*?)\s*[?.!]*$", re.I)
 
 
 def city_named(message: str) -> str:
