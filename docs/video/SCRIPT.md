@@ -202,7 +202,7 @@ Oct 30 12:08 UTC as build 141ff32, and re-run there: turns 2–4 in 5.1 s, 2.5 s
    "no agent phone or email is shared directly". The callback and meeting kinds stay
    off on PROD. Tested three times live on build 141ff32; one earlier run with the
    wording "the Colmenar one" had the link scrubbed by the URL guard, so use "home".
-   Cut on the answer, before the chips: until build 22c0a9c or later is live, the
+   Cut on the answer, before the chips: until build 846d401 or later is live, the
    first chip after this turn read "homes like #1 in Amsterdam" for a Málaga villa
    published by a Dutch portal (fixed in agent/suggest.py).
 
