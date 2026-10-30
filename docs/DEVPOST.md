@@ -1,17 +1,19 @@
 ## Inspiration
 
-Moving to another country means two languages, five property portals and a dozen questions no portal answers: is this price fair, what are the schools like, what does my budget buy in one city versus the next, how do I reach the agent without handing my phone number to a form. Cubi Estate already indexes 2.3M+ active listings across 20 European countries and exposes them through a public, read-only MCP connector. We wanted one conversation over all of it, in the buyer's own language, on open models.
+Moving to another country means two languages, five property portals and a dozen questions no portal answers: is this price fair, what are the schools like, what does my budget buy in one city versus the next, how do I reach the agent without handing my phone number to a form. Cubi Estate already indexes 2.3M+ active listings across 20 European countries and exposes them through a public, read-only MCP connector. We wanted one conversation over all of it, in the buyer's own language, on open models. Our demo opens on a smaller version of the same question: a weekend house in the mountains, by a lake, in whichever country fits.
 
 ## What it does
 
 **Cubi Agent** is a web chat at https://www.cubi.estate/agent (no account needed, free until the end of judging).
 
-- **Ask in any language.** Six languages natively (EN, PT, ES, FR, DE, NL); any other is pivoted through English and back, including the live action log. Nemotron turns "Wohnung in Porto bis 400.000 Euro, mindestens 2 Schlafzimmer" into a structured filter, code checks it, and the agent searches each city separately.
-- **Or pick pictures, not words.** A five-step wizard (a feeling, a country or all of Europe, a kind of home, a plan and budget, what matters) ends in one plain sentence and a brief that says what filters, what only ranks, and what is still open.
-- **Then ask about one home.** Is #2 priced in line with similar homes? How do I contact the agent? Has its price dropped, and what's new in the area (Cubi's price log, Tavily housing news, posts on X)?
-- **Compare places with real data.** Schools and transport in Porto vs Valencia, each point linked to its web source. What €400k buys in Lisbon vs Porto, as the share of Cubi's priced listings within the budget, drawn as bars; raise the budget and the bars move from the old marks.
-- **Compare homes feature by feature.** The top home in each city, or a home and up to three *homes like it* picked by Cubi's similarity model (a 50-dimension PCA embedding of each listing's catalogued features, nearest neighbours, then a ranker on stated features, size, place and asking price). "Not stated" is shown as such, never as "no".
-- **Tap a card** and the home opens in full: Nemotron's brief in your language, what to check before deciding, Cubi's environment and walking-time data, a map from OpenStreetMap, and every question you can ask about that home as a button in the chat.
+- **Pick pictures, not words.** A five-step wizard (a feeling, a country or all of Europe, a kind of home, rent or buy and a budget, what matters) ends in one plain sentence and a brief that says what filters, what only ranks, and what is still open.
+- **Then narrow it in your own language.** Six languages natively (EN, PT, ES, FR, DE, NL); any other is pivoted through English and back. "Vamos limitar a pesquisa à Lombardia" keeps the search to rent; "What if I buy instead?" switches it, and the agent keeps that choice across the following turns. Nemotron turns the words into a structured filter, code checks it, and each place is searched separately.
+- **Check the price.** Is this home priced in line with comparable homes in its city? The interquartile range of asking prices and how many homes it rests on; with too few, it says there is no range, never a verdict.
+- **Find homes like it, there or abroad.** Cubi's similarity model (a 50-dimension embedding of each listing's catalogued features, nearest neighbours, then a ranker on stated features, size and place) matches on features and surroundings, never on price; the agent lays the asking prices side by side, in Málaga or in Lisbon, feature by feature, with "not stated" shown as such, never as "no".
+- **Open a home.** Tap a card: Nemotron's brief in your language, what to check before deciding, Cubi's environment and walking-time data, homes like this one, a map from OpenStreetMap with what's nearby, and every question you can ask about that home as a button in the chat.
+- **Ask about the place.** Schools and transport in two cities, each point linked to its web source; what's new in a town from Cubi's price log, Tavily housing news and recent posts on X.
+- **Compare places with real data.** What €400k buys in Lisbon vs Porto, as the share of Cubi's priced listings within the budget, drawn as bars; raise the budget and the bars move from the old marks.
+- **Reach the agent** only through Cubi's consented flow: questions via Cubi, Cubi Connect or an email request; no phone number or email on screen.
 
 ## How we built it
 
