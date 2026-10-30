@@ -1521,6 +1521,8 @@ class Agent:
                                       [str(c.get("id")) for c in self.shown], replies=self.replies)
         report["citations_linked"] = cited
         answer, report["language_fixed"] = self._in_turn_language(answer)
+        if "get_contact_options" in used and answer.strip():
+            answer = guards.ensure_contact_link(answer, tool_text, self.lang)
         if self.cards and normalize.investment(text) and answer.strip():
             answer = answer.rstrip() + "\n\n" + normalize.LICENCE_NOTE.get(self.lang, normalize.LICENCE_NOTE["en"])
             report["licence_note"] = True

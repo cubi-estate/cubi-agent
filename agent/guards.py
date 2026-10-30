@@ -571,3 +571,20 @@ def apply(answer: str, tool_text: str, lang: str, used_tools: set[str],
                     "absence_wording_fixed": absence, "source_filler_dropped": filler,
                     "all_have_claims_dropped": wishes, "over_budget_dropped": over, "reasoning_stripped": reasoning, "ids_scrubbed": ids,
                     "band_stated": band_added, "dates_fixed": dates, "tool_names_scrubbed": tools, "listed_homes_dropped": listed, **rg_report}
+
+
+CONTACT_LINK = {"en": "To start, open (sign-in required): {url}", "pt": "Para começar, abra (é preciso iniciar sessão): {url}",
+                "es": "Para empezar, abre (requiere iniciar sesión): {url}", "fr": "Pour commencer, ouvrez (connexion requise) : {url}",
+                "de": "Zum Starten öffnen (Anmeldung erforderlich): {url}", "nl": "Open om te beginnen (inloggen vereist): {url}"}
+_CONTACT_URL = re.compile(r"https://www\.cubi\.estate/chat\?listing_id=[^\s)\]]+&intent=contact")
+
+
+def ensure_contact_link(answer: str, tool_text: str, lang: str = "en") -> str:
+    """The contact options' sign-in link, from the tool output, when the answer lost
+    it: the model writes the URL with ":" for "%3A" now and then, and verify_urls
+    removes it (live 2026-10-30, the ending of the second recording). Appended
+    in code, verbatim from the tool, so the ending always has its link."""
+    m = _CONTACT_URL.search(tool_text or "")
+    if not m or m.group(0) in answer:
+        return answer
+    return answer.rstrip() + "\n\n" + CONTACT_LINK.get(lang, CONTACT_LINK["en"]).format(url=m.group(0))

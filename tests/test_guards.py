@@ -155,3 +155,15 @@ def test_tool_names_are_scrubbed():
     out, n = guards.scrub_tool_names("The filter_listings call returned six homes.")
     assert out == "Cubi's search call returned six homes." and n == 1
     assert guards.scrub_tool_names("Six homes in Porto.") == ("Six homes in Porto.", 0)
+
+
+def test_the_contact_link_is_appended_from_the_tool_when_the_answer_lost_it():
+    """Live 2026-10-30: the ending's link was scrubbed (the model wrote ":" for "%3A")."""
+    tool = "How to reach the agent\n- Chat: https://www.cubi.estate/chat?listing_id=a_es%3AAP1&intent=contact (sign-in)\n"
+    lost = "You can reach the agent in three ways:\n1. Questions via Cubi\n2. Cubi Connect\n3. Email request\n\nSomething that did not come from Cubi's results was removed."
+    out = guards.ensure_contact_link(lost, tool, "en")
+    assert out.endswith("To start, open (sign-in required): https://www.cubi.estate/chat?listing_id=a_es%3AAP1&intent=contact")
+    kept = "Open https://www.cubi.estate/chat?listing_id=a_es%3AAP1&intent=contact and sign in."
+    assert guards.ensure_contact_link(kept, tool, "en") == kept
+    assert guards.ensure_contact_link(lost, "no link here", "en") == lost
+    assert guards.ensure_contact_link(lost, tool, "pt").endswith("iniciar sessão): https://www.cubi.estate/chat?listing_id=a_es%3AAP1&intent=contact")
