@@ -167,8 +167,9 @@ skill files, and that shows they're portable. Only add it if the cut stays under
 
 The owner's story: a weekend house in the mountains by a lake, rented first on the
 whole corpus, then narrowed by region, then the same regions for buying. Tested as
-one session on the patched build (commit 92725ed; the live endpoint needs a restart
-on it first — on the published build turn 2 silently switches to homes for sale).
+one session on the patched build (commit 92725ed), live on the endpoint since
+Oct 30 12:08 UTC as build 141ff32, and re-run there: turns 2–4 in 5.1 s, 2.5 s and
+3.6 s. On the earlier build turn 2 silently switched to homes for sale.
 
 1. `Houses to rent with a fireplace, in the mountains and near a lake, anywhere in
    Europe, ideally with a garden and a mountain view` — free-text, Europe-wide, "over
@@ -181,8 +182,10 @@ on it first — on the published build turn 2 silently switches to homes for sal
    this turn: it goes free-text, the location becomes "Lombardy, near a lake" and the
    cards come back for sale.
 3. `And the same in Andalusia?` — to rent, 4 houses (Mijas, Marbella) in 5–10 s.
-4. `What if I buy instead? Show me homes for sale on Lake Como` — for sale, six Como
-   villas €440k–€2.8M (Appiano Gentile, Torno, Carate Urio, Bellagio) in 4 s.
+4. `What if I buy instead? Show me homes for sale with a fireplace on Lake Como` — for
+   sale, six Como villas €440k–€2.8M (Appiano Gentile, Torno, Carate Urio, Bellagio) in
+   4 s. Say "with a fireplace" again: a move to a new place starts fresh, and in one
+   live run the fireplace was dropped from this turn.
    "Lake Como" is a place Cubi knows; "Lake Garda" and "Lake Maggiore" are not.
 5. `And the same in Andalusia?` — for sale, six in 9–13 s; #1 is a cortijo in Colmenar
    by Lake Viñuela, #2 a €39,500 house in Jaén.
