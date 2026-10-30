@@ -216,13 +216,14 @@ browser run with Cubi's cache warm.
 
 ### Voice-over · second recording (for voice generation)
 
-Read each line over its scene; about 420 words, 2:45 at a calm pace. Cards from
-`docs/video/slides.html` (card 1 first, cards 3 and 4 at the end).
+Read each line over its scene; about 435 words, 2:50 at a calm pace. Cards from
+`docs/video/slides.html` (cards 1 and 2 first, cards 3 and 4 at the end).
 
 | Scene | Line |
 |---|---|
 | Card 1 (4 s) | A weekend house in the mountains, by a lake. Which country? Let's not decide yet. |
-| 1 · wizard | No typing to start with. Pick a feeling: mountains, a lake. All of Europe. A house, to rent. A fireplace as a must, a garden and a view as wishes. The brief under the pictures says what filters and what only ranks, and the search is one plain sentence over two point three million listings. |
+| Card 2 (5 s) | Cubi Agent: one conversation over two point three million European listings, on NVIDIA Nemotron and Nebius. |
+| 1 · wizard | No typing to start with. Pick a feeling: mountains, a lake. All of Europe. A house, to rent. A fireplace as a must, a garden and a view as wishes. The brief under the pictures says what filters and what only ranks, and the search is one plain sentence over every country on Cubi. |
 | 2 · Portuguese | Narrow it in Portuguese: Lombardy. The agent keeps "to rent": a first place after a Europe-wide search narrows it, it doesn't start over. |
 | 3 · Spanish | The same in Andalusia, in Spanish. Four houses, two seconds. |
 | 4 · Lake Como | What if I buy instead? Lake Como, with a fireplace: six villas, from four hundred and forty thousand. |
