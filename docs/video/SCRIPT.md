@@ -163,6 +163,36 @@ day.
 Run the same German query in Claude with the Cubi Estate plugin. It uses the same
 skill files, and that shows they're portable. Only add it if the cut stays under 3:00.
 
+## Second recording · rent first, then buy (candidate, tested Oct 30, 12:20 UTC)
+
+The owner's story: a weekend house in the mountains by a lake, rented first on the
+whole corpus, then narrowed by region, then the same regions for buying. Tested as
+one session on the patched build (commit 92725ed; the live endpoint needs a restart
+on it first — on the published build turn 2 silently switches to homes for sale).
+
+1. `Houses to rent with a fireplace, in the mountains and near a lake, anywhere in
+   Europe, ideally with a garden and a mountain view` — free-text, Europe-wide, "over
+   1,000", six cards in 3–13 s. The chips are honest (to rent · house · fireplace ·
+   anywhere in Europe); the cards are not mountain-lake homes (Sofia, Attica, Warsaw,
+   Lefkada), and Nemotron's sentence restates the request. Cut away as soon as the
+   cards land; the point of the scene is the next turn.
+2. `Let's narrow it to Lombardy` — to rent, structured, 4 villas in 13 s; the answer
+   itself names Lake Garda (#3) and Lake Segrino (#4). Do not write "near a lake" in
+   this turn: it goes free-text, the location becomes "Lombardy, near a lake" and the
+   cards come back for sale.
+3. `And the same in Andalusia?` — to rent, 4 houses (Mijas, Marbella) in 5–10 s.
+4. `What if I buy instead? Show me homes for sale on Lake Como` — for sale, six Como
+   villas €440k–€2.8M (Appiano Gentile, Torno, Carate Urio, Bellagio) in 4 s.
+   "Lake Como" is a place Cubi knows; "Lake Garda" and "Lake Maggiore" are not.
+5. `And the same in Andalusia?` — for sale, six in 9–13 s; #1 is a cortijo in Colmenar
+   by Lake Viñuela, #2 a €39,500 house in Jaén.
+6. `Compare #1 and #2 feature by feature` — 1.7 s, asking prices side by side, "doesn't
+   say" where the listing is silent.
+7. `Show me homes like #1 in Málaga` — 2 matches on features and surroundings, never on
+   price (€4.2M and €8.8M against €1.19M), 7 s.
+8. Contact: `How do I contact the agent for #1?` — the three consented options; the
+   callback and meeting kinds stay off on PROD (owner's decision, see the hub).
+
 ## Messages to paste
 
 ```
