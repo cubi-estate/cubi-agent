@@ -163,51 +163,57 @@ day.
 Run the same German query in Claude with the Cubi Estate plugin. It uses the same
 skill files, and that shows they're portable. Only add it if the cut stays under 3:00.
 
-## Second recording · rent first, then buy (candidate, tested Oct 30, 12:20 UTC)
+## Second recording · rent first, then buy (owner's flow, smoke-tested in Chrome Oct 30, 13:05 UTC)
 
-The owner's story: a weekend house in the mountains by a lake, rented first on the
-whole corpus, then narrowed by region, then the same regions for buying. Tested as
-one session on the patched build (commit 92725ed), live on the endpoint since
-Oct 30 12:08 UTC (build 141ff32; 235f751 since 12:27 UTC adds the two fixes below), and
-re-run there: turns 2–5 in 2–5 s each once Cubi's cache is warm. On the earlier build turn 2 silently switched to homes for sale.
+A weekend house in the mountains by a lake: rented first on the whole corpus, then
+narrowed by region, then the same regions for buying, with a few language switches,
+the schools-and-transport comparison, the asking-price check, the X news turn, the
+listing pane, and the contact options in English at the end. Live build 1d9d66c.
+Times are what the API and the browser showed with Cubi's cache warm.
 
-1. `Houses to rent with a fireplace, in the mountains and near a lake, anywhere in
-   Europe, ideally with a garden and a mountain view` — free-text, Europe-wide, "over
-   1,000", six cards in 3–13 s. The chips are honest (to rent · house · fireplace ·
-   anywhere in Europe); the cards are not mountain-lake homes (Sofia, Attica, Warsaw,
-   Lefkada), and Nemotron's sentence restates the request. Cut away as soon as the
-   cards land; the point of the scene is the next turn.
-2. `Let's narrow it to Lombardy` — to rent, structured, 4 villas in 13 s; the answer
-   itself names Lake Garda (#3) and Lake Segrino (#4). Do not write "near a lake" in
-   this turn: it goes free-text, the location becomes "Lombardy, near a lake" and the
-   cards come back for sale.
-3. `And the same in Andalusia?` — to rent, 4 houses (Mijas, Marbella) in 5–10 s.
-4. `What if I buy instead? Show me homes for sale with a fireplace on Lake Como` — for
-   sale, six Como villas €440k–€2.8M (Appiano Gentile, Torno, Carate Urio, Bellagio) in
-   4 s. Say "with a fireplace" again: a move to a new place starts fresh, and in one
-   live run the fireplace was dropped from this turn.
-   "Lake Como" is a place Cubi knows; "Lake Garda" and "Lake Maggiore" are not.
-5. `And the same in Andalusia?` — for sale, six in 9–13 s; #1 is a cortijo in Colmenar
-   by Lake Viñuela, #2 a €39,500 house in Jaén.
-6. `Compare #1 and #2 feature by feature` — 1.7 s, asking prices side by side, "doesn't
-   say" where the listing is silent.
-7. `Show me homes like #4 in Málaga` — #4 being the Colmenar villa; check the number on
-   screen first, Cubi's card order in Andalusia changed once between two runs twenty
-   minutes apart (Colmenar was #1, then #4 in every run since 12:10 UTC). 2 matches on
-   features and surroundings, never on price (€4.2M and €8.8M against €1.19M), 3 s,
-   three live runs out of three on build 235f751. The wording "homes like the Colmenar
-   one in Málaga" also works but one run in three Nemotron answers "which city?" without
-   calling the tool. Granada and Seville have no match; if #1 is the Málaga villa itself
-   the agent asks for another city.
-8. **The ending (owner's decision, Oct 30):** `How do I contact the agent for the
-   Colmenar home?` — 2.7 s: the three consented options (questions through Cubi,
-   Cubi Connect, an email request), one sign-in link to the Cubi chat for that home,
-   "no agent phone or email is shared directly". The callback and meeting kinds stay
-   off on PROD. Tested three times live on build 141ff32; one earlier run with the
-   wording "the Colmenar one" had the link scrubbed by the URL guard, so use "home".
-   The chips after it read "homes like #1 in Madrid", the price-drop question and the
-   price check (build 235f751, live since 12:27 UTC; before 846d401 the first chip said
-   "in Amsterdam" for a Málaga villa published by a Dutch portal).
+1. **EN** `Houses to rent with a fireplace, in the mountains and near a lake, anywhere in
+   Europe, ideally with a garden and a mountain view` — 3 s, "over 1,000", six cards.
+   They are not mountain-lake homes (Sofia, Attica, Warsaw, Lefkada) and the sentence
+   restates the request; cut away as the cards land.
+2. **PT** `Vamos limitar a pesquisa à Lombardia, por favor` — to rent is kept, 4 villas,
+   the answer names Lake Garda and Lake Segrino, 2–5 s. Not the short "Vamos restringir
+   à Lombardia": that is read as French.
+3. **ES** `¿Y lo mismo en Andalucía?` — to rent, 4 houses (Mijas, Marbella), 2 s.
+4. **IT** `E se invece comprassi? Mostrami case in vendita con camino sul Lago di Como`
+   — for sale, six Como villas €440k–€2.8M, 2–6 s. "Lago di Como" resolves to Lake Como;
+   Garda and Maggiore do not.
+5. **EN** `Is #1's price in line with similar homes?` — the Appiano Gentile villa: €630k
+   inside the €590k–€845k interquartile range of 8 comparables, 2–3 s. (The Andalusia
+   cards have no range: Málaga's 20 comparables spread too wide, the others too few.)
+6. **EN** `And the same in Andalusia?` — for sale, six, Colmenar is #4, 2–13 s.
+7. **NL** `Vergelijk scholen en openbaar vervoer in Málaga en Como` — Tavily, 10–11
+   numbered sources, 5–8 s.
+8. **EN** `Has #4's price dropped, and what's new in Andalusia?` — the X turn: Cubi's
+   price log, Tavily housing news and recent posts on X (last 7 days) with [S] and [X]
+   links, 10 s.
+9. **Tap card #4** — the pane: brief, highlights, check-before-deciding, area data,
+   homes like this one, map, the description collapsed to five lines with "Show more",
+   features; the chat line and six chips. Press "Compare #4 with its similar homes
+   feature by feature" if the matches are worth it (see the trap below).
+10. **EN** `Show me homes like #4 in Málaga` — 2 matches, never on price, 3 s.
+11. **EN, the ending** `How do I contact the agent for the Colmenar home?` — the three
+    consented options, the sign-in link, "no phone or email is shared", 3 s.
+
+Traps found in the Chrome run and what was done:
+- An English question right after a Dutch turn was answered in Dutch (the model
+  followed the context). Fixed in f739356: an answer whose language differs from the
+  turn's is translated back, both ways. Verified in Chrome on 1d9d66c.
+- The pane's brief came in English on a Dutch turn (labels in Dutch, "In short" and
+  the lists in English): Nano slips on the brief's language. Open; the recording's
+  pane turn is English, so it does not show.
+- Colmenar's similar homes were the town's €160k and €170k houses against a €1.19M
+  villa: Cubi's structural branch found nothing within ±40% on price and area and fell
+  back to the closest available. Owner's decision: fixed upstream in cleverdragon
+  (4932e51a, fallback off by default), on STAGE now, PROD with the nightly release —
+  after the deadline. Until then skip the compare-with-similar-homes chip on this seed,
+  or tap a Lake Como card instead.
+- "Map not available right now" on the Colmenar seed: no coordinates on that listing.
+- The description is now collapsed (1d9d66c); the wizard page and the chat are unchanged.
 
 ## Messages to paste
 
