@@ -163,6 +163,37 @@ day.
 Run the same German query in Claude with the Cubi Estate plugin. It uses the same
 skill files, and that shows they're portable. Only add it if the cut stays under 3:00.
 
+## After submission · the model switch (Oct 30, 15:36 UTC)
+
+Hours after the submission, Token Factory announced the retirement of both models the
+recording ran on — Nemotron 3 Super (tool loop, extraction, pivot, step translations)
+and Nemotron 3 Nano (the pane's briefs) — on **Nov 9, 2026**, a month before judging
+(Dec 9–23). The live demo moved to **Nemotron 3.5 Lightning** for both roles the same
+day (agent 8bd717d, live 15:36 UTC; cff0449 from 15:54 UTC adds connector timeouts),
+the owner's go at 15:05. The video is unchanged: it was recorded on Super at 13:36–
+13:43 UTC and shows the same turns. What a viewer who tries the flow sees differently
+on Lightning:
+
+- Every turn is faster: 1.2–3.5 s where Super took 2–13 s; held-out extraction
+  148/148 at a median 0.52 s.
+- The first (Europe-wide) answer is more honest — Lightning says none of the six cards
+  states "near a lake"; Super restated the request.
+- Answers are plain prose of 45–90 words. The area and news answers keep some bold,
+  which the page renders.
+- Three agent rules came with the switch and hold for either model: "anywhere in
+  Europe" is no place (Lightning wrote location "Europe", which turned the Portuguese
+  narrowing into a move and dropped "to rent"); a type the user did not name goes
+  ("Houses" came back as house, villa, farmhouse); a lake the user wrote is the place
+  ("on Lake Como" had become Lombardia).
+- The 47 s price check seen once in the Chrome smoke test was a dead kept-alive
+  connection to Cubi's connector, not the model: the client now fails a stalled
+  connect in 5 s and retries once (cff0449).
+
+The recording's thirteen turns were re-run in Chrome on Lightning at 15:38–15:50 UTC,
+all as scripted. The demo is checked twice an hour since 16:00 UTC (see the hub).
+Rollback until Nov 9: `MODEL_SUPER` / `MODEL_NANO` on the endpoint select the retired
+ids; after Nov 9, Nemotron 3 Ultra (36/36 on the held-out set, 1.37 s) is the fallback.
+
 ## Second recording · rent first, then buy (owner's flow, run end to end in Chrome Oct 30, 13:20 UTC)
 
 A weekend house in the mountains by a lake: picked from pictures, rented first on the
