@@ -179,7 +179,7 @@ main { flex: 1; width: 100%; max-width: 860px; margin: 0 auto; padding: 16px 16p
 }
 .composer {
   display: flex; gap: 8px; align-items: flex-end;
-  width: 100%; max-width: 860px; margin: 0 auto; padding: 10px 16px 6px;
+  width: 100%; max-width: 860px; margin: 0 auto; padding: 10px 16px 6px; position: relative;
 }
 textarea {
   flex: 1; resize: none; font: inherit; color: var(--ink); background: var(--panel);
@@ -326,3 +326,9 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .dpin.home { font-size: 26px; line-height: 30px; }
 .leaflet-container { font: inherit; }
 .card .copies { font-size: 12.5px; color: var(--warn); }
+
+/* the down arrow: shown while the end of the conversation is out of view */
+.jump { position: absolute; right: 16px; top: -40px; width: 38px; height: 38px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--accent); display: grid; place-items: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+.jump[hidden] { display: none; }
+.jump:hover { border-color: var(--accent); }

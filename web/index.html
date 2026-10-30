@@ -38,6 +38,9 @@
 
   <div class="dock">
     <form id="form" class="composer" autocomplete="off">
+      <button id="jump" type="button" class="jump" aria-label="Scroll to the latest reply" hidden>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 4v13m0 0-6-6m6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
       <label for="input" class="sr">Message</label>
       <textarea id="input" rows="1" maxlength="500" placeholder="Ask in any language…" required></textarea>
       <button id="send" type="submit" aria-label="Send">

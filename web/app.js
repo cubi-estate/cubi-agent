@@ -584,6 +584,18 @@ function suggestions(box, list, all = false) {
 }
 
 function scrollDown() { window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }
+// A reply no longer scrolls the page (owner, 2026-10-30): the reader stays where they are
+// and a down arrow appears while the end of the conversation is out of view.
+const jump = document.getElementById("jump");
+function jumpCheck() {
+  const away = document.body.scrollHeight - window.scrollY - window.innerHeight;
+  jump.hidden = away < 80;
+}
+window.addEventListener("scroll", jumpCheck, { passive: true });
+window.addEventListener("resize", jumpCheck);
+new MutationObserver(jumpCheck).observe(document.getElementById("log"), { childList: true, subtree: true });
+jump.addEventListener("click", scrollDown);
+function noteNew() { jumpCheck(); }
 
 // A redeploy takes the endpoint away for a few minutes (the public link answers 404
 // "No tunnel") and the restart forgets every chat (tester F6, F19). The page waits
@@ -686,7 +698,7 @@ async function ask(text) {
           suggestions(fups, ev.suggestions || []);
           label.textContent = t.steps(nSteps, ev.latency_s ?? ((performance.now() - t0) / 1000).toFixed(1));
         }
-        scrollDown();
+        noteNew();
       }
     }
     if (!gotAnswer && bot.hidden) fail("No answer came back. Try again in a moment.");
@@ -697,7 +709,7 @@ async function ask(text) {
     if (gotAnswer) steps.open = false;
     if (!gotAnswer && label.textContent === "Working…") label.textContent = "Stopped";
     busy = false; send.disabled = false; input.focus();
-    scrollDown();
+    noteNew();
   }
 }
 
