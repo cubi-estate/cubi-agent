@@ -219,25 +219,25 @@ browser run with Cubi's cache warm.
 Read each line over its scene; about 435 words, 2:50 at a calm pace. Cards from
 `docs/video/slides.html` (cards 1 and 2 first, cards 3 and 4 at the end).
 
-| Scene | Line |
-|---|---|
-| Card 1 (4 s) | A weekend house in the mountains, by a lake. Which country? Let's not decide yet. |
-| Card 2 (5 s) | Cubi Agent: one conversation over two point three million European listings, on NVIDIA Nemotron and Nebius. |
-| 1 · wizard | No typing to start with. Pick a feeling: mountains, a lake. All of Europe. A house, to rent. A fireplace as a must, a garden and a view as wishes. The brief under the pictures says what filters and what only ranks, and the search is one plain sentence over every country on Cubi. |
-| 2 · Portuguese | Narrow it in Portuguese: Lombardy. The agent keeps "to rent": a first place after a Europe-wide search narrows it, it doesn't start over. |
-| 3 · Spanish | The same in Andalusia, in Spanish. Four houses, two seconds. |
-| 4 · Lake Como | What if I buy instead? Lake Como, with a fireplace: six villas, from four hundred and forty thousand. |
-| 5 · price check | Is the first one priced in line? Six hundred and thirty thousand sits inside the middle half of eight comparable homes. Asking prices, never a valuation. |
-| 6 · Andalusia | And the same, for sale, in Andalusia. |
-| 7 · Málaga | Homes like the Colmenar cortijo, in Málaga. Cubi's similarity model matches on features, size and surroundings, never on price, and the table puts the asking prices side by side, with drive times and climate underneath. |
-| 8 · the pane | Tap a card and the home opens in full: Nemotron's brief, what to check before deciding, Cubi's area data, three homes like it within five percent on price, and a map from OpenStreetMap with what's nearby. The description stays folded until you ask. |
-| 9 · its price | This one's price: four point two million, inside the range of sixteen comparable homes in Málaga. |
-| 10 · schools | Schools and public transport, Málaga against Lisbon. The agent searches the web with Tavily, one search per city and topic, and every point carries a numbered source, linked in code. |
-| 11 · X | Has the price dropped, and what's new in Málaga? Cubi's price log, the housing news with its sources, and what people post on X, shown as published, not checked by Cubi. |
-| 12 · Lisbon | The same home in another country: two houses in Lisbon with the same bedrooms and size, at six and a half million each. |
-| 13 · contact | And to reach the agent: only through Cubi's consented flow. Questions via Cubi, Cubi Connect, or an email request. No phone number, no email on screen. |
-| Card 3 (5 s) | Thirty-six unseen requests in six languages: every field right. Four times faster than Cubi's own search, on a tenth of the quota. |
-| Card 4 (5 s) | Try it at cubi.estate/agent, no account needed. Agent, evals and feedback: open source. |
+| Scene | You type or do | Voice-over |
+|---|---|---|
+| Card 1 (4 s) | title card 1 | A weekend house in the mountains, by a lake. Which country? Let's not decide yet. |
+| Card 2 (5 s) | title card 2 | Cubi Agent: one conversation over two point three million European listings, on NVIDIA Nemotron and Nebius. |
+| 1 · wizard | Mountains & forests + Near a lake → Anywhere in Europe → House → Rent → Fireplace ×2, Garden & privacy, Mountain view → Search | No typing to start with. Pick a feeling: mountains, a lake. All of Europe. A house, to rent. A fireplace as a must, a garden and a view as wishes. The brief under the pictures says what filters and what only ranks, and the search is one plain sentence over every country on Cubi. |
+| 2 · Portuguese | `Vamos limitar a pesquisa à Lombardia, por favor` | Narrow it in Portuguese: Lombardy. The agent keeps "to rent": a first place after a Europe-wide search narrows it, it doesn't start over. |
+| 3 · Spanish | `¿Y lo mismo en Andalucía?` | The same in Andalusia, in Spanish. Four houses, two seconds. |
+| 4 · Lake Como | `What if I buy instead? Show me homes for sale with a fireplace on Lake Como` | What if I buy instead? Lake Como, with a fireplace: six villas, from four hundred and forty thousand. |
+| 5 · price check | `Is #1's price in line with similar homes?` | Is the first one priced in line? Six hundred and thirty thousand sits inside the middle half of eight comparable homes. Asking prices, never a valuation. |
+| 6 · Andalusia | `And the same in Andalusia?` | And the same, for sale, in Andalusia. |
+| 7 · Málaga | `Show me homes like #4 in Málaga` | Homes like the Colmenar cortijo, in Málaga. Cubi's similarity model matches on features, size and surroundings, never on price, and the table puts the asking prices side by side, with drive times and climate underneath. |
+| 8 · the pane | tap card #1 (the €4.2M Málaga villa), scroll the pane to the map | Tap a card and the home opens in full: Nemotron's brief, what to check before deciding, Cubi's area data, three homes like it within five percent on price, and a map from OpenStreetMap with what's nearby. The description stays folded until you ask. |
+| 9 · its price | `Is #1's price in line with similar homes?` | This one's price: four point two million, inside the range of sixteen comparable homes in Málaga. |
+| 10 · schools | `Compare schools and public transport in Málaga and Lisbon` | Schools and public transport, Málaga against Lisbon. The agent searches the web with Tavily, one search per city and topic, and every point carries a numbered source, linked in code. |
+| 11 · X | `Has #1's price dropped, and what's new in Málaga?` | Has the price dropped, and what's new in Málaga? Cubi's price log, the housing news with its sources, and what people post on X, shown as published, not checked by Cubi. |
+| 12 · Lisbon | `Show me homes like #1 in Lisboa` | The same home in another country: two houses in Lisbon with the same bedrooms and size, at six and a half million each. |
+| 13 · contact | `How do I contact the agent for the Málaga villa I opened?` | And to reach the agent: only through Cubi's consented flow. Questions via Cubi, Cubi Connect, or an email request. No phone number, no email on screen. |
+| Card 3 (5 s) | title card 3 | Thirty-six unseen requests in six languages: every field right. Four times faster than Cubi's own search, on a tenth of the quota. |
+| Card 4 (5 s) | title card 4 | Try it at cubi.estate/agent, no account needed. Agent, evals and feedback: open source. |
 
 Findings from the runs, and what was done:
 - An English question right after a Dutch turn was answered in Dutch: fixed, both ways
