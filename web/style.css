@@ -312,6 +312,8 @@ textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 #detail .dsimhead span { color: var(--muted); }
 #detail .dsimwhy { color: var(--muted); font-size: 12.5px; }
 #detail .ddesc { font-size: 14px; white-space: pre-line; overflow-wrap: anywhere; margin: 0; }
+#detail .ddesc.clamp { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+#detail .dmore { margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
 #detail .dfeat { margin-top: 14px; font-size: 13.5px; }
 #detail .dfeat summary { cursor: pointer; font-weight: 600; }
 #detail .dsec { margin: 8px 0; }
