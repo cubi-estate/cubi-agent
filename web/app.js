@@ -589,7 +589,7 @@ function scrollDown() { window.scrollTo({ top: document.body.scrollHeight, behav
 const jump = document.getElementById("jump");
 function jumpCheck() {
   const away = document.body.scrollHeight - window.scrollY - window.innerHeight;
-  jump.hidden = away < 80;
+  jump.hidden = away < 80 || !document.querySelector("#log .turn");  // not on the start page
 }
 window.addEventListener("scroll", jumpCheck, { passive: true });
 window.addEventListener("resize", jumpCheck);

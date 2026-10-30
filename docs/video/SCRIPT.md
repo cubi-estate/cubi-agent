@@ -163,57 +163,68 @@ day.
 Run the same German query in Claude with the Cubi Estate plugin. It uses the same
 skill files, and that shows they're portable. Only add it if the cut stays under 3:00.
 
-## Second recording · rent first, then buy (owner's flow, smoke-tested in Chrome Oct 30, 13:05 UTC)
+## Second recording · rent first, then buy (owner's flow, run end to end in Chrome Oct 30, 13:20 UTC)
 
-A weekend house in the mountains by a lake: rented first on the whole corpus, then
-narrowed by region, then the same regions for buying, with a few language switches,
-the schools-and-transport comparison, the asking-price check, the X news turn, the
-listing pane, and the contact options in English at the end. Live build 1d9d66c.
-Times are what the API and the browser showed with Cubi's cache warm.
+A weekend house in the mountains by a lake: picked from pictures, rented first on the
+whole corpus, narrowed by region in Portuguese and Spanish, then everything in English:
+buying on Lake Como, the price check, Andalusia, the asking prices of homes like it in
+Málaga, the listing pane with the OpenStreetMap map, its price check and its twins in
+Lisbon, schools and transport, the X news turn, and the contact options. Live build
+9fcdf61 (a reply no longer scrolls the page; the down arrow does). Times from the
+browser run with Cubi's cache warm.
 
-1. **EN** `Houses to rent with a fireplace, in the mountains and near a lake, anywhere in
-   Europe, ideally with a garden and a mountain view` — 3 s, "over 1,000", six cards.
-   They are not mountain-lake homes (Sofia, Attica, Warsaw, Lefkada) and the sentence
-   restates the request; cut away as the cards land.
+1. **The wizard, not a typed line.** Feel: Mountains & forests + Near a lake → Country:
+   Anywhere in Europe → Type: House → Goal: Rent (no bedrooms, no budget) → Priorities:
+   Fireplace tapped twice (must), Garden & privacy once, Mountain view once → Search.
+   The sentence it builds is exactly "Houses to rent with a fireplace, in the mountains
+   and near a lake, anywhere in Europe, ideally with a garden and a mountain view";
+   six cards in 3–13 s (Sofia, Attica, Warsaw, Lefkada — not mountain-lake homes; cut
+   away as they land).
 2. **PT** `Vamos limitar a pesquisa à Lombardia, por favor` — to rent is kept, 4 villas,
-   the answer names Lake Garda and Lake Segrino, 2–5 s. Not the short "Vamos restringir
-   à Lombardia": that is read as French.
-3. **ES** `¿Y lo mismo en Andalucía?` — to rent, 4 houses (Mijas, Marbella), 2 s.
-4. **IT** `E se invece comprassi? Mostrami case in vendita con camino sul Lago di Como`
-   — for sale, six Como villas €440k–€2.8M, 2–6 s. "Lago di Como" resolves to Lake Como;
-   Garda and Maggiore do not.
-5. **EN** `Is #1's price in line with similar homes?` — the Appiano Gentile villa: €630k
-   inside the €590k–€845k interquartile range of 8 comparables, 2–3 s. (The Andalusia
-   cards have no range: Málaga's 20 comparables spread too wide, the others too few.)
-6. **EN** `And the same in Andalusia?` — for sale, six, Colmenar is #4, 2–13 s.
-7. **NL** `Vergelijk scholen en openbaar vervoer in Málaga en Como` — Tavily, 10–11
-   numbered sources, 5–8 s.
-8. **EN** `Has #4's price dropped, and what's new in Andalusia?` — the X turn: Cubi's
-   price log, Tavily housing news and recent posts on X (last 7 days) with [S] and [X]
-   links, 10 s.
-9. **Tap card #4** — the pane: brief, highlights, check-before-deciding, area data,
-   homes like this one, map, the description collapsed to five lines with "Show more",
-   features; the chat line and six chips. Press "Compare #4 with its similar homes
-   feature by feature" if the matches are worth it (see the trap below).
-10. **EN** `Show me homes like #4 in Málaga` — 2 matches, never on price, 3 s.
-11. **EN, the ending** `How do I contact the agent for the Colmenar home?` — the three
-    consented options, the sign-in link, "no phone or email is shared", 3 s.
+   Lake Garda and Lake Segrino named, 2 s. (Not the short "Vamos restringir à
+   Lombardia": it reads as French.)
+3. **ES** `¿Y lo mismo en Andalucía?` — to rent, 4 houses, 2 s. No more language switches
+   after this turn.
+4. `What if I buy instead? Show me homes for sale with a fireplace on Lake Como` — six
+   Como villas €440k–€2.8M, 2–4 s.
+5. `Is #1's price in line with similar homes?` — €630k inside €590k–€845k of 8
+   comparables, 2 s.
+6. `And the same in Andalusia?` — six for sale, Colmenar is #4, 2–13 s.
+7. `Show me homes like #4 in Málaga` — the asking-prices comparison: two Málaga villas
+   (€4.2M, €8.8M) against the €1.19M cortijo, matched on features and surroundings,
+   never on price; the table with drive times and climate, 3–7 s.
+8. **Tap card #1** (the €4.2M Málaga villa) — the pane: brief, highlights, area data,
+   three homes like it within 0–5% on price, the **OpenStreetMap map** with places
+   nearby, the description collapsed with Show more, features. Scroll the pane to the
+   map; leave it open.
+9. `Is #1's price in line with similar homes?` — this region: €4.2M inside
+   €3.82M–€4.86M of 16 comparables, 2–4 s.
+10. `Show me homes like #1 in Lisboa` — another country: two Lisbon houses at €6.5M,
+    same bedrooms and size, 5 s. (Como, Milano and Paris have none; Roma has two.)
+11. `Compare schools and public transport in Málaga and Lisbon` — Tavily, nine cited
+    sources, 5–7 s.
+12. `Has #1's price dropped, and what's new in Málaga?` — the X turn: price log, Tavily
+    news and recent posts on X about housing in Málaga, each linked, 7–10 s.
+13. **The ending** `How do I contact the agent for the Málaga villa I opened?` — the
+    three consented options and the sign-in link, 2–3 s. Say "the Málaga villa I
+    opened", not "#1": after turn 10 the cards are the Lisbon homes, so "#1" is a
+    Lisbon house, and Nemotron then writes the Málaga link from memory, which the URL
+    guard removes with a "something was removed" note (seen twice in Chrome; the tool's
+    own link is appended in code since 2c59e1f, but the note stays).
 
-Traps found in the Chrome run and what was done:
-- An English question right after a Dutch turn was answered in Dutch (the model
-  followed the context). Fixed in f739356: an answer whose language differs from the
-  turn's is translated back, both ways. Verified in Chrome on 1d9d66c.
-- The pane's brief came in English on a Dutch turn (labels in Dutch, "In short" and
-  the lists in English): Nano slips on the brief's language. Open; the recording's
-  pane turn is English, so it does not show.
-- Colmenar's similar homes were the town's €160k and €170k houses against a €1.19M
-  villa: Cubi's structural branch found nothing within ±40% on price and area and fell
-  back to the closest available. Owner's decision: fixed upstream in cleverdragon
-  (4932e51a, fallback off by default), on STAGE now, PROD with the nightly release —
-  after the deadline. Until then skip the compare-with-similar-homes chip on this seed,
-  or tap a Lake Como card instead.
-- "Map not available right now" on the Colmenar seed: no coordinates on that listing.
-- The description is now collapsed (1d9d66c); the wizard page and the chat are unchanged.
+Findings from the runs, and what was done:
+- An English question right after a Dutch turn was answered in Dutch: fixed, both ways
+  (f739356). The pane's brief came in English on a Dutch turn: open, not in this flow.
+- Colmenar's similar homes were the town's €160k houses: the structural branch's
+  unguarded fallback is off by default in cleverdragon 4932e51a (STAGE now, PROD with
+  the nightly release). Turn 8 opens the Málaga villa instead, whose matches are within
+  5% on price.
+- The description is collapsed (1d9d66c); the reply no longer scrolls the page and a
+  down arrow shows while the end is out of view (9fcdf61), checked in Chrome.
+- The Colmenar listing has no coordinates ("Map not available"); the Málaga villa has
+  the map, that is why the pane is opened on it.
+- X posts for Andalusia once included an unrelated political post; for Málaga they were
+  about housing (rent decrees, a social-housing request).
 
 ## Messages to paste
 
