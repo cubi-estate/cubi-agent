@@ -330,6 +330,7 @@ class Agent:
         self.filter: SearchFilter | None = None
         self.has_results = False
         self.lang = "en"  # the language this turn runs in: one of the six (English when pivoted)
+        self.seen_urls: set[str] = set()  # every URL any tool result has carried
         self.user_lang = "en"  # the language the user writes in: any (agent/pivot.py)
         self.user_lang_name = "English"
         self.data_lang = "en"  # the language asked of Cubi's connector
@@ -1395,6 +1396,7 @@ class Agent:
                 result = f"error: {e}"
                 yield {"type": "action", "text": f"Tool error: {e}"}
             tool_text += result
+            self.seen_urls.update(guards.URL_RE.findall(result))  # links the conversation has shown
             # Named at the end of every tool result, where the model looks last: a
             # system-prompt rule alone lost to history (an English question after
             # Dutch turns was answered in Dutch, live 2026-10-20).
@@ -1517,7 +1519,10 @@ class Agent:
         if "research_area" in used or "home_news" in used:
             answer, cited = tavily_tool.link_citations(answer, self.sources, self.lang)
             tool_text += "\n".join(src["url"] for src in self.sources.values())
-        answer, report = guards.apply(answer, tool_text, self.lang, used,
+        # A link the conversation has already shown (a card's listing page, an earlier
+        # contact link) is not an invention: in a long session Nemotron repeats it and
+        # the guard removed it with a note (live 2026-10-30, the recording's ending).
+        answer, report = guards.apply(answer, tool_text + "\n" + "\n".join(sorted(self.seen_urls)), self.lang, used,
                                       [str(c.get("id")) for c in self.shown], replies=self.replies)
         report["citations_linked"] = cited
         answer, report["language_fixed"] = self._in_turn_language(answer)

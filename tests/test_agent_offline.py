@@ -662,3 +662,15 @@ def test_room_and_no_price_wishes():
     assert not ROOM_WISH.search("T2 com 2 quartos em Lisboa") and not ROOM_WISH.search("3 rooms apartment")
     assert NO_PRICE_WISH.search("also show homes with no price")
     assert skills.select("Afficher aussi les biens non chiffrés", True) == "find-homes"  # "afficher" ⊃ "cher"
+
+
+def test_a_link_shown_earlier_in_the_conversation_is_not_removed():
+    """Live 2026-10-30: at the end of a long session the model wrote the villa's contact
+    link from an earlier turn; the guard knew only this turn's tool output and removed it."""
+    earlier = "https://www.cubi.estate/chat?listing_id=ev_es%3A1&intent=contact"
+    now = "How to reach the agent\n- Chat: https://www.cubi.estate/chat?listing_id=pt_x%3A9&intent=contact\n"
+    answer = f"Open {earlier} and sign in."
+    kept, removed, _ = guards.verify_urls(answer, now + "\n" + earlier)
+    assert kept == answer and removed == []
+    gone, removed2, _ = guards.verify_urls(answer, now)
+    assert earlier not in gone and removed2 == [earlier]
