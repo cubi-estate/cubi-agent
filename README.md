@@ -179,3 +179,18 @@ docs/        FEEDBACK.md — what we learned building on Token Factory and Nebiu
 
 Apache-2.0. The vendored skill pack is MIT-licensed (see its own LICENSE). Listing
 data is served by Cubi Estate under its terms and is not part of this repository.
+
+## Models, after Nov 9, 2026
+
+The submission (Oct 30, build 76f5c28) ran on Nemotron 3 Super (tool loop, filter
+extraction, pivot, step translations) and Nemotron 3 Nano (listing briefs). Token
+Factory retires both serverless models on **Nov 9, 2026**, a month before judging
+(Dec 9–23), so the live demo moved to **Nemotron 3.5 Lightning** for both roles on
+Oct 30 — the only change after submission. Measured before the switch: held-out
+extraction 148/148 fields, 36/36 requests (p50 0.52 s, half of Super's); answer
+audit 0/31 guard fixes; the recorded flow re-run end to end. Two normaliser rules
+and a plain-prose note at the end of every tool result came with it (Lightning
+wrote location "Europe" for "anywhere in Europe", added property types the user
+did not name, and dumped the cards as markdown where Super wrote three sentences).
+`MODEL_SUPER` and `MODEL_NANO` still select any served model.
+

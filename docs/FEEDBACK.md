@@ -121,3 +121,17 @@ current a source is.
 operator traffic, hiding it from usage stats. And anonymous apps shared one per-IP
 rate limit. Both are fixed: named deployment tokens with their own budget, and a
 separate source label.
+
+## Token Factory, after the deadline
+
+**14. The hackathon's headline models were retired ten days after the deadline, before judging.**
+On Oct 30, hours after submissions closed, Token Factory announced that
+`nvidia/nemotron-3-super-120b-a12b` and `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`
+(serverless) stop on Nov 9, 2026; judging runs Dec 9–23. Every live demo built on
+the recommended models breaks mid-judging unless migrated. We moved to Nemotron 3.5
+Lightning the same day (same OpenAI-compatible call, two env defaults), after
+re-running our evals; Lightning needed a plain-prose instruction where Super had
+followed the system prompt, and wrote "Europe" as a location. What would have
+helped: a deprecation calendar on the model catalogue page, and a hackathon-long
+grace period for the models named in the brief.
+

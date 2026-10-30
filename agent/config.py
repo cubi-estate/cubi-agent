@@ -26,11 +26,14 @@ TOKEN_FACTORY_BASE_URL = os.environ.get(
     "TOKEN_FACTORY_BASE_URL", "https://api.tokenfactory.nebius.com/v1/"
 )
 
-# Role → model. Super is the default for everything until the eval gate
-# promotes Nano (extraction) or Ultra (area-compare verdict).
+# Role → model. Until 2026-10-30 Super served every role but the briefs (Nano).
+# Token Factory retires both on 2026-11-09 (notice of Oct 30), so the defaults are
+# Nemotron 3.5 Lightning for both roles: held-out extraction 36/36 (p50 0.52 s), the
+# 31-turn answer audit 0/31 guard fixes, the recorded flow re-run locally. The
+# retired ids stay reachable through the env until the date, for comparison.
 MODELS = {
-    "nano": os.environ.get("MODEL_NANO", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"),
-    "super": os.environ.get("MODEL_SUPER", "nvidia/nemotron-3-super-120b-a12b"),
+    "nano": os.environ.get("MODEL_NANO", "nvidia/Nemotron-3_5-Lightning"),
+    "super": os.environ.get("MODEL_SUPER", "nvidia/Nemotron-3_5-Lightning"),
     "ultra": os.environ.get("MODEL_ULTRA", "nvidia/Nemotron-3-Ultra-550b-a55b"),
     # Newer than the plan; probed as a candidate for the fast calls.
     "lightning": os.environ.get("MODEL_LIGHTNING", "nvidia/Nemotron-3_5-Lightning"),
