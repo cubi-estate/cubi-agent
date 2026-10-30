@@ -191,10 +191,20 @@ Oct 30 12:08 UTC as build 141ff32, and re-run there: turns 2–4 in 5.1 s, 2.5 s
    by Lake Viñuela, #2 a €39,500 house in Jaén.
 6. `Compare #1 and #2 feature by feature` — 1.7 s, asking prices side by side, "doesn't
    say" where the listing is silent.
-7. `Show me homes like #1 in Málaga` — 2 matches on features and surroundings, never on
-   price (€4.2M and €8.8M against €1.19M), 7 s.
-8. Contact: `How do I contact the agent for #1?` — the three consented options; the
-   callback and meeting kinds stay off on PROD (owner's decision, see the hub).
+7. `Show me homes like the Colmenar one in Málaga` — 2 matches on features and
+   surroundings, never on price (€4.2M and €8.8M against €1.19M), 6 s. Name the home,
+   not its number: Cubi's card order in Andalusia changed between two runs twenty
+   minutes apart (Colmenar was #1, then #4), and if #1 happens to be the Málaga villa
+   the agent asks for another city. Granada and Seville have no match.
+8. **The ending (owner's decision, Oct 30):** `How do I contact the agent for the
+   Colmenar home?` — 2.7 s: the three consented options (questions through Cubi,
+   Cubi Connect, an email request), one sign-in link to the Cubi chat for that home,
+   "no agent phone or email is shared directly". The callback and meeting kinds stay
+   off on PROD. Tested three times live on build 141ff32; one earlier run with the
+   wording "the Colmenar one" had the link scrubbed by the URL guard, so use "home".
+   Cut on the answer, before the chips: until build 22c0a9c or later is live, the
+   first chip after this turn read "homes like #1 in Amsterdam" for a Málaga villa
+   published by a Dutch portal (fixed in agent/suggest.py).
 
 ## Messages to paste
 
