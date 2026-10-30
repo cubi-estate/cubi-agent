@@ -167,3 +167,10 @@ def test_tap_questions_without_similar_homes_and_after_a_price_check():
     assert "simpair" not in kinds and "price" not in kinds
     assert dict(qs)["drops"] == "O preço da #3 baixou, e que novidades há em Marbella?"   # the plain question stands
     assert "placenews" not in kinds   # the news question would repeat it
+
+
+def test_a_big_city_in_the_location_beats_the_portal_country():
+    """Live 2026-10-30: a Málaga villa from a Dutch portal offered homes like it in Amsterdam."""
+    card = {"id": "vastgoednederland_nl:672689", "location": "Cl. Colina de Sierrezuela14, MÁLAGA, Andalusia"}
+    assert suggest.other_city(card, ["Andalusia"]) == "Madrid"
+    assert suggest.other_city({"id": "afinest_pt:1", "location": "Alcoitão, Cascais, Lisboa"}, ["Lisboa"]) == "Porto"

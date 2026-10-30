@@ -99,6 +99,13 @@ def _country_key(card: dict) -> str:
     country = country_of(card)
     if country in BIG_CITIES:
         return country
+    # A big city in the location line names the country before the source does:
+    # "Cl. Colina de Sierrezuela, MÁLAGA, Andalusia" from a Dutch portal offered
+    # "homes like #1 in Amsterdam" (live 2026-10-30).
+    where = [w.strip() for w in (card.get("location") or "").split(",")]
+    for key, cities in BIG_CITIES.items():
+        if any(_same_place(city, w) for city in cities for w in where):
+            return key
     m = re.search(r"_([a-z]{2}):", str(card.get("id") or "").lower())
     return _CODE.get(m.group(1), "") if m else ""
 
