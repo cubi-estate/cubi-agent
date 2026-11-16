@@ -6,13 +6,14 @@ from openai import OpenAI
 from . import config
 
 
-def client(timeout: float = 60.0) -> OpenAI:
+def client(timeout: float | None = None) -> OpenAI:
+    """One retry, and each attempt bounded by `config.LLM_TIMEOUT_S` (20 s)."""
     if not config.NEBIUS_API_KEY:
         raise RuntimeError("NEBIUS_API_KEY is not set (see .env.example)")
     return OpenAI(
         base_url=config.TOKEN_FACTORY_BASE_URL,
         api_key=config.NEBIUS_API_KEY,
-        timeout=timeout,
+        timeout=config.LLM_TIMEOUT_S if timeout is None else timeout,
         max_retries=1,
     )
 

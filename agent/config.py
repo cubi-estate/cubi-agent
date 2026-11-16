@@ -39,6 +39,14 @@ MODELS = {
     "lightning": os.environ.get("MODEL_LIGHTNING", "nvidia/Nemotron-3_5-Lightning"),
 }
 
+# Per-call deadline on Token Factory, seconds. A normal call answers in 0.5-9 s,
+# but single calls from the pod stall for 15-60 s (33 of them Nov 3-16, the
+# pod log shows one HTTP 200 per stall and no retry). At the old 60 s a stall
+# held the turn for up to two minutes and on Nov 16 06:46 failed it outright;
+# at 20 s the client gives up and its one retry, which has always come back
+# fast, answers.
+LLM_TIMEOUT_S = float(os.environ.get("LLM_TIMEOUT_S", "20"))
+
 TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
 # Optional: recent posts on X in the home-news turn (agent/x_tool.py). Unset = a link to X.
 X_BEARER_TOKEN = os.environ.get("X_BEARER_TOKEN", "")
