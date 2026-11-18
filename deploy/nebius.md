@@ -4,6 +4,28 @@ The web app (`agent/server.py`) runs as one CPU container behind a Nebius
 managed HTTPS URL. No GPU: the models run on Token Factory, so the container
 only serves the page and orchestrates calls.
 
+> ⛔ **THE PROJECT IS SUBMITTED. NEVER RECREATE THE ENDPOINT.**
+> `cubi-agent-v3` (`aiendpoint-e04pdc0n1zjvn4fa31`) serves
+> `https://port8080-z2jmcfj6t9xx12p.tunnel.applications.eu-west2.nebius.cloud`,
+> and that URL — behind `https://www.cubi.estate/agent` — is in the submission.
+> Deleting and creating an endpoint gives it a NEW URL, so the demo the judges
+> were given stops existing. `restart` / `stop` / `start` keep the URL and are
+> safe; `delete` and `create` are not, whatever they would fix.
+>
+> **Consequence: its secrets cannot be rotated while the submission is live.**
+> The Nebius CLI has no `endpoint update`, and the endpoint pins each
+> MysteryBox secret by VERSION (`cubi-agent-env` → `mbsecver-e04wnh2gm6qrdy0n40`),
+> so a new version reaches it only through a recreate. Rotate `CUBI_MCP_TOKEN`
+> on Cubi's side (`MCP_DEPLOY_TOKENS` entry `cubi-agent-demo`) and the demo is
+> locked out of the connector (401, no anonymous fallback) with no way to give
+> it the new token. Learned 2026-11-18: that entry was rotated after the token
+> was printed in a session transcript, the demo's searches failed, and the fix
+> was to RESTORE the old token on Cubi's side — a replacement endpoint created in
+> between was deleted unused. The exposed token stays live until judging ends
+> (search scope only, 5,000 calls/day); rotate it then, recreating freely.
+> ⚠️ `cubi-agent-env`'s PRIMARY version already holds a newer, now-revoked
+> token — update the primary first when that rotation happens.
+
 ## One-time, by the account owner
 
 ```bash
@@ -61,9 +83,11 @@ nebius ai endpoint restart aiendpoint-e04pdc0n1zjvn4fa31
 curl -s "$(curl -sLo /dev/null -w "%{url_effective}" https://www.cubi.estate/agent)/api/health"   # "build" = the new commit
 ```
 
-Only *recreating* the endpoint (a new size or new secrets) changes the URL. Then
-update `CUBI_AGENT_DEMO_URL` in `cubi-estate/property_chat/next.config.ts`, the
-307 behind `https://www.cubi.estate/agent`, and push to `main` (Vercel deploys).
+Only *recreating* the endpoint (a new size or new secrets) changes the URL — and
+while the submission is live, **don't** (see the top of this file). After judging,
+a recreate also means updating `CUBI_AGENT_DEMO_URL` in
+`cubi-estate/property_chat/next.config.ts`, the 307 behind
+`https://www.cubi.estate/agent`, and pushing to `main` (Vercel deploys).
 
 ## Platform advisories
 
